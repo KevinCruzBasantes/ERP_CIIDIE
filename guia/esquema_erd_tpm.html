@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERD Extensión TPM — ERP Laboratorio de Maderas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f1117;
+    color: #e8e6df;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #f0ede6;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+  .header p {
+    font-size: 13px;
+    color: #9c9a92;
+  }
+  .badges {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+  }
+  .badge-tpm { background: #2a1e1a; color: #e8a87c; border: 1px solid #6b3e2e; }
+  .badge-pilar { background: #1a1e2a; color: #7ab4e8; border: 1px solid #2e4a6b; }
+  #erd {
+    background: #161820;
+    border-radius: 16px;
+    border: 1px solid #2a2c38;
+    padding: 24px;
+    overflow-x: auto;
+  }
+  #erd svg { width: 100%; min-width: 700px; }
+  .pilares {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .pilar-card {
+    background: #161820;
+    border-radius: 12px;
+    border: 1px solid #2a2c38;
+    padding: 14px 16px;
+  }
+  .pilar-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e8a87c;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .pilar-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #e8e6df;
+    margin-bottom: 4px;
+  }
+  .pilar-tabla {
+    font-size: 12px;
+    color: #7ab4e8;
+    font-family: 'Courier New', monospace;
+  }
+  .pilar-desc {
+    font-size: 11px;
+    color: #6a6a62;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6a6a62;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 24px 0 12px;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #5a5a52;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ERD — Extensión TPM</h1>
+  <p>Mantenimiento Productivo Total · 4 tablas adicionales</p>
+  <div class="badges">
+    <span class="badge badge-tpm">TPM — Mantenimiento Productivo Total</span>
+    <span class="badge badge-pilar">Pilares 1 · 3 · 4 · 7</span>
+  </div>
+</div>
+
+<div id="erd"></div>
+
+<p class="section-label">Pilares TPM implementados</p>
+<div class="pilares">
+  <div class="pilar-card">
+    <div class="pilar-num">PILAR 1</div>
+    <div class="pilar-title">Mantenimiento autónomo</div>
+    <div class="pilar-tabla">INSPECCION_DIARIA</div>
+    <div class="pilar-desc">Checklist diario antes de usar la máquina. Si falla → alerta al ingeniero automáticamente.</div>
+  </div>
+  <div class="pilar-card">
+    <div class="pilar-num">PILAR 3</div>
+    <div class="pilar-title">Mejora enfocada — OEE</div>
+    <div class="pilar-tabla">REGISTRO_OEE</div>
+    <div class="pilar-desc">Disponibilidad × Rendimiento × Calidad. Se calcula automáticamente con los datos de ORDEN_TRABAJO.</div>
+  </div>
+  <div class="pilar-card">
+    <div class="pilar-num">PILAR 4</div>
+    <div class="pilar-title">Formación y certificación</div>
+    <div class="pilar-tabla">CERTIFICACION_USUARIO</div>
+    <div class="pilar-desc">Sin certificación vigente, el sistema bloquea la reserva de esa máquina automáticamente.</div>
+  </div>
+  <div class="pilar-card">
+    <div class="pilar-num">PILAR 7</div>
+    <div class="pilar-title">Seguridad e incidentes</div>
+    <div class="pilar-tabla">INCIDENTE</div>
+    <div class="pilar-desc">Condiciones anormales y casi-accidentes. Si requiere mantenimiento → alerta al ingeniero.</div>
+  </div>
+</div>
+
+<div class="footer" style="margin-top:24px">ERP Laboratorio de Maderas · TPM Extension · Django + MariaDB</div>
+
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  fontFamily: "'Segoe UI', system-ui, sans-serif",
+  themeVariables: {
+    darkMode: true,
+    fontSize: '13px',
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
+    lineColor: '#8a6a4a',
+    textColor: '#e8e6df',
+    primaryColor: '#2a1e14',
+    primaryBorderColor: '#6b3e2a',
+    primaryTextColor: '#f0c080',
+    secondaryColor: '#1e1a14',
+    tertiaryColor: '#18160e',
+    background: '#161820',
+    mainBkg: '#2a1e14',
+    nodeBorder: '#6b3e2a',
+    titleColor: '#f0c080',
+    edgeLabelBackground: '#1e1a14',
+    attributeBackgroundColorEven: '#1e1a14',
+    attributeBackgroundColorOdd: '#1a1810',
+  },
+});
+
+const diagram = `erDiagram
+  MAQUINA {
+    int id PK
+    string nombre
+    string codigo
+    string estado
+  }
+  USUARIO {
+    int id PK
+    string nombre
+    string rol
+  }
+  ORDEN_TRABAJO {
+    int id PK
+    float tiempo_planificado
+    float tiempo_real
+    float tiempo_parada
+    string resultado
+  }
+  REGISTRO_OEE {
+    int id PK
+    int maquina_id FK
+    date periodo_inicio
+    date periodo_fin
+    float disponibilidad
+    float rendimiento
+    float calidad
+    float oee_total
+    int calculado_por FK
+  }
+  CERTIFICACION_USUARIO {
+    int id PK
+    int usuario_id FK
+    int maquina_id FK
+    date fecha_certificacion
+    date fecha_vencimiento
+    int certificado_por FK
+    boolean vigente
+  }
+  INSPECCION_DIARIA {
+    int id PK
+    int maquina_id FK
+    int inspector_id FK
+    date fecha
+    boolean nivel_aceite
+    boolean temperatura
+    boolean ruidos
+    boolean limpieza
+    boolean seguridad
+    string observaciones
+    boolean aprobada
+  }
+  INCIDENTE {
+    int id PK
+    int maquina_id FK
+    int reportado_por FK
+    datetime fecha_hora
+    string tipo
+    string descripcion
+    string severidad
+    string accion_tomada
+    boolean requiere_mantenimiento
+  }
+
+  MAQUINA ||--o{ REGISTRO_OEE : mide
+  MAQUINA ||--o{ CERTIFICACION_USUARIO : requiere
+  MAQUINA ||--o{ INSPECCION_DIARIA : inspeccionada
+  MAQUINA ||--o{ INCIDENTE : registra
+  USUARIO ||--o{ REGISTRO_OEE : calcula
+  USUARIO ||--o{ CERTIFICACION_USUARIO : certifica
+  USUARIO ||--o{ CERTIFICACION_USUARIO : es_certificado
+  USUARIO ||--o{ INSPECCION_DIARIA : realiza
+  USUARIO ||--o{ INCIDENTE : reporta
+  ORDEN_TRABAJO ||--o{ REGISTRO_OEE : alimenta
+`;
+
+const { svg } = await mermaid.render('erd-tpm-svg', diagram);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const fp = node.querySelector('path[d]');
+  if (!fp) return;
+  const nums = fp.getAttribute('d').match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0],nums[2],nums[4],nums[6]];
+  const ys = [nums[1],nums[3],nums[5],nums[7]];
+  const x=Math.min(...xs), y=Math.min(...ys);
+  const w=Math.max(...xs)-x, h=Math.max(...ys)-y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x',x); rect.setAttribute('y',y);
+  rect.setAttribute('width',w); rect.setAttribute('height',h);
+  rect.setAttribute('rx','10');
+  for (const a of ['fill','stroke','stroke-width','class','style']) {
+    if (fp.hasAttribute(a)) rect.setAttribute(a, fp.getAttribute(a));
+  }
+  fp.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke','none');
+});
+</script>
+</body>
+</html>

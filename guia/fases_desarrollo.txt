@@ -1,0 +1,311 @@
+================================================================
+ERP LABORATORIO DE MADERAS — FASES DE DESARROLLO
+Guía para continuar el proyecto desde el Proyecto Claude
+================================================================
+
+
+CONTEXTO RÁPIDO
+---------------
+Este es un ERP web para un laboratorio universitario de máquinas
+de diseño industrial (optimill, cortadoras, etc.). Incorpora TPM
+(Mantenimiento Productivo Total). Stack: Django + MariaDB +
+servidor HP ProLiant DL285 G1. El documento de requerimientos
+completo está en requerimientos.txt.
+
+
+================================================================
+FASE 1 — COMPLETADA ✓
+Levantamiento de requerimientos
+================================================================
+
+Estado: COMPLETADA
+Entregables producidos:
+- Documento de requerimientos (requerimientos.txt)
+- ERD completo con 15 tablas (esquema_erd_nucleo.html y
+  esquema_erd_tpm.html)
+- Decisiones de arquitectura tomadas:
+  · Aplicación web (no escritorio)
+  · Django + MariaDB
+  · Inventario unificado con campo tipo
+  · TPM integrado desde el diseño inicial
+  · Servidor local ProLiant DL285 G1
+
+
+================================================================
+FASE 2 — EN CURSO
+Diseño del sistema y desarrollo
+================================================================
+
+PASO 1 — Preparar el servidor ProLiant (PENDIENTE)
+----------------------------------------------------
+Objetivo: Dejar el servidor listo para el proyecto Django.
+
+Tareas:
+[ ] Verificar versión de Python: python3 --version
+[ ] Verificar pip: pip3 --version
+[ ] Verificar MariaDB: mysql --version
+[ ] Instalar dependencias base si faltan:
+    sudo apt update && sudo apt install python3-pip python3-venv -y
+[ ] Crear la base de datos:
+    CREATE DATABASE erp_laboratorio
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+[ ] Crear usuario de base de datos:
+    CREATE USER 'erp_user'@'localhost' IDENTIFIED BY 'password_seguro';
+    GRANT ALL PRIVILEGES ON erp_laboratorio.* TO 'erp_user'@'localhost';
+    FLUSH PRIVILEGES;
+
+Preguntar a Claude en el Proyecto:
+"Ayúdame a verificar el servidor ProLiant para el ERP y
+ejecutar el Paso 1 del documento de fases."
+
+
+PASO 2 — Crear el proyecto Django (PENDIENTE)
+-----------------------------------------------
+Objetivo: Estructura base del proyecto con todas las apps.
+
+Comandos a ejecutar:
+  mkdir /var/www/erp_laboratorio && cd /var/www/erp_laboratorio
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install django mysqlclient pillow
+
+  django-admin startproject config .
+  python manage.py startapp maquinas
+  python manage.py startapp usuarios
+  python manage.py startapp mantenimiento
+  python manage.py startapp inventario
+  python manage.py startapp reservas
+  python manage.py startapp reportes
+  python manage.py startapp tpm
+
+Estructura de apps:
+  maquinas/     → Máquinas y piezas
+  usuarios/     → Usuarios, roles, permisos, certificaciones
+  mantenimiento/ → Mantenimiento preventivo/correctivo
+  inventario/   → Materiales y consumos
+  reservas/     → Reservas y órdenes de trabajo
+  reportes/     → Dashboard, alertas, exportación Excel
+  tpm/          → OEE, inspecciones diarias, incidentes
+
+Preguntar a Claude en el Proyecto:
+"Crea el proyecto Django para el ERP del laboratorio con todas
+las apps según el Paso 2 del documento de fases."
+
+
+PASO 3 — Configurar settings.py (PENDIENTE)
+---------------------------------------------
+Objetivo: Conectar Django con MariaDB y configurar el proyecto.
+
+Configuraciones clave:
+  ENGINE: django.db.backends.mysql
+  NAME: erp_laboratorio
+  USER: erp_user
+  PASSWORD: (definir)
+  HOST: localhost
+  PORT: 3306
+  OPTIONS: {'charset': 'utf8mb4'}
+
+  LANGUAGE_CODE = 'es-ec'
+  TIME_ZONE = 'America/Guayaquil'
+  MEDIA_URL = '/media/'
+  MEDIA_ROOT = BASE_DIR / 'media'
+
+  INSTALLED_APPS: agregar las 7 apps del proyecto
+
+Preguntar a Claude en el Proyecto:
+"Genera el settings.py completo para el ERP del laboratorio
+según el Paso 3 del documento de fases."
+
+
+PASO 4 — Definir los modelos Django (PENDIENTE)
+-------------------------------------------------
+Objetivo: Crear todos los modelos según el ERD diseñado.
+Este es el paso más importante — define toda la base de datos.
+
+Orden de creación de modelos:
+  1. usuarios/models.py   → Rol, Permiso, Usuario
+  2. maquinas/models.py   → Maquina, Pieza, TransferenciaPieza
+  3. mantenimiento/models.py → Mantenimiento
+  4. inventario/models.py → Material, ConsumoMaterial
+  5. reservas/models.py   → Reserva, OrdenTrabajo
+  6. tpm/models.py        → RegistroOEE, CertificacionUsuario,
+                            InspeccionDiaria, Incidente
+
+Las 15 tablas del ERD:
+  Núcleo (11):
+    ROL, PERMISO, USUARIO, MAQUINA, PIEZA,
+    TRANSFERENCIA_PIEZA, MANTENIMIENTO, MATERIAL,
+    CONSUMO_MATERIAL, RESERVA, ORDEN_TRABAJO
+  TPM (4):
+    REGISTRO_OEE, CERTIFICACION_USUARIO,
+    INSPECCION_DIARIA, INCIDENTE
+
+Comando tras crear los modelos:
+  python manage.py makemigrations
+  python manage.py migrate
+
+Preguntar a Claude en el Proyecto:
+"Escribe todos los modelos Django completos para el ERP del
+laboratorio según el ERD y el Paso 4 del documento de fases."
+
+
+PASO 5 — Panel de administración (PENDIENTE)
+----------------------------------------------
+Objetivo: Registrar todos los modelos en admin.py para tener
+una interfaz funcional desde el día 1.
+
+Por cada modelo, configurar:
+  - list_display (columnas visibles en la lista)
+  - list_filter (filtros laterales)
+  - search_fields (campos de búsqueda)
+  - Inlines donde corresponda (ej: piezas dentro de máquina)
+
+Comandos:
+  python manage.py createsuperuser
+  python manage.py runserver 0.0.0.0:8000
+
+Acceso desde la red del lab: http://IP_SERVIDOR:8000/admin
+
+Preguntar a Claude en el Proyecto:
+"Genera el admin.py completo para todas las apps del ERP
+del laboratorio con el Paso 5 del documento de fases."
+
+
+PASO 6 — Desarrollo de módulos (PENDIENTE)
+-------------------------------------------
+Objetivo: Construir las vistas, formularios y templates de
+cada módulo. Orden recomendado:
+
+  Módulo 1: Usuarios y login
+    - Login con detección de rol
+    - Redirect automático según rol al entrar
+    - Decoradores de permiso por vista
+    - Cambio de contraseña
+
+  Módulo 2: Máquinas y piezas
+    - Listado de máquinas con estado visual
+    - Ficha completa de máquina (datos + fotos + manual)
+    - Registro de piezas con fotos de ubicación
+    - Formulario de transferencia de piezas
+
+  Módulo 3: Mantenimiento
+    - Dashboard de estados (próximo / vencido / al día)
+    - Formulario de mantenimiento (similar al DANEC)
+    - Historial por máquina
+
+  Módulo 4: Reservas y órdenes de trabajo
+    - Calendario de reservas por máquina
+    - Verificación automática de certificación vigente
+    - Formulario de orden de trabajo
+    - Registro de tiempos reales
+
+  Módulo 5: Inventario
+    - Lista de materiales con semáforo de stock
+    - Registro de consumo por orden de trabajo
+    - Alertas de stock mínimo
+
+  Módulo 6: TPM
+    - Checklist de inspección diaria
+    - Cálculo automático de OEE
+    - Registro de incidentes
+    - Panel de certificaciones
+
+  Módulo 7: Reportes
+    - Dashboard general con alertas
+    - Exportación a Excel (openpyxl)
+    - Reportes de mantenimiento, uso e inventario
+
+
+PASO 7 — Producción (PENDIENTE)
+---------------------------------
+Objetivo: Pasar de servidor de desarrollo a producción estable.
+
+Instalar:
+  pip install gunicorn whitenoise
+  sudo apt install nginx -y
+
+Configurar:
+  - Gunicorn como servicio systemd
+  - Nginx como proxy reverso
+  - Archivos estáticos con WhiteNoise
+  - Backups automáticos de MariaDB (cron diario)
+
+Preguntar a Claude en el Proyecto:
+"Configura Gunicorn y Nginx para poner en producción el ERP
+del laboratorio en el servidor ProLiant con Debian."
+
+
+================================================================
+FASE 3 — PENDIENTE
+Pruebas con usuarios reales
+================================================================
+
+Participantes:
+- Ingeniero Industrial (usuario técnico)
+- PhD Diseño Industrial (usuario administrador)
+- 1-2 estudiantes capacitados (beta testers)
+
+Objetivos:
+[ ] El ingeniero ingresa datos reales de máquinas existentes
+[ ] El ingeniero registra el plan de mantenimiento actual
+[ ] Se prueban las alertas de mantenimiento
+[ ] Se prueban las reservas con certificaciones
+[ ] Se valida que los reportes muestran datos correctos
+[ ] Se recoge retroalimentación y se ajusta el sistema
+
+Duración estimada: 2-3 semanas de uso paralelo al sistema actual
+
+
+================================================================
+FASE 4 — PENDIENTE
+Migración de datos e implementación oficial
+================================================================
+
+Tareas:
+[ ] Pasar datos existentes (si los hay en papel o Excel)
+[ ] Capacitación formal al ingeniero y administrador
+[ ] Crear usuarios reales con roles y certificaciones
+[ ] Ingresar inventario inicial de materiales
+[ ] Registrar todas las máquinas existentes con sus piezas
+[ ] Activar alertas de mantenimiento
+[ ] Apagar cualquier sistema anterior
+
+
+================================================================
+FASE 5 — PENDIENTE
+Capacitación y mantenimiento del sistema
+================================================================
+
+Capacitación:
+[ ] Manual de usuario por rol (administrador / técnico)
+[ ] Video o guía rápida para la inspección diaria TPM
+[ ] Procedimiento de backup y restauración
+
+Mantenimiento continuo:
+[ ] Backup diario automático de la base de datos
+[ ] Revisar logs de errores semanalmente
+[ ] Agregar nuevos usuarios y roles según el laboratorio crezca
+[ ] Actualizar Django y dependencias cada 6 meses
+
+
+================================================================
+CÓMO USAR ESTE ARCHIVO EN EL PROYECTO CLAUDE
+================================================================
+
+1. Subir al Proyecto Claude junto con requerimientos.txt y los
+   archivos HTML de los esquemas ERD.
+
+2. En cada sesión de trabajo, indicar en qué PASO estás:
+   "Estoy en el Paso 4 del documento de fases, ayúdame a crear
+   los modelos Django para las apps de maquinas y usuarios."
+
+3. Claude tendrá contexto completo del proyecto y podrá generar
+   código preciso sin necesidad de re-explicar todo desde cero.
+
+4. Actualizar los checkboxes [ ] → [x] conforme avances.
+
+
+================================================================
+FIN DEL DOCUMENTO DE FASES
+Versión 1.0
+================================================================

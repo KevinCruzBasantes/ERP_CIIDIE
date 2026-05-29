@@ -1,3 +1,12 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import (
+    InspeccionTPM,
+    IndicadorTPM,
+    HallazgoTPM
+)
+
+
+admin.site.register(InspeccionTPM)
+admin.site.register(IndicadorTPM)
+admin.site.register(HallazgoTPM)

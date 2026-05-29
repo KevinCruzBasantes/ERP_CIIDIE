@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERD Núcleo — ERP Laboratorio de Maderas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f1117;
+    color: #e8e6df;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #f0ede6;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+  .header p {
+    font-size: 13px;
+    color: #9c9a92;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 8px;
+    background: #1e2a1e;
+    color: #7ec98a;
+    border: 1px solid #3a6b3e;
+    letter-spacing: 0.03em;
+  }
+  #erd {
+    background: #161820;
+    border-radius: 16px;
+    border: 1px solid #2a2c38;
+    padding: 24px;
+    overflow-x: auto;
+  }
+  #erd svg {
+    width: 100%;
+    min-width: 700px;
+  }
+  /* Override mermaid styles for dark theme */
+  #erd svg text {
+    fill: #e8e6df !important;
+    font-weight: 500 !important;
+  }
+  #erd svg .er.entityBox {
+    fill: #1e2130 !important;
+    stroke: #3a4060 !important;
+  }
+  #erd svg .er.entityLabel {
+    fill: #c2e0ff !important;
+    font-weight: 600 !important;
+  }
+  #erd svg .er.attributeBoxOdd {
+    fill: #191c2a !important;
+  }
+  #erd svg .er.attributeBoxEven {
+    fill: #1a1e2e !important;
+  }
+  #erd svg .er.relationshipLine {
+    stroke: #5a6a9a !important;
+  }
+  #erd svg .er.relationshipLabel {
+    fill: #a0c4ff !important;
+    font-weight: 500 !important;
+  }
+  .legend {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: #161820;
+    border-radius: 12px;
+    border: 1px solid #2a2c38;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #9c9a92;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #5a5a52;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ERD — Núcleo del ERP</h1>
+  <p>Laboratorio de Máquinas de Diseño Industrial</p>
+  <span class="badge">11 tablas · Núcleo del sistema</span>
+</div>
+
+<div id="erd"></div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4a6fa5"></div>PK — Clave primaria</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7a9a5a"></div>FK — Clave foránea (relación)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#9a6a5a"></div>||--o{ — Uno a muchos</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7a5a9a"></div>||--o| — Uno a uno opcional</div>
+</div>
+
+<div class="footer">ERP Laboratorio de Maderas · Fase 2 · Django + MariaDB</div>
+
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  fontFamily: "'Segoe UI', system-ui, sans-serif",
+  themeVariables: {
+    darkMode: true,
+    fontSize: '13px',
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
+    lineColor: '#5a7aaa',
+    textColor: '#e8e6df',
+    primaryColor: '#1e2340',
+    primaryBorderColor: '#3a4570',
+    primaryTextColor: '#c2e0ff',
+    secondaryColor: '#1a2030',
+    tertiaryColor: '#161c2c',
+    background: '#161820',
+    mainBkg: '#1e2130',
+    nodeBorder: '#3a4060',
+    clusterBkg: '#161c2c',
+    titleColor: '#c2e0ff',
+    edgeLabelBackground: '#1a1e2e',
+    attributeBackgroundColorEven: '#1a1e2e',
+    attributeBackgroundColorOdd: '#191c2a',
+  },
+});
+
+const diagram = `erDiagram
+  ROL {
+    int id PK
+    string nombre
+    string descripcion
+  }
+  PERMISO {
+    int id PK
+    string modulo
+    string accion
+    int rol_id FK
+  }
+  USUARIO {
+    int id PK
+    string nombre
+    string email
+    string cedula
+    string password_hash
+    int rol_id FK
+    boolean activo
+  }
+  MAQUINA {
+    int id PK
+    string nombre
+    string codigo
+    string serial
+    string codigo_barras
+    string marca
+    string modelo
+    int anio
+    string estado
+    string foto_url
+    string manual_url
+    int responsable_id FK
+  }
+  PIEZA {
+    int id PK
+    string nombre
+    string descripcion
+    string ubicacion
+    string foto_url
+    int maquina_id FK
+    int stock_disponible
+  }
+  TRANSFERENCIA_PIEZA {
+    int id PK
+    int pieza_id FK
+    int maquina_origen_id FK
+    int maquina_destino_id FK
+    date fecha
+    string motivo
+    int autorizado_por FK
+  }
+  MANTENIMIENTO {
+    int id PK
+    int maquina_id FK
+    string tipo
+    string tipo_tpm
+    date fecha_realizado
+    date proxima_fecha
+    int horas_intervalo
+    string descripcion
+    string estado
+    int tecnico_id FK
+  }
+  MATERIAL {
+    int id PK
+    string nombre
+    string tipo
+    string unidad
+    float stock_actual
+    float stock_minimo
+    string proveedor
+  }
+  CONSUMO_MATERIAL {
+    int id PK
+    int material_id FK
+    int orden_id FK
+    float cantidad
+    date fecha
+    int registrado_por FK
+  }
+  RESERVA {
+    int id PK
+    int maquina_id FK
+    int solicitante_id FK
+    int autorizado_por FK
+    datetime fecha_inicio
+    datetime fecha_fin
+    string proposito
+    string estado
+    string tipo_trabajo
+  }
+  ORDEN_TRABAJO {
+    int id PK
+    int reserva_id FK
+    int maquina_id FK
+    int operador_id FK
+    datetime inicio
+    datetime fin
+    float tiempo_planificado
+    float tiempo_real
+    float tiempo_parada
+    string descripcion
+    string resultado
+  }
+
+  ROL ||--o{ USUARIO : tiene
+  ROL ||--o{ PERMISO : define
+  USUARIO ||--o{ RESERVA : solicita
+  USUARIO ||--o{ MANTENIMIENTO : realiza
+  MAQUINA ||--o{ PIEZA : contiene
+  MAQUINA ||--o{ MANTENIMIENTO : recibe
+  MAQUINA ||--o{ RESERVA : reservada_en
+  MAQUINA ||--o{ ORDEN_TRABAJO : ejecuta
+  PIEZA ||--o{ TRANSFERENCIA_PIEZA : transferida
+  RESERVA ||--o| ORDEN_TRABAJO : genera
+  ORDEN_TRABAJO ||--o{ CONSUMO_MATERIAL : usa
+  MATERIAL ||--o{ CONSUMO_MATERIAL : consumido
+`;
+
+const { svg } = await mermaid.render('erd-nucleo-svg', diagram);
+document.getElementById('erd').innerHTML = svg;
+
+// Round entity box corners
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const fp = node.querySelector('path[d]');
+  if (!fp) return;
+  const nums = fp.getAttribute('d').match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0],nums[2],nums[4],nums[6]];
+  const ys = [nums[1],nums[3],nums[5],nums[7]];
+  const x=Math.min(...xs), y=Math.min(...ys);
+  const w=Math.max(...xs)-x, h=Math.max(...ys)-y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x',x); rect.setAttribute('y',y);
+  rect.setAttribute('width',w); rect.setAttribute('height',h);
+  rect.setAttribute('rx','10');
+  for (const a of ['fill','stroke','stroke-width','class','style']) {
+    if (fp.hasAttribute(a)) rect.setAttribute(a, fp.getAttribute(a));
+  }
+  fp.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke','none');
+});
+</script>
+</body>
+</html>

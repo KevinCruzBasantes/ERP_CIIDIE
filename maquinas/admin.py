@@ -1,7 +1,22 @@
 from django.contrib import admin
-from .models import Maquina, Pieza, TransferenciaPieza
+from .models import Maquina
 
 
-admin.site.register(Maquina)
-admin.site.register(Pieza)
-admin.site.register(TransferenciaPieza)
+@admin.register(Maquina)
+class MaquinaAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'codigo',
+        'nombre',
+        'estado',
+        'ubicacion',
+    )
+
+    list_filter = (
+        'estado',
+    )
+
+    search_fields = (
+        'codigo',
+        'nombre',
+    )
