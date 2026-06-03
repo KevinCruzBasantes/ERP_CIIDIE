@@ -1,12 +1,16 @@
 from django.contrib import admin
-
 from .models import (
-    InspeccionTPM,
-    IndicadorTPM,
-    HallazgoTPM
+    CertificacionUsuario,
+    InspeccionDiaria,
+    HallazgoInspeccion,
+    RegistroOEE,
+    Incidente,
+    Alerta,
 )
 
-
-admin.site.register(InspeccionTPM)
-admin.site.register(IndicadorTPM)
-admin.site.register(HallazgoTPM)
+admin.site.register(CertificacionUsuario)
+admin.site.register(InspeccionDiaria)
+admin.site.register(HallazgoInspeccion)
+admin.site.register(RegistroOEE)
+admin.site.register(Incidente)
+admin.site.register(Alerta)

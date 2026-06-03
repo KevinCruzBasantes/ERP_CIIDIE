@@ -1,341 +1,53 @@
-================================================================
-ERP LABORATORIO DE MADERAS — DOCUMENTO DE REQUERIMIENTOS
-Levantado en conversación con el equipo del laboratorio
-================================================================
+"""
+ERP LAB MADERAS - REQUERIMIENTOS COMPRIMIDOS
+Stack: Django, MariaDB, Debian 12 (HP ProLiant DL285 G1). Red local, es-ec, America/Guayaquil. Enfoque: TPM (Mantenimiento Productivo Total).
 
-DESCRIPCIÓN GENERAL DEL SISTEMA
----------------------------------
-Sistema ERP web para la gestión integral de un laboratorio de
-máquinas de diseño industrial universitario. El sistema incorpora
-la filosofía TPM (Mantenimiento Productivo Total) para garantizar
-la disponibilidad, eficiencia y seguridad de los equipos.
+1. NEGOCIO & ROLES
+- Contexto: Aula, investigación y producción universitaria.
+- Jerarquía: PhD (Jefe) -> Ingeniero Industrial (Técnico/Mantenimiento/Inventario) -> Estudiante Capacitado (Opera) -> Estudiante Regular (Solo consulta).
+- Trabajos: Clases, Investigación, Pedidos externos.
 
-Tecnología: Django (Python) + MariaDB + servidor HP ProLiant DL285 G1
-Acceso: Aplicación web en red local del laboratorio
-Idioma: Español (es-ec), zona horaria America/Guayaquil
+2. MÁQUINAS (Tabla: MAQUINA)
+- Campos: nombre, codigo_interno, serial, codigo_barras_u, marca, modelo, anio, descripcion, estado (activa/mantenimiento/baja), fotografia, manual_pdf, responsable_id.
+- Reglas: Registro solo por Admin. Bloqueo automático de reservas si está en 'mantenimiento'. Requiere reserva previa. Ref: Sistema DANEC (Access).
 
+3. PIEZAS (Tabla: PIEZA)
+- Campos: nombre, descripcion, ubicacion_en_maquina (img_ref), fotografia, maquina_id, stock_repuestos.
+- Reglas: Permite transferencias entre máquinas (mismo modelo/marca). Historial obligatorio: pieza_id, origen_maquina_id, destino_maquina_id, fecha, motivo, autorizador_id. Registro obligatorio si se rompe/repone. Visualizar esquema según manual.
 
-================================================================
-1. ENTENDER EL NEGOCIO
-================================================================
+4. MANTENIMIENTO TPM (Tabla: MANTENIMIENTO)
+- Tipos: Preventivo (según manual), Correctivo (falla). Calcular fechas próximas automáticamente por máquina.
+- Estados ERP: Próximo (alerta), Vencido, Al día.
+- Flujo: Alerta automática -> Revisión Ingeniero -> Ejecución -> Formulario ERP -> Actualiza estado máquina.
+- Pilares TPM: P1 (Autónomo: inspección diaria), P2 (Planificado: alertas), P3 (Mejora: OEE), P4 (Formación: certificaciones), P7 (Seguridad: incidentes).
+- Campo extra: tipo_tpm (pilar asociado).
 
-Objetivo principal:
-- Enseñanza, investigación y producción de ingeniería industrial
-- El laboratorio funciona también como aula de clases
+5. USUARIOS, ROLES & CERTIFICACIONES
+- Login: Clave encriptada. Opción llave pública/privada (Admin/Técnico). RBAC estricto (módulos ocultos según rol). Roles abiertos en BD.
+- Certificaciones (Pilar 4): tabla vincula usuario_id y maquina_id + fecha_vencimiento + otorgado_por. Regla: Sin certificación vigente, ERP bloquea reserva.
 
-Jerarquía de usuarios:
-- PhD en Diseño Industrial → responsable máximo del laboratorio
-- Ingeniero Industrial → reporta al PhD, gestiona mantenimiento,
-  cuidado de máquinas e inventario de suministros
-- Estudiantes capacitados (semestres superiores) → operan las
-  máquinas bajo supervisión del ingeniero
-- Estudiantes sin acceso → solicitan trabajos a los capacitados
+6. INVENTARIO UNIFICADO (Tabla: MATERIAL)
+- Campos: nombre, tipo (mantenimiento/produccion/ambos), unidad_medida, stock_actual, stock_minimo, proveedor.
+- Reglas: Alerta automática al llegar a stock_minimo. Consumo descontado automáticamente vinculado a Orden de Trabajo (quién, qué, cuánto, dónde).
 
-Tipos de trabajo:
-- Clases y enseñanza
-- Proyectos de investigación (tesis propias y de otras carreras)
-- Trabajos bajo pedido (otras universidades u organizaciones)
+7. RESERVAS Y ÓRDENES DE TRABAJO (Tablas: RESERVA, ORDEN_TRABAJO)
+- Flujo: Solicitud -> Verifica certificación -> Verifica disponibilidad máquina -> Aprueba Ingeniero/Admin -> Genera Orden al iniciar -> Registra tiempos reales al terminar.
+- Campos Reserva: maquina_id, solicitante_id, autorizador_id, fecha_inicio, fecha_fin, proposito (ensenanza/investigacion/produccion/pedido), estado (pendiente/aprobada/en_uso/completada/cancelada).
+- Campos Orden (para OEE): tiempo_planificado, tiempo_real, tiempo_parada (fallas), descripcion, resultado.
 
-Procesos actuales:
-- No hay sistema digital unificado (punto de partida desde cero)
-- El ingeniero industrial proveerá toda la información de máquinas
-  y mantenimiento
+8. REPORTES & ALERTAS (Dashboard + Exportar Excel hojas)
+- Alertas: Mantenimiento próximo/vencido, Stock mínimo, Inspección diaria fallida, Certificación por vencer.
+- Reportes Mto: Estado actual, Historial por máquina, Transferencia piezas, Reposiciones.
+- Reportes Uso: OEE por máquina/periodo, Bitácora uso (máquina/usuario/fecha), Horas operación.
+- Reportes Stock: Inventario actual, Consumo por periodo/orden, Alertas stock bajo.
 
-
-================================================================
-2. GESTIÓN DE MÁQUINAS Y EQUIPOS
-================================================================
-
-Máquinas conocidas (lista abierta, se agregarán más):
-- Optimill Router 1313
-- Cortadoras (varios tipos)
-- Otras máquinas por confirmar con el ingeniero
-
-Atributos de cada máquina (tabla MAQUINA):
-- Nombre
-- Código interno
-- Serial
-- Código de barras (registrado a nombre de la universidad)
-- Marca
-- Modelo
-- Año
-- Descripción
-- Estado (activa / en mantenimiento / dada de baja)
-- Fotografía
-- Manual del fabricante (archivo adjunto)
-- Responsable asignado
-
-Reglas de negocio:
-- Solo el administrador puede registrar máquinas nuevas
-- Una máquina en mantenimiento queda bloqueada para reservas
-- Se requiere reserva previa para usar cualquier máquina
-- Los atributos son similares al sistema DANEC (Access) tomado
-  como referencia
-
-
-================================================================
-3. GESTIÓN DE PIEZAS
-================================================================
-
-Atributos de cada pieza (tabla PIEZA):
-- Nombre
-- Descripción
-- Ubicación dentro de la máquina (con imagen de referencia)
-- Fotografía de la pieza
-- Máquina a la que pertenece
-- Stock de repuestos disponibles
-
-Reglas especiales:
-- Una pieza puede ser transferida de una máquina a otra
-  (especialmente en máquinas del mismo modelo/marca)
-- Toda transferencia queda registrada: qué pieza, de qué máquina,
-  a qué máquina, fecha, motivo, quién autorizó
-- Si una pieza se rompe y requiere reposición, debe quedar
-  registrado en el sistema
-- Se debe poder visualizar el esquema de piezas por máquina
-  con imágenes de ubicación según el manual del fabricante
-
-
-================================================================
-4. MANTENIMIENTO (CON TPM)
-================================================================
-
-Responsable: Ingeniero Industrial
-
-Tipos de mantenimiento:
-- Preventivo (según periodo del manual del fabricante)
-- Correctivo (cuando hay falla)
-
-Periodos:
-- Cada máquina tiene su propio periodo de mantenimiento
-- El sistema debe calcular automáticamente las fechas próximas
-
-Estados de mantenimiento que el sistema debe mostrar:
-- Máquinas con mantenimiento próximo (alerta preventiva)
-- Máquinas cuyo mantenimiento ya venció y no se ha realizado
-- Máquinas con mantenimiento al día
-
-Flujo de mantenimiento:
-1. Sistema genera alerta automática
-2. Ingeniero revisa la alerta
-3. Ingeniero realiza el mantenimiento
-4. Ingeniero llena el formulario en el ERP (similar al DANEC)
-5. Sistema actualiza el estado de la máquina
-
-Pilares TPM implementados:
-- Pilar 1: Mantenimiento autónomo (inspección diaria por operador)
-- Pilar 2: Mantenimiento planificado (alertas por periodo)
-- Pilar 3: Mejora enfocada — cálculo de OEE por máquina
-- Pilar 4: Formación — certificaciones de usuarios por máquina
-- Pilar 7: Seguridad — registro de incidentes y condiciones de riesgo
-
-Campos adicionales en MANTENIMIENTO por TPM:
-- tipo_tpm (pilar al que corresponde el mantenimiento)
-
-
-================================================================
-5. USUARIOS Y ROLES
-================================================================
-
-Roles iniciales:
-- Administrador: acceso total, registra máquinas, gestiona usuarios
-- Técnico (Ingeniero Industrial): gestiona mantenimiento, inventario,
-  aprueba reservas, llena formularios de mantenimiento
-
-Características del sistema de usuarios:
-- Sistema de login con contraseña encriptada
-- Posible implementación de llave pública/privada para roles críticos
-  (administrador, técnico)
-- El sistema identifica el rol al login y muestra SOLO la información
-  y módulos que corresponden a ese rol
-- Un rol no puede ver ni editar información de otro rol
-- El sistema de roles es abierto: se pueden crear nuevos roles
-  con permisos personalizados por módulo
-
-Roles futuros contemplados:
-- Estudiante capacitado: registra uso de máquinas, genera bitácora
-- Estudiante regular: solo consulta (sin acceso a máquinas)
-- Docente / Investigador externo
-- Visitante
-
-Sistema de certificaciones (TPM Pilar 4):
-- Cada usuario debe tener certificación vigente por máquina
-- Sin certificación vigente, el sistema bloquea la reserva
-- Las certificaciones tienen fecha de vencimiento
-- El ingeniero o administrador otorga las certificaciones
-
-
-================================================================
-6. INVENTARIO DE MATERIALES Y SUMINISTROS
-================================================================
-
-Inventario UNIFICADO con categorías (decisión de diseño):
-- Un solo inventario con campo "tipo" (mantenimiento / producción / ambos)
-- Evita duplicación de registros para materiales que sirven para ambos
-
-Materiales registrados:
-- Aceites y lubricantes
-- Tornillos y fijaciones
-- Resina
-- Filamento
-- Repuestos de máquinas
-- Madera y materias primas
-- Otros suministros
-
-Atributos de cada material:
-- Nombre
-- Tipo (mantenimiento / producción / ambos)
-- Unidad de medida
-- Stock actual
-- Stock mínimo (para alertas)
-- Proveedor
-
-Reglas de negocio:
-- El sistema notifica cuando un material llega al stock mínimo
-- Todo consumo queda vinculado a una orden de trabajo
-- Se registra quién consumió qué material en qué trabajo
-- El consumo de materiales en una orden descuenta automáticamente
-  del stock
-
-
-================================================================
-7. RESERVAS Y ÓRDENES DE TRABAJO
-================================================================
-
-Flujo de reserva:
-1. Usuario solicita reserva de una máquina (con propósito y fechas)
-2. Sistema verifica certificación vigente del solicitante
-3. Sistema verifica disponibilidad de la máquina
-4. Autorizado por el ingeniero o administrador
-5. Se genera la orden de trabajo al inicio del uso
-6. Al terminar, se registran tiempos reales y resultado
-
-Atributos de reserva:
-- Máquina reservada
-- Solicitante
-- Autorizador
-- Fecha y hora de inicio
-- Fecha y hora de fin
-- Propósito (enseñanza / investigación / producción / pedido)
-- Estado (pendiente / aprobada / en uso / completada / cancelada)
-- Tipo de trabajo
-
-Campos de orden de trabajo (necesarios para OEE):
-- Tiempo planificado
-- Tiempo real de uso
-- Tiempo de parada (fallas, interrupciones)
-- Descripción del trabajo
-- Resultado
-
-
-================================================================
-8. REPORTES Y ALERTAS
-================================================================
-
-Alertas automáticas del sistema:
-- Máquinas próximas a requerir mantenimiento
-- Máquinas con mantenimiento vencido
-- Materiales en stock mínimo
-- Inspección diaria fallida (alerta al ingeniero)
-- Certificación de usuario próxima a vencer
-
-Reportes de mantenimiento:
-- Estado de mantenimiento de todas las máquinas
-- Historial de mantenimiento por máquina
-- Registro de transferencia de piezas
-- Piezas rotas o en reposición
-
-Reportes de uso:
-- OEE (Disponibilidad × Rendimiento × Calidad) por máquina
-- Bitácora de uso por máquina, usuario y periodo
-- Horas de operación por máquina
-
-Reportes de inventario:
-- Stock actual de todos los materiales
-- Consumo de materiales por período y por orden de trabajo
-- Materiales bajo stock mínimo
-
-Formato de reportes:
-- Vista en pantalla (dashboard)
-- Exportación a Excel (pendiente de definir formato exacto)
-- Un archivo Excel con hojas por categoría (a confirmar)
-
-
-================================================================
 9. MÓDULOS TPM ADICIONALES
-================================================================
+- INSPECCION_DIARIA: checklist operador (aceite, temperatura, ruidos, limpieza, seguridad) antes de usar. Si campo 'aprobada' es False -> Alerta al ingeniero y bloquea máquina.
+- REGISTRO_OEE: Automático. Disp = real/planificado. Rend = prod_real/prod_esperada. Calidad = ok/total. OEE = Disp * Rend * Calidad.
+- INCIDENTE: Registro casi-accidentes. Campos: tipo, descripcion, severidad, accion_tomada, flag_requiere_mantenimiento (genera alerta).
 
-INSPECCION_DIARIA:
-- Checklist que el operador llena antes de usar la máquina
-- Campos: nivel de aceite, temperatura, ruidos, limpieza, seguridad
-- Si el checklist falla → alerta automática al ingeniero
-- Campo "aprobada" determina si la máquina puede usarse ese día
-
-REGISTRO_OEE:
-- Se calcula automáticamente con datos de las órdenes de trabajo
-- Disponibilidad = tiempo real / tiempo planificado
-- Rendimiento = producción real / producción esperada
-- Calidad = trabajos sin defecto / total trabajos
-- OEE Total = Disponibilidad × Rendimiento × Calidad
-- Se genera por máquina y por período
-
-CERTIFICACION_USUARIO:
-- Qué máquinas puede operar cada persona
-- Quién otorgó la certificación
-- Fecha de vencimiento
-- Sin certificación vigente = reserva bloqueada automáticamente
-
-INCIDENTE:
-- Condiciones anormales o casi-accidentes
-- Tipo, descripción, severidad
-- Acción tomada
-- Flag: requiere mantenimiento (genera alerta al ingeniero)
-
-
-================================================================
-10. REQUERIMIENTOS TÉCNICOS
-================================================================
-
-Servidor: HP ProLiant DL285 G1
-- Sistema operativo recomendado: Debian 12
-- Base de datos: MariaDB (ya instalada)
-- Framework: Django (Python)
-- Frontend inicial: Templates Django + HTML/CSS
-- Servidor de producción: Gunicorn + Nginx
-
-Configuración de base de datos:
-- Nombre: erp_laboratorio
-- Charset: utf8mb4
-- Zona horaria: America/Guayaquil
-
-Usuarios del sistema al lanzar:
-- Ingeniero Industrial (técnico)
-- Administrador del sistema
-- Abierto a nuevos usuarios y roles
-
-Acceso:
-- Red local del laboratorio (sin internet requerido)
-- Acceso desde cualquier PC del laboratorio vía navegador
-- Considerar acceso móvil en el futuro
-
-Seguridad:
-- Autenticación con contraseña encriptada
-- Posible llave pública/privada para roles críticos
-- Cada rol ve y edita SOLO su información designada
-
-Almacenamiento de archivos (MEDIA):
-- Fotografías de máquinas
-- Fotografías de piezas con su ubicación
-- Manuales del fabricante (PDF)
-- Esquemas de máquinas
-
-Escalabilidad:
-- El sistema debe soportar agregar más máquinas
-- El sistema de roles debe permitir crear nuevos roles sin tocar código
-- Diseñado para crecer a múltiples usuarios simultáneos
-
-
-================================================================
-FIN DEL DOCUMENTO DE REQUERIMIENTOS
-Versión 1.0 — Listo para iniciar Fase 2: Diseño y Desarrollo
-================================================================
+10. REQUERIMIENTOS TÉCNICOS & ESCALABILIDAD
+- Servidor local sin internet: Gunicorn + Nginx + Django + MariaDB (BD: erp_laboratorio, utf8mb4, America/Guayaquil).
+- Media: Directorio para fotos máquinas/piezas y PDFs de manuales.
+- Escalabilidad: Agregar máquinas sin límite y crear roles con permisos en BD sin tocar código.
+"""
