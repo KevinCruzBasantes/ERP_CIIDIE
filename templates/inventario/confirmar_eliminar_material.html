@@ -1,0 +1,46 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Eliminar material — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Inventario / Eliminar{% endblock %}
+{% block nav_inventario %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <h1>Eliminar material</h1>
+    <p>El material quedará inactivo y no aparecerá en el inventario.</p>
+</div>
+
+<div class="card" style="max-width:480px;">
+    <div class="card-header"><div class="card-title">Confirmar desactivación</div></div>
+
+    <div style="display:grid; gap:0.75rem; margin-bottom:1.5rem;">
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Código</div>
+            <div style="font-size:0.88rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ material.codigo }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Nombre</div>
+            <div style="font-size:0.88rem; color:var(--text);">{{ material.nombre }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Stock actual</div>
+            <div style="font-size:0.88rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ material.stock_actual }} {{ material.unidad_medida }}</div>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <a href="{% url 'detalle_material' material.pk %}"
+           style="padding:0.65rem 1.25rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+            Volver
+        </a>
+        <form method="post" style="flex:1;">
+            {% csrf_token %}
+            <button type="submit"
+                    style="width:100%; padding:0.65rem; background:var(--danger); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.08em;">
+                Desactivar material
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

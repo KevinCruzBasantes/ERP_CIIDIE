@@ -1,10 +1,19 @@
 {% extends 'usuarios/base.html' %}
-
 {% block title %}Reserva #{{ reserva.pk }} — ERP CIIDIE{% endblock %}
 {% block breadcrumb %}Reservas / #{{ reserva.pk }}{% endblock %}
 {% block nav_reservas %}active{% endblock %}
 
 {% block content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
+                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
 
 <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
     <div>
@@ -16,41 +25,57 @@
             {{ reserva.maquina.nombre }}
         </h1>
         <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-            {% if reserva.estado == 'PENDIENTE' %}
-                <span class="badge badge-warning">● Pendiente</span>
-            {% elif reserva.estado == 'APROBADA' %}
-                <span class="badge badge-success">● Aprobada</span>
-            {% elif reserva.estado == 'EN_USO' %}
-                <span class="badge badge-info">● En uso</span>
-            {% elif reserva.estado == 'COMPLETADA' %}
-                <span class="badge badge-accent">● Completada</span>
-            {% else %}
-                <span class="badge badge-danger">● Cancelada</span>
-            {% endif %}
-            {% if reserva.proposito == 'ENSENANZA' %}
-                <span class="badge badge-info">Enseñanza</span>
-            {% elif reserva.proposito == 'INVESTIGACION' %}
-                <span class="badge badge-accent">Investigación</span>
-            {% elif reserva.proposito == 'PRODUCCION' %}
-                <span class="badge badge-success">Producción</span>
-            {% else %}
-                <span class="badge badge-warning">Pedido externo</span>
-            {% endif %}
+            {% if reserva.estado == 'PENDIENTE' %}<span class="badge badge-warning">● Pendiente</span>
+            {% elif reserva.estado == 'APROBADA' %}<span class="badge badge-success">● Aprobada</span>
+            {% elif reserva.estado == 'EN_USO' %}<span class="badge badge-info">● En uso</span>
+            {% elif reserva.estado == 'COMPLETADA' %}<span class="badge badge-accent">● Completada</span>
+            {% else %}<span class="badge badge-danger">● Cancelada</span>{% endif %}
+
+            {% if reserva.proposito == 'ENSENANZA' %}<span class="badge badge-info">Enseñanza</span>
+            {% elif reserva.proposito == 'INVESTIGACION' %}<span class="badge badge-accent">Investigación</span>
+            {% elif reserva.proposito == 'PRODUCCION' %}<span class="badge badge-success">Producción</span>
+            {% else %}<span class="badge badge-warning">Pedido externo</span>{% endif %}
         </div>
     </div>
-    <div style="display:flex; gap:0.75rem;">
-        <a href="{% url 'detalle_maquina' reserva.maquina.pk %}"
-           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
-           onmouseover="this.style.borderColor='var(--accent)'"
-           onmouseout="this.style.borderColor='var(--border)'">
-            ⚙ Ver máquina
+
+    <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+        {% if es_admin_o_tecnico and reserva.estado == 'PENDIENTE' %}
+        <form method="post" action="{% url 'cambiar_estado_reserva' reserva.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="estado" value="APROBADA">
+            <button type="submit"
+                    style="padding:0.4rem 1rem; background:rgba(34,197,94,0.15); color:var(--success); border:1px solid rgba(34,197,94,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; cursor:pointer; font-weight:500;">
+                ✓ Aprobar
+            </button>
+        </form>
+        <form method="post" action="{% url 'cambiar_estado_reserva' reserva.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="estado" value="CANCELADA">
+            <button type="submit"
+                    style="padding:0.4rem 1rem; background:rgba(239,68,68,0.1); color:var(--danger); border:1px solid rgba(239,68,68,0.25); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; cursor:pointer;">
+                ✗ Rechazar
+            </button>
+        </form>
+        {% endif %}
+
+        {% if reserva.estado == 'APROBADA' and not orden %}
+        <a href="{% url 'crear_orden' reserva.pk %}"
+           style="padding:0.4rem 1rem; background:rgba(232,160,32,0.15); color:var(--accent); border:1px solid rgba(232,160,32,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none; font-weight:500;">
+            ◈ Crear OT
         </a>
+        {% endif %}
+
         {% if orden %}
         <a href="{% url 'detalle_orden' orden.pk %}"
-           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--accent); border-radius:4px; transition:background 0.15s;"
-           onmouseover="this.style.background='rgba(232,160,32,0.08)'"
-           onmouseout="this.style.background='transparent'">
-            ◈ Ver orden de trabajo
+           style="padding:0.4rem 1rem; background:rgba(59,130,246,0.1); color:var(--info); border:1px solid rgba(59,130,246,0.25); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none;">
+            ◈ OT-{{ orden.pk|stringformat:"04d" }}
+        </a>
+        {% endif %}
+
+        {% if reserva.estado not in 'COMPLETADA,CANCELADA' %}
+        <a href="{% url 'cancelar_reserva' reserva.pk %}"
+           style="padding:0.4rem 1rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none;">
+            Cancelar
         </a>
         {% endif %}
     </div>
@@ -63,51 +88,40 @@
             <div class="card-title">Datos de la reserva</div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
-
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Solicitante</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Solicitante</div>
                 <div style="font-size:0.85rem; color:var(--text);">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</div>
-                {% if reserva.usuario.rol %}
-                    <div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:0.1rem;">{{ reserva.usuario.rol }}</div>
-                {% endif %}
+                {% if reserva.usuario.rol %}<div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:0.1rem;">{{ reserva.usuario.rol }}</div>{% endif %}
             </div>
-
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Autorizador</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Autorizador</div>
                 <div style="font-size:0.85rem; color:var(--text);">{{ reserva.autorizador.get_full_name|default:"—" }}</div>
             </div>
-
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
                 <div style="font-size:0.85rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ reserva.maquina.codigo }}</div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">{{ reserva.maquina.nombre }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">{{ reserva.maquina.nombre }}</div>
             </div>
-
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Fecha</div>
                 <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ reserva.fecha|date:"d/m/Y" }}</div>
             </div>
-
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Hora inicio</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Hora inicio</div>
                 <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ reserva.hora_inicio|time:"H:i" }}</div>
             </div>
-
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Hora fin</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Hora fin</div>
                 <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ reserva.hora_fin|time:"H:i" }}</div>
             </div>
-
             <div style="grid-column:span 2;">
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Solicitud creada</div>
-                <div style="font-size:0.82rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">{{ reserva.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Creada</div>
+                <div style="font-size:0.8rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">{{ reserva.fecha_creacion|date:"d/m/Y H:i" }}</div>
             </div>
-
         </div>
-
         {% if reserva.observaciones %}
         <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
-            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Observaciones</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.4rem;">Observaciones</div>
             <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ reserva.observaciones }}</div>
         </div>
         {% endif %}
@@ -118,51 +132,61 @@
             <div class="card-title">Orden de trabajo</div>
         </div>
         {% if orden %}
-        <div style="display:flex; flex-direction:column; gap:0.85rem;">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Número OT</div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">OT-{{ orden.pk|stringformat:"04d" }}</div>
-                </div>
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Estado OT</div>
-                    {% if orden.estado == 'ABIERTA' %}
-                        <span class="badge badge-warning">Abierta</span>
-                    {% elif orden.estado == 'EN_PROCESO' %}
-                        <span class="badge badge-info">En proceso</span>
-                    {% elif orden.estado == 'FINALIZADA' %}
-                        <span class="badge badge-success">Finalizada</span>
-                    {% else %}
-                        <span class="badge badge-danger">Cancelada</span>
-                    {% endif %}
-                </div>
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">T. planificado</div>
-                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ orden.tiempo_planificado_min }} min</div>
-                </div>
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">T. real</div>
-                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ orden.tiempo_real_min|default:"—" }} {% if orden.tiempo_real_min %}min{% endif %}</div>
-                </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:1rem;">
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Número OT</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">OT-{{ orden.pk|stringformat:"04d" }}</div>
             </div>
-            <div style="padding-top:0.75rem; border-top:1px solid var(--border); text-align:center;">
-                <a href="{% url 'detalle_orden' orden.pk %}"
-                   style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none; padding:0.5rem 1.25rem; border:1px solid var(--accent); border-radius:4px; transition:background 0.15s; display:inline-block;"
-                   onmouseover="this.style.background='rgba(232,160,32,0.08)'"
-                   onmouseout="this.style.background='transparent'">
-                    Ver detalle completo →
-                </a>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Estado</div>
+                {% if orden.estado == 'ABIERTA' %}<span class="badge badge-warning">Abierta</span>
+                {% elif orden.estado == 'EN_PROCESO' %}<span class="badge badge-info">En proceso</span>
+                {% elif orden.estado == 'FINALIZADA' %}<span class="badge badge-success">Finalizada</span>
+                {% else %}<span class="badge badge-danger">Cancelada</span>{% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">T. planificado</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text);">{{ orden.tiempo_planificado_min }} min</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">T. real</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text);">{{ orden.tiempo_real_min|default:"—" }}{% if orden.tiempo_real_min %} min{% endif %}</div>
             </div>
         </div>
+        <div style="text-align:center; padding-top:0.75rem; border-top:1px solid var(--border);">
+            <a href="{% url 'detalle_orden' orden.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none; padding:0.5rem 1.25rem; border:1px solid var(--accent); border-radius:4px; display:inline-block;">
+                Ver detalle completo →
+            </a>
+        </div>
         {% else %}
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
             <span style="font-size:2rem; opacity:0.2;">◈</span>
-            <div style="font-size:0.82rem;">Sin orden de trabajo generada aún.</div>
-            <div style="font-size:0.72rem; opacity:0.6;">Se genera al aprobar e iniciar la reserva.</div>
+            <div style="font-size:0.82rem;">Sin orden de trabajo generada.</div>
+            {% if reserva.estado == 'APROBADA' %}
+            <a href="{% url 'crear_orden' reserva.pk %}"
+               style="margin-top:0.5rem; padding:0.5rem 1.25rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; text-decoration:none;">
+                Crear orden de trabajo
+            </a>
+            {% else %}
+            <div style="font-size:0.72rem; opacity:0.6;">Se crea al aprobar la reserva.</div>
+            {% endif %}
         </div>
         {% endif %}
     </div>
 
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-msg-tag]').forEach(el => {
+    if (!el.dataset.msgTag.includes('success')) {
+        el.style.background = 'rgba(239,68,68,0.1)';
+        el.style.border     = '1px solid rgba(239,68,68,0.25)';
+        el.style.color      = 'var(--danger)';
+    }
+});
+</script>
 {% endblock %}

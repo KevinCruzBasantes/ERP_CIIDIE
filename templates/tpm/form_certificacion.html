@@ -1,0 +1,99 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}{{ titulo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / Certificaciones / {{ titulo }}{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_certificaciones' %}" style="color:var(--text-muted); text-decoration:none;">Certificaciones</a>
+        <span style="margin:0 0.4rem;">›</span> {{ titulo }}
+    </div>
+    <h1>{{ titulo }}</h1>
+    <p>Las certificaciones habilitan al usuario para operar una máquina específica.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
+                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><div class="card-title">Datos de la certificación</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Usuario <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.usuario }}
+                {% if form.usuario.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.usuario.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Máquina <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.maquina }}
+                {% if form.maquina.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.maquina.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Fecha de otorgamiento <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.fecha_otorgamiento }}
+                {% if form.fecha_otorgamiento.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.fecha_otorgamiento.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Fecha de vencimiento <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.fecha_vencimiento }}
+                {% if form.fecha_vencimiento.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.fecha_vencimiento.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Observaciones
+                </label>
+                {{ form.observaciones }}
+            </div>
+
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'lista_certificaciones' %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+            Cancelar
+        </a>
+        <button type="submit"
+                style="padding:0.7rem 1.5rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">
+            {{ accion }}
+        </button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-msg-tag]').forEach(el => {
+    if (!el.dataset.msgTag.includes('success')) {
+        el.style.background = 'rgba(239,68,68,0.1)';
+        el.style.border     = '1px solid rgba(239,68,68,0.25)';
+        el.style.color      = 'var(--danger)';
+    }
+});
+</script>
+{% endblock %}

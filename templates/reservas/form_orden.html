@@ -1,0 +1,84 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}{{ titulo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Órdenes de trabajo / Nueva{% endblock %}
+{% block nav_ordenes %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_ordenes' %}" style="color:var(--text-muted); text-decoration:none;">Órdenes</a>
+        <span style="margin:0 0.4rem;">›</span> {{ titulo }}
+    </div>
+    <h1>{{ titulo }}</h1>
+</div>
+
+<div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header"><div class="card-title">Reserva asociada</div></div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; font-size:0.82rem;">
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Máquina</div>
+            <div style="color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ reserva.maquina.codigo }}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">{{ reserva.maquina.nombre }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Fecha</div>
+            <div style="color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ reserva.fecha|date:"d/m/Y" }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Horario</div>
+            <div style="color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ reserva.hora_inicio|time:"H:i" }} – {{ reserva.hora_fin|time:"H:i" }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Solicitante</div>
+            <div style="color:var(--text);">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</div>
+        </div>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header"><div class="card-title">Datos de la orden</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Descripción del trabajo <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.descripcion.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Tiempo planificado (min) <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.tiempo_planificado_min }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Unidades esperadas
+                </label>
+                {{ form.unidades_esperadas }}
+            </div>
+
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'detalle_reserva' reserva.pk %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+            Cancelar
+        </a>
+        <button type="submit"
+                style="padding:0.7rem 1.5rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">
+            {{ accion }}
+        </button>
+    </div>
+</form>
+
+{% endblock %}

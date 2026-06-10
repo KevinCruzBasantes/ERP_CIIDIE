@@ -1,457 +1,545 @@
 <!DOCTYPE html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ERP Laboratorio CIIDIE{% endblock %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}
+        ERP Laboratorio CIIDIE
+      {% endblock %}
+    </title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --bg:        #0f1117;
-            --surface:   #181c27;
-            --surface2:  #1e2333;
-            --border:    #2a2f42;
-            --accent:    #e8a020;
-            --accent2:   #c97b10;
-            --text:      #d4d8e8;
-            --text-muted:#6b7194;
-            --success:   #22c55e;
-            --warning:   #f59e0b;
-            --danger:    #ef4444;
-            --info:      #3b82f6;
-            --sidebar-w: 240px;
+      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+      
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      
+      :root {
+        --bg: #0f1117;
+        --surface: #181c27;
+        --surface2: #1e2333;
+        --border: #2a2f42;
+        --accent: #e8a020;
+        --accent2: #c97b10;
+        --text: #d4d8e8;
+        --text-muted: #6b7194;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --sidebar-w: 240px;
+      }
+      
+      body {
+        font-family: 'IBM Plex Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+      }
+      
+      .sidebar {
+        width: var(--sidebar-w);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 100;
+      }
+      
+      .sidebar-logo {
+        padding: 1.5rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+      }
+      
+      .sidebar-logo .lab-name {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        line-height: 1.6;
+      }
+      
+      .sidebar-logo .erp-label {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        font-family: 'IBM Plex Mono', monospace;
+        letter-spacing: 0.08em;
+      }
+      
+      .sidebar-user {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        background: var(--accent);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #0f1117;
+        flex-shrink: 0;
+      }
+      
+      .user-info .user-name {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+      }
+      
+      .user-info .user-role {
+        font-size: 0.65rem;
+        font-family: 'IBM Plex Mono', monospace;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      
+      .sidebar-nav {
+        flex: 1;
+        padding: 1rem 0;
+        overflow-y: auto;
+      }
+      
+      .nav-section-label {
+        font-size: 0.6rem;
+        font-family: 'IBM Plex Mono', monospace;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        padding: 0.75rem 1.25rem 0.35rem;
+      }
+      
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1.25rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.15s;
+        border-left: 2px solid transparent;
+        position: relative;
+      }
+      
+      .nav-item:hover {
+        color: var(--text);
+        background: var(--surface2);
+        border-left-color: var(--border);
+      }
+      
+      .nav-item.active {
+        color: var(--accent);
+        background: rgba(232, 160, 32, 0.08);
+        border-left-color: var(--accent);
+      }
+      
+      .nav-item .nav-icon {
+        font-size: 1rem;
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      
+      .nav-badge {
+        margin-left: auto;
+        background: var(--danger);
+        color: white;
+        font-size: 0.6rem;
+        font-family: 'IBM Plex Mono', monospace;
+        padding: 0.1rem 0.4rem;
+        border-radius: 10px;
+        font-weight: 500;
+      }
+      
+      .sidebar-bottom {
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--border);
+      }
+      
+      .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        padding: 0.5rem 0;
+        transition: color 0.15s;
+      }
+      
+      .logout-btn:hover {
+        color: var(--danger);
+      }
+      
+      .main {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      
+      .topbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0 2rem;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      
+      .topbar-title {
+        font-size: 0.85rem;
+        font-family: 'IBM Plex Mono', monospace;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+      }
+      
+      .topbar-title span {
+        color: var(--text);
+      }
+      
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      
+      .status-dot {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        font-family: 'IBM Plex Mono', monospace;
+        color: var(--text-muted);
+      }
+      
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        animation: pulse 2s infinite;
+      }
+      
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-
-        body {
-            font-family: 'IBM Plex Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
+        50% {
+          opacity: 0.4;
         }
-
-        .sidebar {
-            width: var(--sidebar-w);
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            z-index: 100;
+      }
+      
+      .content {
+        padding: 2rem;
+        flex: 1;
+      }
+      
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.5rem;
+      }
+      
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+      
+      .card-title {
+        font-size: 0.75rem;
+        font-family: 'IBM Plex Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+      }
+      
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.25rem;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+      }
+      
+      .stat-card.accent::before {
+        background: var(--accent);
+      }
+      .stat-card.success::before {
+        background: var(--success);
+      }
+      .stat-card.warning::before {
+        background: var(--warning);
+      }
+      .stat-card.danger::before {
+        background: var(--danger);
+      }
+      .stat-card.info::before {
+        background: var(--info);
+      }
+      
+      .stat-label {
+        font-size: 0.65rem;
+        font-family: 'IBM Plex Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+      }
+      
+      .stat-value {
+        font-size: 2rem;
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 500;
+        color: var(--text);
+        line-height: 1;
+      }
+      
+      .stat-sub {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 0.4rem;
+      }
+      
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      
+      .badge-success {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--success);
+      }
+      .badge-warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--warning);
+      }
+      .badge-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--danger);
+      }
+      .badge-info {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--info);
+      }
+      .badge-accent {
+        background: rgba(232, 160, 32, 0.15);
+        color: var(--accent);
+      }
+      
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+      }
+      
+      @media (max-width: 900px) {
+        .grid-2,
+        .grid-3 {
+          grid-template-columns: 1fr;
         }
-
-        .sidebar-logo {
-            padding: 1.5rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .sidebar-logo .lab-name {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--accent);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            line-height: 1.6;
-        }
-
-        .sidebar-logo .erp-label {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            font-family: 'IBM Plex Mono', monospace;
-            letter-spacing: 0.08em;
-        }
-
-        .sidebar-user {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .user-avatar {
-            width: 36px; height: 36px;
-            background: var(--accent);
-            border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #0f1117;
-            flex-shrink: 0;
-        }
-
-        .user-info .user-name {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
-        }
-
-        .user-info .user-role {
-            font-size: 0.65rem;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .sidebar-nav {
-            flex: 1;
-            padding: 1rem 0;
-            overflow-y: auto;
-        }
-
-        .nav-section-label {
-            font-size: 0.6rem;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            padding: 0.75rem 1.25rem 0.35rem;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.6rem 1.25rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: all 0.15s;
-            border-left: 2px solid transparent;
-            position: relative;
-        }
-
-        .nav-item:hover {
-            color: var(--text);
-            background: var(--surface2);
-            border-left-color: var(--border);
-        }
-
-        .nav-item.active {
-            color: var(--accent);
-            background: rgba(232,160,32,0.08);
-            border-left-color: var(--accent);
-        }
-
-        .nav-item .nav-icon {
-            font-size: 1rem;
-            width: 18px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .nav-badge {
-            margin-left: auto;
-            background: var(--danger);
-            color: white;
-            font-size: 0.6rem;
-            font-family: 'IBM Plex Mono', monospace;
-            padding: 0.1rem 0.4rem;
-            border-radius: 10px;
-            font-weight: 500;
-        }
-
-        .sidebar-bottom {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .logout-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.8rem;
-            padding: 0.5rem 0;
-            transition: color 0.15s;
-        }
-
-        .logout-btn:hover { color: var(--danger); }
-
-        .main {
-            margin-left: var(--sidebar-w);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .topbar {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0 2rem;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        .topbar-title {
-            font-size: 0.85rem;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--text-muted);
-            letter-spacing: 0.05em;
-        }
-
-        .topbar-title span { color: var(--text); }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .status-dot {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.72rem;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--text-muted);
-        }
-
-        .dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .content { padding: 2rem; flex: 1; }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.25rem;
-        }
-
-        .card-title {
-            font-size: 0.75rem;
-            font-family: 'IBM Plex Mono', monospace;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.25rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-        }
-
-        .stat-card.accent::before  { background: var(--accent); }
-        .stat-card.success::before { background: var(--success); }
-        .stat-card.warning::before { background: var(--warning); }
-        .stat-card.danger::before  { background: var(--danger); }
-        .stat-card.info::before    { background: var(--info); }
-
-        .stat-label {
-            font-size: 0.65rem;
-            font-family: 'IBM Plex Mono', monospace;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 500;
-            color: var(--text);
-            line-height: 1;
-        }
-
-        .stat-sub {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 0.4rem;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .badge-success { background: rgba(34,197,94,0.15);  color: var(--success); }
-        .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
-        .badge-danger  { background: rgba(239,68,68,0.15);  color: var(--danger); }
-        .badge-info    { background: rgba(59,130,246,0.15); color: var(--info); }
-        .badge-accent  { background: rgba(232,160,32,0.15); color: var(--accent); }
-
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
-
-        @media (max-width: 900px) {
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
-        }
-
-        .page-header { margin-bottom: 1.5rem; }
-
-        .page-header h1 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 0.25rem;
-        }
-
-        .page-header p {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
+      }
+      
+      .page-header {
+        margin-bottom: 1.5rem;
+      }
+      
+      .page-header h1 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+      }
+      
+      .page-header p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
     </style>
-    {% block extra_head %}{% endblock %}
-</head>
-<body>
-
-<aside class="sidebar">
-    <div class="sidebar-logo">
+    {% block extra_head %}
+    {% endblock %}
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-logo">
         <div class="lab-name">Lab. CIIDIE</div>
         <div class="erp-label">Sistema ERP — v1.0</div>
-    </div>
+      </div>
 
-    <div class="sidebar-user">
-        <div class="user-avatar">
-            {{ user.get_full_name|default:user.username|slice:":1"|upper }}
-        </div>
+      <div class="sidebar-user">
+        <div class="user-avatar">{{ user.get_full_name|default:user.username|slice:':1'|upper }}</div>
         <div class="user-info">
-            <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-            <div class="user-role">{{ user.rol|default:"Sin rol" }}</div>
+          <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+          <div class="user-role">{{ user.rol|default:'Sin rol' }}</div>
         </div>
-    </div>
+      </div>
 
-    <nav class="sidebar-nav">
+      <nav class="sidebar-nav">
         <div class="nav-section-label">Principal</div>
         {% if user.is_superuser or user.rol and user.rol.nombre|lower == 'administrador' %}
-        <a href="{% url 'dashboard_admin' %}" class="nav-item {% block nav_inicio %}{% endblock %}">
+          <a href="{% url 'dashboard_admin' %}"
+            class="nav-item {% block nav_inicio %}
+            {% endblock %}">
             <span class="nav-icon">⊞</span> Inicio
-        </a>
+          </a>
         {% elif user.rol and 'técnico' in user.rol.nombre|lower or user.rol and 'ingeniero' in user.rol.nombre|lower %}
-        <a href="{% url 'dashboard_tecnico' %}" class="nav-item">
-            <span class="nav-icon">⊞</span> Inicio
-        </a>
+          <a href="{% url 'dashboard_tecnico' %}" class="nav-item"><span class="nav-icon">⊞</span> Inicio</a>
         {% else %}
-        <a href="{% url 'dashboard_general' %}" class="nav-item">
-            <span class="nav-icon">⊞</span> Inicio
-        </a>
+          <a href="{% url 'dashboard_general' %}" class="nav-item"><span class="nav-icon">⊞</span> Inicio</a>
         {% endif %}
 
         <div class="nav-section-label">Máquinas</div>
-        <a href="{% url 'lista_maquinas' %}" class="nav-item {% block nav_maquinas %}{% endblock %}">
-            <span class="nav-icon">⚙</span> Máquinas
+        <a href="{% url 'lista_maquinas' %}"
+          class="nav-item {% block nav_maquinas %}
+          {% endblock %}">
+          <span class="nav-icon">⚙</span> Máquinas
         </a>
-        <a href="{% url 'lista_reservas' %}" class="nav-item {% block nav_reservas %}{% endblock %}">
-            <span class="nav-icon">◷</span> Reservas
+        <a href="{% url 'lista_reservas' %}"
+          class="nav-item {% block nav_reservas %}
+          {% endblock %}">
+          <span class="nav-icon">◷</span> Reservas
         </a>
-        <a href="{% url 'lista_ordenes' %}" class="nav-item {% block nav_ordenes %}{% endblock %}">
-            <span class="nav-icon">◈</span> Órdenes de trabajo
+        <a href="{% url 'lista_ordenes' %}"
+          class="nav-item {% block nav_ordenes %}
+          {% endblock %}">
+          <span class="nav-icon">◈</span> Órdenes de trabajo
         </a>
 
         <div class="nav-section-label">Operación</div>
-        <a href="{% url 'inspeccion_diaria' %}" class="nav-item {% block nav_inspeccion %}{% endblock %}">
-            <span class="nav-icon">✓</span> Inspección diaria
+        <a href="{% url 'inspeccion_diaria' %}"
+          class="nav-item {% block nav_inspeccion %}
+          {% endblock %}">
+          <span class="nav-icon">✓</span> Inspección diaria
         </a>
-        <a href="{% url 'lista_materiales' %}" class="nav-item {% block nav_inventario %}{% endblock %}">
-            <span class="nav-icon">▦</span> Inventario
+        <a href="{% url 'lista_materiales' %}"
+          class="nav-item {% block nav_inventario %}
+          {% endblock %}">
+          <span class="nav-icon">▦</span> Inventario
         </a>
 
         {% if user.rol and user.rol.nombre|lower == 'administrador' or user.is_superuser %}
-        <div class="nav-section-label">Administración</div>
-        <a href="{% url 'lista_usuarios' %}" class="nav-item {% block nav_usuarios %}{% endblock %}">
+          <div class="nav-section-label">Administración</div>
+          <a href="{% url 'lista_usuarios' %}"
+            class="nav-item {% block nav_usuarios %}
+            {% endblock %}">
             <span class="nav-icon">◎</span> Usuarios
-        </a>
-        <a href="{% url 'lista_mantenimientos' %}" class="nav-item {% block nav_mantenimiento %}{% endblock %}">
+          </a>
+          <a href="{% url 'lista_mantenimientos' %}"
+            class="nav-item {% block nav_mantenimiento %}
+            {% endblock %}">
             <span class="nav-icon">◉</span> Mantenimiento
-        </a>
-        <a href="{% url 'dashboard_tpm' %}" class="nav-item {% block nav_tpm %}{% endblock %}">
+          </a>
+          <a href="{% url 'dashboard_tpm' %}"
+            class="nav-item {% block nav_tpm %}
+            {% endblock %}">
             <span class="nav-icon">▲</span> TPM / OEE
-        </a>
-        <a href="{% url 'lista_reportes' %}" class="nav-item {% block nav_reportes %}{% endblock %}">
+          </a>
+          <a href="{% url 'lista_alertas' %}"
+            class="nav-item {% block nav_alertas %}
+            {% endblock %}">
+            <span class="nav-icon">⚠</span> Alertas
+          </a>
+          <a href="{% url 'lista_reportes' %}"
+            class="nav-item {% block nav_reportes %}
+            {% endblock %}">
             <span class="nav-icon">▤</span> Reportes
-        </a>
-        <a href="/sistema-tecnico-erp-ciidie/" class="nav-item">
-            <span class="nav-icon">◐</span> Panel admin
-        </a>
+          </a>
+          <a href="/sistema-tecnico-erp-ciidie/" class="nav-item"><span class="nav-icon">◐</span> Panel admin</a>
         {% endif %}
-    </nav>
+      </nav>
 
-    <div class="sidebar-bottom">
-        <a href="{% url 'logout' %}" class="logout-btn">
-            <span>⎋</span> Cerrar sesión
-        </a>
-    </div>
-</aside>
+      <div class="sidebar-bottom">
+        <a href="{% url 'logout' %}" class="logout-btn"><span>⎋</span> Cerrar sesión</a>
+      </div>
+    </aside>
 
-<main class="main">
-    <div class="topbar">
+    <main class="main">
+      <div class="topbar">
         <div class="topbar-title">
-            ERP / <span>{% block breadcrumb %}Inicio{% endblock %}</span>
+          ERP / <span>
+            {% block breadcrumb %}
+              Inicio
+            {% endblock %}
+          </span>
         </div>
         <div class="topbar-right">
-            <div class="status-dot">
-                <span class="dot"></span> Sistema activo
-            </div>
+          <div class="status-dot">
+            <span class="dot"></span> Sistema activo
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div class="content">
-        {% block content %}{% endblock %}
-    </div>
-</main>
+      <div class="content">
+        {% block content %}
+        {% endblock %}
+      </div>
+    </main>
 
-{% block extra_js %}{% endblock %}
-</body>
+    {% block extra_js %}
+    {% endblock %}
+  </body>
 </html>

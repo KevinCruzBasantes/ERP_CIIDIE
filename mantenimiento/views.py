@@ -124,3 +124,21 @@ def eliminar_mantenimiento(request, pk):
 
     context = {'mantenimiento': mantenimiento}
     return render(request, 'mantenimiento/confirmar_eliminar_mantenimiento.html', context)
+
+@login_required(login_url='login')
+def cambiar_estado_mantenimiento(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para esta acción.')
+        return redirect('detalle_mantenimiento', pk=pk)
+    mto = get_object_or_404(Mantenimiento, pk=pk, activo=True)
+    if request.method == 'POST':
+        nuevo_estado = request.POST.get('estado')
+        if nuevo_estado in ['PROGRAMADO', 'EN_PROCESO', 'FINALIZADO', 'CANCELADO']:
+            mto.estado = nuevo_estado
+            if nuevo_estado == 'EN_PROCESO' and not mto.fecha_inicio:
+                mto.fecha_inicio = timezone.now()
+            if nuevo_estado == 'FINALIZADO' and not mto.fecha_fin:
+                mto.fecha_fin = timezone.now()
+            mto.save()
+            messages.success(request, f'Mantenimiento #{mto.pk} actualizado a {mto.get_estado_display()}.')
+    return redirect('detalle_mantenimiento', pk=pk)

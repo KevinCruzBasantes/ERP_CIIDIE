@@ -1,0 +1,51 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Revocar certificación — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / Certificaciones / Revocar{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <h1>Revocar certificación</h1>
+    <p>El usuario perderá el acceso a reservar esta máquina.</p>
+</div>
+
+<div class="card" style="max-width:520px;">
+    <div class="card-header"><div class="card-title">Confirmar revocación</div></div>
+
+    <div style="display:grid; gap:0.75rem; margin-bottom:1.5rem;">
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Usuario</div>
+            <div style="font-size:0.88rem; color:var(--text);">{{ cert.usuario.get_full_name|default:cert.usuario.username }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Máquina</div>
+            <div style="font-size:0.88rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ cert.maquina.codigo }}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">{{ cert.maquina.nombre }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Vence</div>
+            <div style="font-size:0.88rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ cert.fecha_vencimiento|date:"d/m/Y" }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Otorgado por</div>
+            <div style="font-size:0.88rem; color:var(--text);">{{ cert.otorgado_por.get_full_name|default:cert.otorgado_por.username|default:"—" }}</div>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <a href="{% url 'lista_certificaciones' %}"
+           style="padding:0.65rem 1.25rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+            Cancelar
+        </a>
+        <form method="post" style="flex:1;">
+            {% csrf_token %}
+            <button type="submit"
+                    style="width:100%; padding:0.65rem; background:var(--danger); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.08em;">
+                Confirmar revocación
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

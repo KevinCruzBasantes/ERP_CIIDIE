@@ -1,40 +1,53 @@
 {% extends 'usuarios/base.html' %}
-
 {% block title %}Certificaciones — ERP CIIDIE{% endblock %}
 {% block breadcrumb %}TPM / Certificaciones{% endblock %}
 {% block nav_tpm %}active{% endblock %}
 
 {% block content %}
 
-<div class="page-header" style="margin-bottom:1.5rem;">
-    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
-        <span style="margin:0 0.4rem;">›</span> Certificaciones
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
+                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
     </div>
-    <h1>Certificaciones</h1>
-    <p>Pilar 4 TPM — Formación y habilitación de operarios</p>
+    {% endfor %}
+{% endif %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <h1>Certificaciones</h1>
+        <p>Control de habilitaciones de usuarios por máquina (Pilar 4 TPM)</p>
+    </div>
+    {% if es_admin_o_tecnico %}
+    <a href="{% url 'crear_certificacion' %}"
+       style="padding:0.55rem 1.1rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; text-decoration:none;">
+        + Nueva certificación
+    </a>
+    {% endif %}
 </div>
 
 <div class="stats-grid">
     <div class="stat-card accent">
-        <div class="stat-label">Total</div>
+        <div class="stat-label">Total activas</div>
         <div class="stat-value">{{ total }}</div>
-        <div class="stat-sub">certificaciones</div>
+        <div class="stat-sub">en el sistema</div>
     </div>
     <div class="stat-card success">
         <div class="stat-label">Vigentes</div>
         <div class="stat-value">{{ vigentes }}</div>
-        <div class="stat-sub">habilitadas</div>
+        <div class="stat-sub">dentro del plazo</div>
     </div>
     <div class="stat-card warning">
         <div class="stat-label">Por vencer</div>
         <div class="stat-value">{{ por_vencer }}</div>
-        <div class="stat-sub">próximos 30 días</div>
+        <div class="stat-sub">en los próximos 30 días</div>
     </div>
     <div class="stat-card danger">
         <div class="stat-label">Vencidas</div>
         <div class="stat-value">{{ vencidas }}</div>
-        <div class="stat-sub">bloquean reservas</div>
+        <div class="stat-sub">requieren renovación</div>
     </div>
 </div>
 
@@ -42,6 +55,7 @@
     <div class="card-header">
         <div class="card-title">Listado de certificaciones</div>
     </div>
+
     {% if certificaciones %}
     <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
@@ -49,10 +63,11 @@
                 <tr style="border-bottom:1px solid var(--border);">
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Usuario</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Otorgado por</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Otorgamiento</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Vencimiento</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Otorgado</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Vence</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Estado</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Otorgado por</th>
+                    {% if es_admin_o_tecnico %}<th style="padding:0.6rem 0.75rem;"></th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -60,38 +75,61 @@
                 <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
                     onmouseover="this.style.background='var(--surface2)'"
                     onmouseout="this.style.background='transparent'">
+
                     <td style="padding:0.75rem;">
                         <div style="font-weight:500; color:var(--text);">{{ c.usuario.get_full_name|default:c.usuario.username }}</div>
                         {% if c.usuario.rol %}<div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ c.usuario.rol }}</div>{% endif %}
                     </td>
+
                     <td style="padding:0.75rem;">
-                        <a href="{% url 'detalle_maquina' c.maquina.pk %}" style="color:var(--accent); text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">{{ c.maquina.codigo }}</a>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ c.maquina.nombre }}</div>
+                        <div style="color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.82rem;">{{ c.maquina.codigo }}</div>
+                        <div style="font-size:0.72rem; color:var(--text-muted);">{{ c.maquina.nombre }}</div>
                     </td>
-                    <td style="padding:0.75rem; font-size:0.8rem; color:var(--text-muted);">{{ c.otorgado_por.get_full_name|default:"—" }}</td>
-                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">{{ c.fecha_otorgamiento|date:"d/m/Y" }}</td>
-                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem;">
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">
+                        {{ c.fecha_otorgamiento|date:"d/m/Y" }}
+                    </td>
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">
                         {% if c.vigente %}
-                            <span style="color:var(--text);">{{ c.fecha_vencimiento|date:"d/m/Y" }}</span>
                             {% if c.dias_para_vencer <= 30 %}
-                                <div style="font-size:0.65rem; color:var(--warning); margin-top:0.1rem;">Vence en {{ c.dias_para_vencer }} días</div>
+                                <span style="color:var(--warning);">{{ c.fecha_vencimiento|date:"d/m/Y" }}</span>
+                                <div style="font-size:0.65rem; color:var(--warning);">Vence en {{ c.dias_para_vencer }} días</div>
+                            {% else %}
+                                <span style="color:var(--text);">{{ c.fecha_vencimiento|date:"d/m/Y" }}</span>
                             {% endif %}
                         {% else %}
                             <span style="color:var(--danger);">{{ c.fecha_vencimiento|date:"d/m/Y" }}</span>
-                            <div style="font-size:0.65rem; color:var(--danger); margin-top:0.1rem;">Vencida</div>
+                            <div style="font-size:0.65rem; color:var(--danger);">Vencida</div>
                         {% endif %}
                     </td>
+
                     <td style="padding:0.75rem;">
                         {% if c.vigente %}
-                            {% if c.dias_para_vencer <= 30 %}
-                                <span class="badge badge-warning">⚠ Por vencer</span>
-                            {% else %}
-                                <span class="badge badge-success">● Vigente</span>
-                            {% endif %}
+                            <span class="badge badge-success">● Vigente</span>
                         {% else %}
-                            <span class="badge badge-danger">✗ Vencida</span>
+                            <span class="badge badge-danger">● Vencida</span>
                         {% endif %}
                     </td>
+
+                    <td style="padding:0.75rem; font-size:0.8rem; color:var(--text-muted);">
+                        {% if c.otorgado_por %}{{ c.otorgado_por.get_full_name|default:c.otorgado_por.username }}{% else %}—{% endif %}
+                    </td>
+
+                    {% if es_admin_o_tecnico %}
+                    <td style="padding:0.75rem; text-align:right;">
+                        <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
+                            <a href="{% url 'editar_certificacion' c.pk %}"
+                               style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); text-decoration:none; padding:0.25rem 0.6rem; border:1px solid rgba(232,160,32,0.3); border-radius:4px;">
+                                Editar
+                            </a>
+                            <a href="{% url 'revocar_certificacion' c.pk %}"
+                               style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--danger); text-decoration:none; padding:0.25rem 0.6rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;">
+                                Revocar
+                            </a>
+                        </div>
+                    </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -99,10 +137,28 @@
     </div>
     {% else %}
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
-        <span style="font-size:2.5rem; opacity:0.2;">◈</span>
-        <div style="font-size:0.85rem;">No hay certificaciones registradas aún.</div>
+        <span style="font-size:2.5rem; opacity:0.2;">◎</span>
+        <div style="font-size:0.85rem;">No hay certificaciones registradas.</div>
+        {% if es_admin_o_tecnico %}
+        <a href="{% url 'crear_certificacion' %}"
+           style="margin-top:0.5rem; padding:0.5rem 1.25rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; text-decoration:none;">
+            Otorgar primera certificación
+        </a>
+        {% endif %}
     </div>
     {% endif %}
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-msg-tag]').forEach(el => {
+    if (!el.dataset.msgTag.includes('success')) {
+        el.style.background = 'rgba(239,68,68,0.1)';
+        el.style.border     = '1px solid rgba(239,68,68,0.25)';
+        el.style.color      = 'var(--danger)';
+    }
+});
+</script>
 {% endblock %}
