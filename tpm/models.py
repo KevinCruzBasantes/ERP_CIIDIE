@@ -31,6 +31,7 @@ class CertificacionUsuario(models.Model):
     fecha_otorgamiento = models.DateField()
     fecha_vencimiento = models.DateField()
     observaciones = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-fecha_vencimiento']
@@ -121,6 +122,7 @@ class InspeccionDiaria(models.Model):
     )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-fecha']
@@ -188,6 +190,7 @@ class RegistroOEE(models.Model):
 
     observaciones = models.TextField(blank=True)
     fecha_calculo = models.DateTimeField(auto_now=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-anio', '-mes']
@@ -246,6 +249,7 @@ class Incidente(models.Model):
 
     fecha_ocurrencia = models.DateTimeField()
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-fecha_ocurrencia']

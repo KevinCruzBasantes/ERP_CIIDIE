@@ -1,0 +1,197 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Mantenimiento #{{ m.pk }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / #{{ m.pk }}{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_mantenimientos' %}" style="color:var(--text-muted); text-decoration:none;">Mantenimiento</a>
+            <span style="margin:0 0.4rem;">›</span> #{{ m.pk }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">
+            {{ m.maquina.nombre }}
+        </h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if m.tipo == 'PREVENTIVO' %}
+                <span class="badge badge-info">Preventivo</span>
+            {% else %}
+                <span class="badge badge-danger">Correctivo</span>
+            {% endif %}
+            {% if m.estado == 'PROGRAMADO' %}
+                {% if m.esta_vencido %}
+                    <span class="badge badge-danger">● Vencido</span>
+                {% else %}
+                    <span class="badge badge-warning">● Programado</span>
+                {% endif %}
+            {% elif m.estado == 'EN_PROCESO' %}
+                <span class="badge badge-info">● En proceso</span>
+            {% elif m.estado == 'FINALIZADO' %}
+                <span class="badge badge-success">● Finalizado</span>
+            {% else %}
+                <span class="badge badge-accent">● Cancelado</span>
+            {% endif %}
+            {% if m.prioridad == 'CRITICA' %}
+                <span class="badge badge-danger">⚠ Prioridad crítica</span>
+            {% elif m.prioridad == 'ALTA' %}
+                <span class="badge badge-warning">Prioridad alta</span>
+            {% endif %}
+        </div>
+
+        {% if es_admin_o_tecnico %}
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem;">
+            <a href="{% url 'editar_mantenimiento' m.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
+               onmouseover="this.style.background='var(--accent2)'"
+               onmouseout="this.style.background='var(--accent)'">
+                ✎ Editar
+            </a>
+            <a href="{% url 'eliminar_mantenimiento' m.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--danger)'"
+               onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">
+                ✕ Eliminar
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <a href="{% url 'detalle_maquina' m.maquina.pk %}"
+           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            ⚙ Ver máquina
+        </a>
+    </div>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Datos generales</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                <div style="font-size:0.85rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ m.maquina.codigo }}</div>
+                <div style="font-size:0.78rem; color:var(--text-muted);">{{ m.maquina.nombre }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Responsable</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ m.responsable.get_full_name|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha programada</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ m.fecha_programada|date:"d/m/Y" }}</div>
+                {% if m.esta_vencido %}
+                    <div style="font-size:0.68rem; color:var(--danger); margin-top:0.15rem;">Vencido</div>
+                {% elif m.estado == 'PROGRAMADO' %}
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.15rem;">en {{ m.dias_para_vencer }} día{{ m.dias_para_vencer|pluralize:"s" }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Próxima fecha</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ m.proxima_fecha|date:"d/m/Y"|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha inicio</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ m.fecha_inicio|date:"d/m/Y H:i"|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha fin</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ m.fecha_fin|date:"d/m/Y H:i"|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Horas de trabajo</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                    {% if m.horas_trabajo %}{{ m.horas_trabajo }} h{% else %}—{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Costo</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                    {% if m.costo %}$ {{ m.costo }}{% else %}—{% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        {% if m.descripcion %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Descripción</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ m.descripcion }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Plan asociado</div>
+            </div>
+            {% if m.plan %}
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Tarea</div>
+                    <div style="font-size:0.85rem; color:var(--text);">{{ m.plan.nombre_tarea }}</div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Intervalo</div>
+                        <div style="font-size:0.82rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">c/ {{ m.plan.intervalo_valor }} {{ m.plan.get_intervalo_unidad_display }}</div>
+                    </div>
+                    <div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Pilar TPM</div>
+                        <div style="font-size:0.82rem; color:var(--accent);">{{ m.plan.get_tipo_tpm_display }}</div>
+                    </div>
+                </div>
+                {% if m.plan.descripcion_detallada %}
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Procedimiento</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.6; white-space:pre-line;">{{ m.plan.descripcion_detallada }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div style="padding:1rem 0; font-size:0.8rem; color:var(--text-muted);">
+                Mantenimiento correctivo sin plan asociado.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Ejecución</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Acciones realizadas</div>
+                    <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ m.acciones_realizadas|default:"Sin registrar aún." }}</div>
+                </div>
+                {% if m.observaciones %}
+                <div style="padding-top:0.75rem; border-top:1px solid var(--border);">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Observaciones</div>
+                    <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ m.observaciones }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

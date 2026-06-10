@@ -147,6 +147,7 @@ class OrdenTrabajo(models.Model):
 
     resultado = models.TextField(blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-fecha_creacion']
@@ -191,6 +192,7 @@ class RegistroParada(models.Model):
     )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['orden_trabajo', 'hora_inicio']

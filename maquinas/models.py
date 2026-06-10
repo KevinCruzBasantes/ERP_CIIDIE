@@ -88,6 +88,7 @@ class Maquina(models.Model):
 
     fecha_adquisicion = models.DateField(null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
 
     class Meta:
         ordering = ['nombre']
@@ -268,6 +269,7 @@ class Pieza(models.Model):
 
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True, null=True, blank=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['maquina', 'numero_posicion', 'nombre']

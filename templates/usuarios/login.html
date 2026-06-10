@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Laboratorio CIIDIE — Ingreso</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:        #0f1117;
+            --surface:   #181c27;
+            --surface2:  #1e2333;
+            --border:    #2a2f42;
+            --accent:    #e8a020;
+            --accent2:   #c97b10;
+            --text:      #d4d8e8;
+            --text-muted:#6b7194;
+            --success:   #22c55e;
+            --danger:    #ef4444;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Fondo con grid sutil */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 48px 48px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Brillo de acento en la esquina */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -20%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(232,160,32,0.07) 0%, transparent 65%);
+            pointer-events: none;
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 400px;
+            padding: 1.5rem;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cabecera */
+        .login-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .login-header .lab-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.62rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.6rem;
+        }
+
+        .login-header h1 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .login-header p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Tarjeta principal */
+        .login-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 2rem;
+            position: relative;
+        }
+
+        /* Línea de acento en la parte superior */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 2rem; right: 2rem;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            border-radius: 2px;
+        }
+
+        /* Alerta de error */
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 6px;
+            padding: 0.65rem 0.9rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.78rem;
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-error::before {
+            content: '⚠';
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        /* Campos del formulario */
+        .form-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.7rem;
+            font-family: 'IBM Plex Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.45rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.9rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(232, 160, 32, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        /* Botón */
+        .btn-login {
+            width: 100%;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: var(--accent);
+            color: #0f1117;
+            border: none;
+            border-radius: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn-login:hover  { background: var(--accent2); }
+        .btn-login:active { transform: scale(0.99); }
+
+        /* Footer de la card */
+        .login-footer {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .login-footer .version {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--text-muted);
+        }
+
+        .dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+
+    <div class="login-header">
+        <div class="lab-tag">Lab. CIIDIE — UCE</div>
+        <h1>Sistema ERP</h1>
+        <p>Gestión de máquinas y mantenimiento TPM</p>
+    </div>
+
+    <div class="login-card">
+
+        {% for message in messages %}
+            <div class="alert-error">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="id_username">Usuario</label>
+                <input
+                    class="form-input"
+                    type="text"
+                    id="id_username"
+                    name="username"
+                    placeholder="nombre de usuario"
+                    autofocus
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_password">Contraseña</label>
+                <input
+                    class="form-input"
+                    type="password"
+                    id="id_password"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn-login">Ingresar al sistema</button>
+        </form>
+
+        <div class="login-footer">
+            <span class="version">v1.0.0-dev</span>
+            <span class="status-dot">
+                <span class="dot"></span> Sistema activo
+            </span>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

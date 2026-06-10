@@ -1,0 +1,204 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}{{ usuario.username }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Usuarios / {{ usuario.username }}{% endblock %}
+{% block nav_usuarios %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header"
+    style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div
+            style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_usuarios' %}" style="color:var(--text-muted); text-decoration:none;">Usuarios</a>
+            <span style="margin:0 0.4rem;">›</span> {{ usuario.username }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">
+            {{ usuario.get_full_name|default:usuario.username }}
+        </h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if usuario.estado == 'ACTIVO' %}
+            <span class="badge badge-success">● Activo</span>
+            {% elif usuario.estado == 'SUSPENDIDO' %}
+            <span class="badge badge-warning">● Suspendido</span>
+            {% else %}
+            <span class="badge badge-danger">● Inactivo</span>
+            {% endif %}
+            {% if usuario.rol %}
+            <span class="badge badge-accent">{{ usuario.rol }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <a href="{% url 'editar_usuario' usuario.pk %}"
+            style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
+            onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">
+            ✎ Editar
+        </a>
+        <a href="{% url 'eliminar_usuario' usuario.pk %}"
+            style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px; transition:border-color 0.15s;"
+            onmouseover="this.style.borderColor='var(--danger)'"
+            onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">
+            ✕ Eliminar
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div data-msg-tag="{{ message.tags }}"
+    style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Datos personales</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Usuario</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">{{
+                    usuario.username }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Cédula</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ usuario.cedula|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Nombres</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ usuario.first_name|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Apellidos</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ usuario.last_name|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Email</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ usuario.email|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Teléfono</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ usuario.telefono|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Rol</div>
+                <div style="font-size:0.85rem; color:var(--accent);">{{ usuario.rol|default:"Sin rol asignado" }}</div>
+            </div>
+
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Registrado</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{
+                    usuario.fecha_creacion|date:"d/m/Y" }}</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Estado de la cuenta</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1.25rem;">
+            <div
+                style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Estado actual</span>
+                {% if usuario.estado == 'ACTIVO' %}
+                <span class="badge badge-success">● Activo</span>
+                {% elif usuario.estado == 'SUSPENDIDO' %}
+                <span class="badge badge-warning">● Suspendido</span>
+                {% else %}
+                <span class="badge badge-danger">● Inactivo</span>
+                {% endif %}
+            </div>
+            <div
+                style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Último acceso</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">{{
+                    usuario.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</span>
+            </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border); padding-top:1rem;">
+            <div
+                style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.75rem;">
+                Cambiar estado</div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                {% if usuario.estado != 'ACTIVO' %}
+                <form method="post" action="{% url 'cambiar_estado_usuario' usuario.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" name="estado" value="ACTIVO"
+                        style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--success); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer; transition:opacity 0.15s;"
+                        onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                        → Activar
+                    </button>
+                </form>
+                {% endif %}
+                {% if usuario.estado != 'SUSPENDIDO' %}
+                <form method="post" action="{% url 'cambiar_estado_usuario' usuario.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" name="estado" value="SUSPENDIDO"
+                        style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--warning); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer; transition:opacity 0.15s;"
+                        onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                        → Suspender
+                    </button>
+                </form>
+                {% endif %}
+                {% if usuario.estado != 'INACTIVO' %}
+                <form method="post" action="{% url 'cambiar_estado_usuario' usuario.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" name="estado" value="INACTIVO"
+                        style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:white; background:var(--danger); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer; transition:opacity 0.15s;"
+                        onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                        → Desactivar
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-msg-tag]').forEach(el => {
+        if (!el.dataset.msgTag.includes('success')) {
+            el.style.background = 'rgba(239,68,68,0.1)';
+            el.style.border = '1px solid rgba(239,68,68,0.25)';
+            el.style.color = 'var(--danger)';
+        }
+    });
+</script>
+{% endblock %}

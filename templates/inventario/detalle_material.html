@@ -1,0 +1,204 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}{{ material.nombre }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Inventario / {{ material.codigo }}{% endblock %}
+{% block nav_inventario %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_materiales' %}" style="color:var(--text-muted); text-decoration:none;">Inventario</a>
+            <span style="margin:0 0.4rem;">›</span>
+            {{ material.codigo }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">{{ material.nombre }}</h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if material.tipo == 'MANTENIMIENTO' %}
+                <span class="badge badge-info">Mantenimiento</span>
+            {% elif material.tipo == 'PRODUCCION' %}
+                <span class="badge badge-accent">Producción</span>
+            {% else %}
+                <span class="badge badge-success">Ambos</span>
+            {% endif %}
+            {% if material.stock_bajo %}
+                <span class="badge badge-danger">⚠ Stock bajo</span>
+            {% else %}
+                <span class="badge badge-success">● Stock OK</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Datos generales</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Código</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">{{ material.codigo }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Unidad de medida</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ material.unidad_medida }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Proveedor</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ material.proveedor|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Costo unitario</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                    {% if material.costo_unitario %}$ {{ material.costo_unitario }}{% else %}—{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Registrado</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ material.fecha_creacion|date:"d/m/Y" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Estado</div>
+                {% if material.activo %}
+                    <span class="badge badge-success">Activo</span>
+                {% else %}
+                    <span class="badge badge-danger">Inactivo</span>
+                {% endif %}
+            </div>
+
+        </div>
+
+        {% if material.descripcion %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Descripción</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ material.descripcion }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Estado del stock</div>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.5rem;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted);">Stock actual</div>
+                <div id="stock-valor"
+                     data-bajo="{% if material.stock_bajo %}1{% else %}0{% endif %}"
+                     style="font-family:'IBM Plex Mono',monospace; font-size:1.4rem; font-weight:500; color:var(--text);">
+                    {{ material.stock_actual }} <span style="font-size:0.7rem; color:var(--text-muted);">{{ material.unidad_medida }}</span>
+                </div>
+            </div>
+
+            {% if material.stock_minimo > 0 %}
+            <div style="background:var(--surface2); border-radius:4px; height:6px; overflow:hidden; margin-bottom:0.4rem;">
+                <div id="stock-bar"
+                     data-actual="{{ material.stock_actual }}"
+                     data-minimo="{{ material.stock_minimo }}"
+                     data-bajo="{% if material.stock_bajo %}1{% else %}0{% endif %}"
+                     style="height:100%; border-radius:4px; transition:width 0.3s; width:0%;">
+                </div>
+            </div>
+            {% endif %}
+
+            <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">
+                <span>Mínimo: {{ material.stock_minimo }} {{ material.unidad_medida }}</span>
+                {% if material.stock_bajo %}
+                    <span style="color:var(--danger);">⚠ Por debajo del mínimo</span>
+                {% else %}
+                    <span style="color:var(--success);">✓ Nivel aceptable</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="padding-top:1rem; border-top:1px solid var(--border); display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Stock mínimo</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ material.stock_minimo }} {{ material.unidad_medida }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Valor en stock</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                    {% if material.costo_unitario %}$ {{ material.stock_actual|floatformat:2 }}{% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Historial de consumos</div>
+        <span class="badge badge-accent">Últimos 20</span>
+    </div>
+
+    {% if consumos %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Realizado por</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Orden de trabajo</th>
+                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Cantidad</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Observación</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in consumos %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">{{ c.fecha|date:"d/m/Y H:i" }}</td>
+                    <td style="padding:0.75rem; font-size:0.82rem; color:var(--text);">{{ c.realizado_por.get_full_name|default:"—" }}</td>
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--accent);">
+                        {% if c.orden_trabajo %}#{{ c.orden_trabajo.pk }}{% else %}—{% endif %}
+                    </td>
+                    <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--danger);">
+                        -{{ c.cantidad }} <span style="font-size:0.65rem; color:var(--text-muted);">{{ material.unidad_medida }}</span>
+                    </td>
+                    <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted);">{{ c.observacion|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:2rem; opacity:0.2;">▦</span>
+        <div style="font-size:0.82rem;">Sin consumos registrados para este material.</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const bar = document.getElementById('stock-bar');
+    if (bar) {
+        const actual = parseFloat(bar.dataset.actual);
+        const minimo = parseFloat(bar.dataset.minimo);
+        const bajo = bar.dataset.bajo === '1';
+        const pct = minimo > 0 ? Math.min((actual / minimo) * 100, 100) : 100;
+        bar.style.width = pct + '%';
+        bar.style.background = bajo ? 'var(--danger)' : 'var(--success)';
+    }
+    const valor = document.getElementById('stock-valor');
+    if (valor) {
+        const bajo = valor.dataset.bajo === '1';
+        valor.style.color = bajo ? 'var(--danger)' : 'var(--success)';
+    }
+</script>
+{% endblock %}

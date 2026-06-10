@@ -1,0 +1,173 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Inspección #{{ inspeccion.pk }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / Inspecciones / #{{ inspeccion.pk }}{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+            <span style="margin:0 0.4rem;">›</span>
+            <a href="{% url 'lista_inspecciones' %}" style="color:var(--text-muted); text-decoration:none;">Inspecciones</a>
+            <span style="margin:0 0.4rem;">›</span> #{{ inspeccion.pk }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">
+            Inspección — {{ inspeccion.maquina.nombre }}
+        </h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if inspeccion.aprobada %}
+                <span class="badge badge-success">✓ Aprobada</span>
+            {% else %}
+                <span class="badge badge-danger">✗ Fallida</span>
+            {% endif %}
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ inspeccion.fecha|date:"d/m/Y" }}</span>
+        </div>
+    </div>
+    <a href="{% url 'detalle_maquina' inspeccion.maquina.pk %}"
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+       onmouseover="this.style.borderColor='var(--accent)'"
+       onmouseout="this.style.borderColor='var(--border)'">⚙ Ver máquina</a>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Checklist de inspección</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Nivel de aceite lubricación</span>
+                {% if inspeccion.nivel_aceite_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Presión neumática (5–7 bar)</span>
+                {% if inspeccion.presion_neumatica_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Nivel de refrigerante</span>
+                {% if inspeccion.nivel_refrigerante_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-warning">⚠ Bajo</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Limpieza del área de trabajo</span>
+                {% if inspeccion.limpieza_area_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-warning">⚠ Pendiente</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Ruidos anormales detectados</span>
+                {% if inspeccion.ruidos_anormales %}<span class="badge badge-danger">⚠ Sí</span>{% else %}<span class="badge badge-success">✓ No</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Vibraciones anormales detectadas</span>
+                {% if inspeccion.vibraciones_anormales %}<span class="badge badge-danger">⚠ Sí</span>{% else %}<span class="badge badge-success">✓ No</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Temperatura de operación normal</span>
+                {% if inspeccion.temperatura_normal %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Anormal</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Guardas y protecciones de seguridad</span>
+                {% if inspeccion.guardas_seguridad_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
+                <span style="font-size:0.82rem; color:var(--text);">Botón de parada de emergencia</span>
+                {% if inspeccion.boton_emergencia_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
+            </div>
+
+        </div>
+
+        {% if inspeccion.observaciones %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Observaciones</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ inspeccion.observaciones }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Datos generales</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                    <div style="font-size:0.85rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ inspeccion.maquina.codigo }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ inspeccion.maquina.nombre }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Inspector</div>
+                    <div style="font-size:0.85rem; color:var(--text);">{{ inspeccion.inspector.get_full_name|default:inspeccion.inspector.username }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha</div>
+                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ inspeccion.fecha|date:"d/m/Y" }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Registrada</div>
+                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ inspeccion.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Hallazgos</div>
+                <span class="badge {% if hallazgos %}badge-warning{% else %}badge-success{% endif %}">{{ hallazgos.count }} hallazgo{{ hallazgos.count|pluralize:"s" }}</span>
+            </div>
+            {% if hallazgos %}
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    {% for h in hallazgos %}
+                    <div data-prioridad="{{ h.prioridad }}"
+                         style="padding:0.75rem; background:var(--surface2); border-radius:6px; border-left:3px solid var(--border);">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
+                            {% if h.prioridad == 'CRITICA' %}
+                                <span class="badge badge-danger">Crítica</span>
+                            {% elif h.prioridad == 'ALTA' %}
+                                <span class="badge badge-warning">Alta</span>
+                            {% elif h.prioridad == 'MEDIA' %}
+                                <span class="badge badge-info">Media</span>
+                            {% else %}
+                                <span class="badge badge-accent">Baja</span>
+                            {% endif %}
+                            {% if h.resuelto %}
+                                <span class="badge badge-success">Resuelto</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.5;">{{ h.descripcion }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+            <div style="padding:1.5rem; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+                Sin hallazgos registrados.
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-prioridad]').forEach(el => {
+        const p = el.dataset.prioridad;
+        if (p === 'CRITICA') el.style.borderLeftColor = 'var(--danger)';
+        else if (p === 'ALTA') el.style.borderLeftColor = 'var(--warning)';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Dashboard Técnico — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Inicio{% endblock %}
+{% block nav_inicio %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
+    <p>{{ user.rol|default:"Técnico" }} — Laboratorio CIIDIE · Universidad Central del Ecuador</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card warning">
+        <div class="stat-label">Mantenimientos vencidos</div>
+        <div class="stat-value">{{ mant_vencidos }}</div>
+        <div class="stat-sub">{{ mant_programados }} programados</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-label">Inspecciones fallidas hoy</div>
+        <div class="stat-value">{{ inspecciones_fallidas_hoy }}</div>
+        <div class="stat-sub">{{ inspecciones_hoy }} realizadas hoy</div>
+    </div>
+    <div class="stat-card accent">
+        <div class="stat-label">Máquinas sin inspección</div>
+        <div class="stat-value">{{ maquinas_pendientes_inspeccion }}</div>
+        <div class="stat-sub">pendientes hoy</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-label">Órdenes en proceso</div>
+        <div class="stat-value">{{ ordenes_en_proceso }}</div>
+        <div class="stat-sub">{{ ordenes_abiertas }} abiertas</div>
+    </div>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Mantenimientos próximos</div>
+            <a href="{% url 'lista_mantenimientos' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todos →</a>
+        </div>
+        {% if mant_proximos_lista %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for m in mant_proximos_lista %}
+            <a href="{% url 'detalle_mantenimiento' m.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ m.maquina.nombre }}</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ m.descripcion|truncatechars:45 }}</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0; margin-left:1rem;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--warning);">{{ m.fecha_programada|date:"d/m/Y" }}</div>
+                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">en {{ m.dias_para_vencer }} día{{ m.dias_para_vencer|pluralize:"s" }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:2rem; opacity:0.3;">◉</span>
+            <div style="font-size:0.82rem;">Sin mantenimientos en los próximos 7 días.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Accesos rápidos</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <a href="{% url 'inspeccion_diaria' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">✓</span> Inspección diaria TPM
+            </a>
+            <a href="{% url 'lista_mantenimientos' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">◉</span> Mantenimientos
+            </a>
+            <a href="{% url 'lista_ordenes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">◈</span> Órdenes de trabajo
+            </a>
+            <a href="{% url 'lista_materiales' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">▦</span> Inventario
+                {% if materiales_stock_bajo > 0 %}
+                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(239,68,68,0.15); color:var(--danger); padding:0.15rem 0.5rem; border-radius:3px;">{{ materiales_stock_bajo }} bajo</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'lista_inspecciones' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">▲</span> Historial inspecciones
+            </a>
+            <a href="{% url 'lista_reportes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">▤</span> Reportes
+            </a>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

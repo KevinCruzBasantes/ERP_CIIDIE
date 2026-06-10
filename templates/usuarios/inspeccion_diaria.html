@@ -1,0 +1,211 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Inspección diaria — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Inspección diaria{% endblock %}
+{% block nav_inspeccion %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Inspección diaria</h1>
+    <p>Pilar 1 TPM — Checklist de mantenimiento autónomo · {{ hoy|date:"d/m/Y" }}</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Nueva inspección</div>
+            <span class="badge badge-accent">{{ pendientes.count }} pendiente{{ pendientes.count|pluralize:"s" }}</span>
+        </div>
+
+        {% if pendientes %}
+        <form method="post">
+            {% csrf_token %}
+
+            <div style="margin-bottom:1.25rem;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.45rem;">Máquina a inspeccionar</label>
+                <select name="maquina_id" required
+                        style="width:100%; padding:0.65rem 0.9rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:0.88rem; outline:none; cursor:pointer;">
+                    <option value="">— Seleccionar máquina —</option>
+                    {% for m in pendientes %}
+                    <option value="{{ m.pk }}">{{ m.codigo }} — {{ m.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.75rem;">Checklist de inspección</div>
+
+            <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem;">
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Nivel de aceite lubricación OK</span>
+                    <input type="checkbox" name="nivel_aceite_ok" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Presión neumática dentro del rango (5–7 bar)</span>
+                    <input type="checkbox" name="presion_neumatica_ok" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Nivel de refrigerante OK</span>
+                    <input type="checkbox" name="nivel_refrigerante_ok" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Área de trabajo limpia</span>
+                    <input type="checkbox" name="limpieza_area_ok" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Temperatura de operación normal</span>
+                    <input type="checkbox" name="temperatura_normal" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Guardas y protecciones de seguridad en su lugar</span>
+                    <input type="checkbox" name="guardas_seguridad_ok" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">Botón de parada de emergencia operativo</span>
+                    <input type="checkbox" name="boton_emergencia_ok" checked
+                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                </label>
+
+                <div style="margin-top:0.5rem; padding:0.5rem 0.9rem; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--danger);">
+                    Anomalías detectadas
+                </div>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">¿Se detectaron ruidos anormales?</span>
+                    <input type="checkbox" name="ruidos_anormales"
+                           style="width:16px; height:16px; accent-color:var(--danger); cursor:pointer;">
+                </label>
+
+                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                       onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.82rem; color:var(--text);">¿Se detectaron vibraciones anormales?</span>
+                    <input type="checkbox" name="vibraciones_anormales"
+                           style="width:16px; height:16px; accent-color:var(--danger); cursor:pointer;">
+                </label>
+
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.45rem;">Observaciones</label>
+                <textarea name="observaciones" rows="3"
+                          placeholder="Notas adicionales sobre la inspección..."
+                          style="width:100%; padding:0.65rem 0.9rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:0.85rem; outline:none; resize:vertical;"></textarea>
+            </div>
+
+            <button type="submit"
+                    style="width:100%; padding:0.75rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:background 0.15s;"
+                    onmouseover="this.style.background='var(--accent2)'"
+                    onmouseout="this.style.background='var(--accent)'">
+                Registrar inspección
+            </button>
+        </form>
+
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+            <span style="font-size:2.5rem; opacity:0.3;">✓</span>
+            <div style="font-size:0.85rem; color:var(--success);">Todas las máquinas inspeccionadas hoy.</div>
+            <div style="font-size:0.72rem; opacity:0.6;">No quedan máquinas operativas pendientes de inspección.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Inspeccionadas hoy</div>
+            <span class="badge {% if inspeccionadas_hoy %}badge-success{% else %}badge-accent{% endif %}">
+                {{ inspeccionadas_hoy.count }} de {{ maquinas.count }}
+            </span>
+        </div>
+
+        {% if inspeccionadas_hoy %}
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            {% for i in inspeccionadas_hoy %}
+            <a href="{% url 'detalle_inspeccion' i.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-weight:500; font-size:0.85rem; color:var(--text);">{{ i.maquina.nombre }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.15rem;">
+                        {{ i.maquina.codigo }} · {{ i.inspector.get_full_name|default:i.inspector.username }}
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    {% if i.aprobada %}
+                        <span class="badge badge-success">✓ OK</span>
+                    {% else %}
+                        <span class="badge badge-danger">✗ Fallida</span>
+                    {% endif %}
+                    <span style="color:var(--text-muted); font-size:0.75rem;">→</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:2rem; opacity:0.2;">◎</span>
+            <div style="font-size:0.82rem;">Sin inspecciones registradas hoy.</div>
+        </div>
+        {% endif %}
+
+        {% if pendientes %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">Pendientes de inspección</div>
+            <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                {% for m in pendientes %}
+                <div style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; background:var(--surface2); border-radius:4px;">
+                    <span style="color:var(--warning); font-size:0.75rem;">◉</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">{{ m.codigo }} — {{ m.nombre }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-msg-tag]').forEach(el => {
+        if (!el.dataset.msgTag.includes('success')) {
+            el.style.background = 'rgba(239,68,68,0.1)';
+            el.style.border = '1px solid rgba(239,68,68,0.25)';
+            el.style.color = 'var(--danger)';
+        }
+    });
+</script>
+{% endblock %}

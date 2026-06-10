@@ -1,0 +1,347 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}OT-{{ orden.pk|stringformat:"04d" }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Órdenes / OT-{{ orden.pk|stringformat:"04d" }}{% endblock %}
+{% block nav_ordenes %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header"
+    style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div
+            style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_ordenes' %}" style="color:var(--text-muted); text-decoration:none;">Órdenes</a>
+            <span style="margin:0 0.4rem;">›</span> OT-{{ orden.pk|stringformat:"04d" }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">
+            OT-{{ orden.pk|stringformat:"04d" }} — {{ orden.reserva.maquina.nombre }}
+        </h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if orden.estado == 'ABIERTA' %}
+            <span class="badge badge-warning">● Abierta</span>
+            {% elif orden.estado == 'EN_PROCESO' %}
+            <span class="badge badge-info">● En proceso</span>
+            {% elif orden.estado == 'FINALIZADA' %}
+            <span class="badge badge-success">● Finalizada</span>
+            {% else %}
+            <span class="badge badge-danger">● Cancelada</span>
+            {% endif %}
+        </div>
+    </div>
+    <a href="{% url 'detalle_reserva' orden.reserva.pk %}"
+        style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        ◷ Ver reserva
+    </a>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Datos generales</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Máquina</div>
+                <div style="font-size:0.85rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{
+                    orden.reserva.maquina.codigo }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">{{ orden.reserva.maquina.nombre }}</div>
+            </div>
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Operario</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{
+                    orden.reserva.usuario.get_full_name|default:orden.reserva.usuario.username }}</div>
+            </div>
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Fecha reserva</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{
+                    orden.reserva.fecha|date:"d/m/Y" }}</div>
+            </div>
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Horario</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{
+                    orden.reserva.hora_inicio|time:"H:i" }} – {{ orden.reserva.hora_fin|time:"H:i" }}</div>
+            </div>
+        </div>
+        {% if orden.descripcion %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div
+                style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">
+                Descripción</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ orden.descripcion }}</div>
+        </div>
+        {% endif %}
+        {% if orden.resultado %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div
+                style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">
+                Resultado</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ orden.resultado }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Tiempos y OEE</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:1rem;">
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    T. planificado</div>
+                <div style="font-size:1.1rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{
+                    orden.tiempo_planificado_min }} <span style="font-size:0.65rem; color:var(--text-muted);">min</span>
+                </div>
+            </div>
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    T. real</div>
+                <div style="font-size:1.1rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{
+                    orden.tiempo_real_min|default:"—" }} {% if orden.tiempo_real_min %}<span
+                        style="font-size:0.65rem; color:var(--text-muted);">min</span>{% endif %}</div>
+            </div>
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    T. paradas</div>
+                <div id="paradas-valor" data-valor="{{ orden.tiempo_parada_min }}"
+                    style="font-size:1.1rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                    {{ orden.tiempo_parada_min }} <span style="font-size:0.65rem; color:var(--text-muted);">min</span>
+                </div>
+            </div>
+            <div>
+                <div
+                    style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">
+                    Unidades</div>
+                <div style="font-size:1.1rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{
+                    orden.unidades_producidas }} <span style="font-size:0.65rem; color:var(--text-muted);">/ {{
+                        orden.unidades_esperadas }}</span></div>
+            </div>
+        </div>
+        <div style="padding-top:1rem; border-top:1px solid var(--border);">
+            <div
+                style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.75rem;">
+                Indicadores OEE</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; text-align:center;">
+                <div
+                    style="background:var(--surface2); border-radius:6px; padding:0.75rem; border:1px solid var(--border);">
+                    <div
+                        style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.3rem;">
+                        Disponib.</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:1rem; color:var(--info);">
+                        {% if orden.tiempo_planificado_min > 0 and orden.tiempo_real_min %}
+                        {% widthratio orden.tiempo_real_min orden.tiempo_planificado_min 100 %}%
+                        {% else %}—{% endif %}
+                    </div>
+                </div>
+                <div
+                    style="background:var(--surface2); border-radius:6px; padding:0.75rem; border:1px solid var(--border);">
+                    <div
+                        style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.3rem;">
+                        Rendim.</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:1rem; color:var(--accent);">
+                        {% if orden.unidades_esperadas > 0 %}
+                        {% widthratio orden.unidades_producidas orden.unidades_esperadas 100 %}%
+                        {% else %}—{% endif %}
+                    </div>
+                </div>
+                <div
+                    style="background:var(--surface2); border-radius:6px; padding:0.75rem; border:1px solid var(--border);">
+                    <div
+                        style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.3rem;">
+                        Calidad</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:1rem; color:var(--success);">
+                        {% if orden.unidades_producidas > 0 %}
+                        {% widthratio orden.unidades_sin_defecto orden.unidades_producidas 100 %}%
+                        {% else %}—{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- PARADAS -->
+<div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Registro de paradas</div>
+        <span class="badge {% if paradas %}badge-warning{% else %}badge-success{% endif %}">{{ paradas.count }} parada{{
+            paradas.count|pluralize:"s" }}</span>
+    </div>
+    {% if paradas %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th
+                        style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Código</th>
+                    <th
+                        style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Inicio</th>
+                    <th
+                        style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Fin</th>
+                    <th
+                        style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Duración</th>
+                    <th
+                        style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Descripción técnica</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in paradas %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem;">
+                        {% if p.codigo_parada %}
+                        <span class="badge badge-warning">{{ p.codigo_parada.codigo }}</span>
+                        <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.2rem;">{{
+                            p.codigo_parada.subsistema }}</div>
+                        {% else %}
+                        <span style="color:var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td
+                        style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">
+                        {{ p.hora_inicio|time:"H:i" }}</td>
+                    <td
+                        style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">
+                        {{ p.hora_fin|time:"H:i"|default:"—" }}</td>
+                    <td
+                        style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--warning);">
+                        {% if p.duracion_minutos %}{{ p.duracion_minutos }} min{% else %}—{% endif %}
+                    </td>
+                    <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted);">{{ p.descripcion_tecnica }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div
+        style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:1.8rem; opacity:0.2;">✓</span>
+        <div style="font-size:0.82rem;">Sin paradas registradas en esta orden.</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- BITÁCORA -->
+<div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Bitácora del operario</div>
+        <span class="badge badge-accent">{{ bitacora.count }} entrada{{ bitacora.count|pluralize:"s" }}</span>
+    </div>
+    {% if bitacora %}
+    {% for entrada in bitacora %}
+    <div style="padding:1rem; border-bottom:1px solid var(--border);">
+        <div
+            style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div
+                    style="width:28px; height:28px; background:var(--accent); border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:#0f1117; font-weight:500; flex-shrink:0;">
+                    {{ entrada.operario.get_full_name|default:entrada.operario.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <div style="font-size:0.82rem; font-weight:500; color:var(--text);">{{
+                        entrada.operario.get_full_name|default:entrada.operario.username }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{
+                        entrada.fecha_registro|date:"d/m/Y H:i" }}</div>
+                </div>
+            </div>
+            {% if entrada.requiere_atencion %}
+            <span class="badge badge-warning">⚠ Requiere atención</span>
+            {% endif %}
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6; margin-left:2.5rem;">{{
+            entrada.descripcion_trabajo }}</div>
+        {% if entrada.observaciones %}
+        <div
+            style="font-size:0.78rem; color:var(--text-muted); margin-top:0.5rem; margin-left:2.5rem; padding-left:0.75rem; border-left:2px solid var(--border); opacity:0.8;">
+            {{ entrada.observaciones }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div
+        style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:1.8rem; opacity:0.2;">◎</span>
+        <div style="font-size:0.82rem;">Sin entradas de bitácora registradas.</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- CONSUMOS DE MATERIAL -->
+{% if consumos %}
+<div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Materiales consumidos</div>
+        <span class="badge badge-accent">{{ consumos.count }} item{{ consumos.count|pluralize:"s" }}</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th
+                        style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Material</th>
+                    <th
+                        style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Cantidad</th>
+                    <th
+                        style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">
+                        Observación</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in consumos %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding:0.75rem;">
+                        <div style="font-weight:500; color:var(--text);">{{ c.material.nombre }}</div>
+                        <div
+                            style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:0.1rem;">
+                            {{ c.material.codigo }}</div>
+                    </td>
+                    <td
+                        style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--danger);">
+                        -{{ c.cantidad }} <span style="font-size:0.65rem; color:var(--text-muted);">{{
+                            c.material.unidad_medida }}</span>
+                    </td>
+                    <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted);">{{
+                        c.observacion|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+    const paradasValor = document.getElementById('paradas-valor');
+    if (paradasValor) {
+        const val = parseFloat(paradasValor.dataset.valor);
+        paradasValor.style.color = val > 0 ? 'var(--warning)' : 'var(--text)';
+    }
+</script>
+{% endblock %}

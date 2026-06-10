@@ -1,0 +1,241 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}{{ titulo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Máquinas / {{ titulo }}{% endblock %}
+{% block nav_maquinas %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
+        <span style="margin:0 0.4rem;">›</span> {{ titulo }}
+    </div>
+    <h1>{{ titulo }}</h1>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- IDENTIFICACIÓN -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <div class="card-title">Identificación</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Nombre <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.nombre.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Código interno <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.codigo }}
+                {% if form.codigo.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.codigo.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">N° de serie</label>
+                {{ form.numero_serie }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Código barras UCE</label>
+                {{ form.codigo_barras_universidad }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Fabricante</label>
+                {{ form.fabricante }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Modelo</label>
+                {{ form.modelo }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Año fabricación</label>
+                {{ form.anio_fabricacion }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Fecha adquisición</label>
+                {{ form.fecha_adquisicion }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Ubicación <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.ubicacion }}
+                {% if form.ubicacion.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.ubicacion.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Estado <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.estado }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Responsable</label>
+                {{ form.responsable }}
+            </div>
+
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Descripción</label>
+                {{ form.descripcion }}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- FICHA TÉCNICA -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <div class="card-title">Ficha técnica</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Voltaje (V)</label>
+                {{ form.voltaje_v }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Frecuencia (Hz)</label>
+                {{ form.frecuencia_hz }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Presión neumática mín. (bar)</label>
+                {{ form.presion_neumatica_min_bar }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Presión neumática máx. (bar)</label>
+                {{ form.presion_neumatica_max_bar }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Capacidad refrigerante (L)</label>
+                {{ form.capacidad_refrigerante_l }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">RPM husillo máx.</label>
+                {{ form.rpm_husillo_max }}
+            </div>
+
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Control CNC</label>
+                {{ form.tipo_control_cnc }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Peso (kg)</label>
+                {{ form.peso_kg }}
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Largo (mm)</label>
+                    {{ form.largo_mm }}
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Ancho (mm)</label>
+                    {{ form.ancho_mm }}
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Alto (mm)</label>
+                    {{ form.alto_mm }}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ARCHIVOS -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <div class="card-title">Archivos</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Imagen de la máquina</label>
+                {{ form.imagen }}
+                {% if maquina.imagen %}
+                <div style="margin-top:0.5rem; font-size:0.72rem; color:var(--text-muted);">
+                    Actual: <a href="{{ maquina.imagen.url }}" target="_blank" style="color:var(--accent);">ver imagen</a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Manual PDF</label>
+                {{ form.manual_pdf }}
+                {% if maquina.manual_pdf %}
+                <div style="margin-top:0.5rem; font-size:0.72rem; color:var(--text-muted);">
+                    Actual: <a href="{{ maquina.manual_pdf.url }}" target="_blank" style="color:var(--accent);">ver manual</a>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BOTONES -->
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'lista_maquinas' %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--text-muted)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            Cancelar
+        </a>
+        <button type="submit"
+                style="padding:0.7rem 1.5rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:background 0.15s;"
+                onmouseover="this.style.background='var(--accent2)'"
+                onmouseout="this.style.background='var(--accent)'">
+            {{ accion }}
+        </button>
+    </div>
+
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-msg-tag]').forEach(el => {
+        if (!el.dataset.msgTag.includes('success')) {
+            el.style.background = 'rgba(239,68,68,0.1)';
+            el.style.border = '1px solid rgba(239,68,68,0.25)';
+            el.style.color = 'var(--danger)';
+        }
+    });
+</script>
+{% endblock %}

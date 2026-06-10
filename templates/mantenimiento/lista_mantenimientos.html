@@ -1,0 +1,180 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Mantenimiento — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <h1>Mantenimiento</h1>
+        <p>Registro de mantenimientos preventivos y correctivos</p>
+    </div>
+    {% if es_admin_o_tecnico %}
+    <a href="{% url 'crear_mantenimiento' %}"
+       style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:background 0.15s;"
+       onmouseover="this.style.background='var(--accent2)'"
+       onmouseout="this.style.background='var(--accent)'">
+        + Nuevo mantenimiento
+    </a>
+    {% endif %}
+</div>
+
+<!-- STATS -->
+<div class="stats-grid">
+    <div class="stat-card accent">
+        <div class="stat-label">Total registros</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">en el sistema</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">Programados</div>
+        <div class="stat-value">{{ programados }}</div>
+        <div class="stat-sub">pendientes de ejecución</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-label">En proceso</div>
+        <div class="stat-value">{{ en_proceso }}</div>
+        <div class="stat-sub">actualmente en curso</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-label">Vencidos</div>
+        <div class="stat-value">{{ vencidos }}</div>
+        <div class="stat-sub">requieren atención inmediata</div>
+    </div>
+</div>
+
+<!-- TABLA -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Historial de mantenimientos</div>
+        <span class="badge badge-accent">{{ total }} registro{{ total|pluralize:"s" }}</span>
+    </div>
+
+    {% if mantenimientos %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">#</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tipo</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Descripción</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha programada</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Prioridad</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Estado</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Responsable</th>
+                    <th style="padding:0.6rem 0.75rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mantenimientos %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                        {{ m.pk }}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        <a href="{% url 'detalle_maquina' m.maquina.pk %}"
+                           style="font-weight:500; color:var(--accent); text-decoration:none;">
+                            {{ m.maquina.codigo }}
+                        </a>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.1rem;">{{ m.maquina.nombre }}</div>
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if m.tipo == 'PREVENTIVO' %}
+                            <span class="badge badge-info">Preventivo</span>
+                        {% else %}
+                            <span class="badge badge-danger">Correctivo</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; color:var(--text-muted); font-size:0.8rem; max-width:220px;">
+                        <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ m.descripcion }}
+                        </div>
+                        {% if m.plan %}
+                            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.15rem; opacity:0.7;">
+                                Plan: {{ m.plan.nombre_tarea }}
+                            </div>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">
+                        {% if m.esta_vencido %}
+                            <span style="color:var(--danger);">{{ m.fecha_programada|date:"d/m/Y" }}</span>
+                            <div style="font-size:0.65rem; color:var(--danger); margin-top:0.1rem;">
+                                Vencido hace {{ m.dias_para_vencer|stringformat:"d"|slice:"1:" }} días
+                            </div>
+                        {% else %}
+                            <span style="color:var(--text);">{{ m.fecha_programada|date:"d/m/Y" }}</span>
+                            {% if m.estado == 'PROGRAMADO' %}
+                                <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">
+                                    en {{ m.dias_para_vencer }} día{{ m.dias_para_vencer|pluralize:"s" }}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if m.prioridad == 'CRITICA' %}
+                            <span class="badge badge-danger">Crítica</span>
+                        {% elif m.prioridad == 'ALTA' %}
+                            <span class="badge badge-warning">Alta</span>
+                        {% elif m.prioridad == 'MEDIA' %}
+                            <span class="badge badge-info">Media</span>
+                        {% else %}
+                            <span class="badge badge-accent">Baja</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if m.estado == 'PROGRAMADO' %}
+                            {% if m.esta_vencido %}
+                                <span class="badge badge-danger">● Vencido</span>
+                            {% else %}
+                                <span class="badge badge-warning">● Programado</span>
+                            {% endif %}
+                        {% elif m.estado == 'EN_PROCESO' %}
+                            <span class="badge badge-info">● En proceso</span>
+                        {% elif m.estado == 'FINALIZADO' %}
+                            <span class="badge badge-success">● Finalizado</span>
+                        {% else %}
+                            <span class="badge badge-accent">● Cancelado</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; color:var(--text-muted); font-size:0.8rem;">
+                        {{ m.responsable.get_full_name|default:"—" }}
+                    </td>
+
+                    <td style="padding:0.75rem; text-align:right;">
+                        <a href="{% url 'detalle_mantenimiento' m.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--accent)'"
+                           onmouseout="this.style.borderColor='var(--border)'">
+                            Ver →
+                        </a>
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+        <span style="font-size:2.5rem; opacity:0.2;">◉</span>
+        <div style="font-size:0.85rem;">No hay mantenimientos registrados aún.</div>
+        <div style="font-size:0.75rem; opacity:0.6;">Agrega registros desde el panel de administración.</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

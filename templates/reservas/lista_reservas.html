@@ -1,0 +1,140 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Reservas — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Reservas{% endblock %}
+{% block nav_reservas %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Reservas</h1>
+    <p>Gestión de reservas de máquinas del laboratorio</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card accent">
+        <div class="stat-label">Total reservas</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">en el sistema</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">Pendientes</div>
+        <div class="stat-value">{{ pendientes }}</div>
+        <div class="stat-sub">esperando aprobación</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-label">Aprobadas</div>
+        <div class="stat-value">{{ aprobadas }}</div>
+        <div class="stat-sub">listas para usar</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-label">En uso</div>
+        <div class="stat-value">{{ en_uso }}</div>
+        <div class="stat-sub">máquinas ocupadas ahora</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Listado de reservas</div>
+        <span class="badge {% if pendientes > 0 %}badge-warning{% else %}badge-success{% endif %}">
+            {% if pendientes > 0 %}{{ pendientes }} pendiente{{ pendientes|pluralize:"s" }}{% else %}Sin pendientes{% endif %}
+        </span>
+    </div>
+
+    {% if reservas %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">#</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Solicitante</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Horario</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Propósito</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Estado</th>
+                    <th style="padding:0.6rem 0.75rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reservas %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                        {{ r.pk }}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        <div style="font-weight:500; color:var(--text);">{{ r.usuario.get_full_name|default:r.usuario.username }}</div>
+                        {% if r.usuario.rol %}
+                            <div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:0.1rem;">{{ r.usuario.rol }}</div>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        <a href="{% url 'detalle_maquina' r.maquina.pk %}"
+                           style="font-weight:500; color:var(--accent); text-decoration:none;">{{ r.maquina.codigo }}</a>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.maquina.nombre }}</div>
+                    </td>
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">
+                        {{ r.fecha|date:"d/m/Y" }}
+                    </td>
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">
+                        {{ r.hora_inicio|time:"H:i" }} – {{ r.hora_fin|time:"H:i" }}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if r.proposito == 'ENSENANZA' %}
+                            <span class="badge badge-info">Enseñanza</span>
+                        {% elif r.proposito == 'INVESTIGACION' %}
+                            <span class="badge badge-accent">Investigación</span>
+                        {% elif r.proposito == 'PRODUCCION' %}
+                            <span class="badge badge-success">Producción</span>
+                        {% else %}
+                            <span class="badge badge-warning">Pedido externo</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if r.estado == 'PENDIENTE' %}
+                            <span class="badge badge-warning">● Pendiente</span>
+                        {% elif r.estado == 'APROBADA' %}
+                            <span class="badge badge-success">● Aprobada</span>
+                        {% elif r.estado == 'EN_USO' %}
+                            <span class="badge badge-info">● En uso</span>
+                        {% elif r.estado == 'COMPLETADA' %}
+                            <span class="badge badge-accent">● Completada</span>
+                        {% else %}
+                            <span class="badge badge-danger">● Cancelada</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; text-align:right;">
+                        <a href="{% url 'detalle_reserva' r.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--accent)'"
+                           onmouseout="this.style.borderColor='var(--border)'">
+                            Ver →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+        <span style="font-size:2.5rem; opacity:0.2;">◷</span>
+        <div style="font-size:0.85rem;">No hay reservas registradas aún.</div>
+        <div style="font-size:0.75rem; opacity:0.6;">Las reservas aparecerán aquí cuando se soliciten.</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

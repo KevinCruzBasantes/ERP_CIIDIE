@@ -1,0 +1,111 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Inspecciones diarias — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / Inspecciones{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+            <span style="margin:0 0.4rem;">›</span> Inspecciones
+        </div>
+        <h1>Inspecciones diarias</h1>
+        <p>Pilar 1 TPM — Mantenimiento autónomo</p>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card accent">
+        <div class="stat-label">Total inspecciones</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">registradas</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-label">Aprobadas</div>
+        <div class="stat-value">{{ aprobadas }}</div>
+        <div class="stat-sub">sin observaciones críticas</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-label">Fallidas</div>
+        <div class="stat-value">{{ fallidas }}</div>
+        <div class="stat-sub">requieren atención</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Historial de inspecciones</div>
+        <span class="badge {% if fallidas > 0 %}badge-danger{% else %}badge-success{% endif %}">
+            {% if fallidas > 0 %}{{ fallidas }} fallida{{ fallidas|pluralize:"s" }}{% else %}Todo OK{% endif %}
+        </span>
+    </div>
+
+    {% if inspecciones %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Inspector</th>
+                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Aceite</th>
+                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Presión</th>
+                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Guardas</th>
+                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Emergencia</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Resultado</th>
+                    <th style="padding:0.6rem 0.75rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in inspecciones %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text);">{{ i.fecha|date:"d/m/Y" }}</td>
+                    <td style="padding:0.75rem;">
+                        <a href="{% url 'detalle_maquina' i.maquina.pk %}" style="font-weight:500; color:var(--accent); text-decoration:none;">{{ i.maquina.codigo }}</a>
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ i.maquina.nombre }}</div>
+                    </td>
+                    <td style="padding:0.75rem; font-size:0.8rem; color:var(--text);">{{ i.inspector.get_full_name|default:i.inspector.username }}</td>
+                    <td style="padding:0.75rem; text-align:center;">
+                        {% if i.nivel_aceite_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
+                    </td>
+                    <td style="padding:0.75rem; text-align:center;">
+                        {% if i.presion_neumatica_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
+                    </td>
+                    <td style="padding:0.75rem; text-align:center;">
+                        {% if i.guardas_seguridad_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
+                    </td>
+                    <td style="padding:0.75rem; text-align:center;">
+                        {% if i.boton_emergencia_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
+                    </td>
+                    <td style="padding:0.75rem;">
+                        {% if i.aprobada %}
+                            <span class="badge badge-success">✓ Aprobada</span>
+                        {% else %}
+                            <span class="badge badge-danger">✗ Fallida</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:0.75rem; text-align:right;">
+                        <a href="{% url 'detalle_inspeccion' i.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--accent)'"
+                           onmouseout="this.style.borderColor='var(--border)'">Ver →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+        <span style="font-size:2.5rem; opacity:0.2;">✓</span>
+        <div style="font-size:0.85rem;">No hay inspecciones registradas aún.</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

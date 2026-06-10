@@ -1,3 +1,308 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import F
+from maquinas.models import Maquina
+from mantenimiento.models import Mantenimiento
+from inventario.models import Material
+from reservas.models import Reserva, OrdenTrabajo
+from tpm.models import Alerta, InspeccionDiaria
+from .models import Usuario, Rol
+from .forms import UsuarioCrearForm, UsuarioEditarForm
 
-# Create your views here.
+
+def es_admin(user):
+    if user.is_superuser:
+        return True
+    if user.rol:
+        rol = user.rol.nombre.lower()
+        return 'administrador' in rol or 'phd' in rol
+    return False
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirigir_por_rol(request.user)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            if user.estado == 'ACTIVO':
+                login(request, user)
+                return redirigir_por_rol(user)
+            else:
+                messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos.')
+    return render(request, 'usuarios/login.html')
+
+
+def redirigir_por_rol(user):
+    if user.is_superuser:
+        return redirect('dashboard_admin')
+    rol = user.rol.nombre.lower() if user.rol else ''
+    if 'administrador' in rol or 'phd' in rol:
+        return redirect('dashboard_admin')
+    elif 'técnico' in rol or 'ingeniero' in rol:
+        return redirect('dashboard_tecnico')
+    else:
+        return redirect('dashboard_general')
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+
+@login_required(login_url='login')
+def dashboard_admin(request):
+    hoy = timezone.now().date()
+    context = {
+        'total_maquinas': Maquina.objects.count(),
+        'maquinas_operativas': Maquina.objects.filter(estado='OPERATIVA').count(),
+        'maquinas_mantenimiento': Maquina.objects.filter(estado='MANTENIMIENTO').count(),
+        'maquinas_fuera': Maquina.objects.filter(estado='FUERA_SERVICIO').count(),
+        'mant_programados': Mantenimiento.objects.filter(estado='PROGRAMADO').count(),
+        'mant_vencidos': Mantenimiento.objects.filter(
+            estado__in=['PROGRAMADO', 'EN_PROCESO'],
+            fecha_programada__lt=hoy
+        ).count(),
+        'mant_proximos': Mantenimiento.objects.filter(
+            estado='PROGRAMADO',
+            fecha_programada__gte=hoy,
+            fecha_programada__lte=hoy + timezone.timedelta(days=7)
+        ).order_by('fecha_programada')[:5],
+        'materiales_stock_bajo': Material.objects.filter(
+            activo=True,
+            stock_actual__lte=F('stock_minimo')
+        ).count(),
+        'reservas_pendientes': Reserva.objects.filter(estado='PENDIENTE').count(),
+        'ordenes_en_proceso': OrdenTrabajo.objects.filter(estado='EN_PROCESO').count(),
+        'alertas_activas': Alerta.objects.filter(resuelta=False).count(),
+        'alertas_criticas': Alerta.objects.filter(resuelta=False, severidad='CRITICA').count(),
+        'ultimas_alertas': Alerta.objects.filter(resuelta=False).select_related('maquina')[:5],
+    }
+    return render(request, 'usuarios/dashboard_admin.html', context)
+
+
+@login_required(login_url='login')
+def dashboard_tecnico(request):
+    hoy = timezone.now().date()
+    context = {
+        'mant_programados': Mantenimiento.objects.filter(estado='PROGRAMADO').count(),
+        'mant_en_proceso': Mantenimiento.objects.filter(estado='EN_PROCESO').count(),
+        'mant_vencidos': Mantenimiento.objects.filter(
+            estado__in=['PROGRAMADO', 'EN_PROCESO'],
+            fecha_programada__lt=hoy
+        ).count(),
+        'mant_proximos': Mantenimiento.objects.filter(
+            estado='PROGRAMADO',
+            fecha_programada__gte=hoy,
+            fecha_programada__lte=hoy + timezone.timedelta(days=7)
+        ).order_by('fecha_programada')[:5],
+        'inspecciones_hoy': InspeccionDiaria.objects.filter(fecha=hoy).count(),
+        'inspecciones_fallidas_hoy': InspeccionDiaria.objects.filter(
+            fecha=hoy, aprobada=False
+        ).count(),
+        'maquinas_pendientes_inspeccion': Maquina.objects.filter(
+            estado='OPERATIVA'
+        ).exclude(inspecciones_diarias__fecha=hoy).count(),
+        'ordenes_abiertas': OrdenTrabajo.objects.filter(estado='ABIERTA').count(),
+        'ordenes_en_proceso': OrdenTrabajo.objects.filter(estado='EN_PROCESO').count(),
+        'materiales_stock_bajo': Material.objects.filter(
+            activo=True,
+            stock_actual__lte=F('stock_minimo')
+        ).count(),
+        'mant_proximos_lista': Mantenimiento.objects.filter(
+            estado='PROGRAMADO',
+            fecha_programada__gte=hoy,
+            fecha_programada__lte=hoy + timezone.timedelta(days=7)
+        ).order_by('fecha_programada')[:5],
+    }
+    return render(request, 'usuarios/dashboard_tecnico.html', context)
+
+
+@login_required(login_url='login')
+def dashboard_general(request):
+    hoy = timezone.now().date()
+    context = {
+        'maquinas_operativas': Maquina.objects.filter(estado='OPERATIVA'),
+        'mis_reservas': Reserva.objects.filter(
+            usuario=request.user
+        ).order_by('-fecha')[:5],
+        'inspeccion_hoy': InspeccionDiaria.objects.filter(
+            inspector=request.user,
+            fecha=hoy
+        ).first(),
+    }
+    return render(request, 'usuarios/dashboard_general.html', context)
+
+
+@login_required(login_url='login')
+def inspeccion_diaria(request):
+    hoy = timezone.now().date()
+    maquinas = Maquina.objects.filter(estado='OPERATIVA')
+
+    inspeccionadas_hoy = InspeccionDiaria.objects.filter(
+        fecha=hoy
+    ).select_related('maquina', 'inspector')
+
+    inspeccionadas_ids = inspeccionadas_hoy.values_list('maquina_id', flat=True)
+    pendientes = maquinas.exclude(id__in=inspeccionadas_ids)
+
+    if request.method == 'POST':
+        maquina_id = request.POST.get('maquina_id')
+        maquina = Maquina.objects.get(pk=maquina_id)
+
+        if InspeccionDiaria.objects.filter(maquina=maquina, fecha=hoy).exists():
+            messages.error(request, f'Ya existe una inspección para {maquina.nombre} hoy.')
+            return redirect('inspeccion_diaria')
+
+        InspeccionDiaria.objects.create(
+            maquina=maquina,
+            inspector=request.user,
+            fecha=hoy,
+            nivel_aceite_ok=request.POST.get('nivel_aceite_ok') == 'on',
+            presion_neumatica_ok=request.POST.get('presion_neumatica_ok') == 'on',
+            nivel_refrigerante_ok=request.POST.get('nivel_refrigerante_ok') == 'on',
+            limpieza_area_ok=request.POST.get('limpieza_area_ok') == 'on',
+            ruidos_anormales=request.POST.get('ruidos_anormales') == 'on',
+            vibraciones_anormales=request.POST.get('vibraciones_anormales') == 'on',
+            temperatura_normal=request.POST.get('temperatura_normal') == 'on',
+            guardas_seguridad_ok=request.POST.get('guardas_seguridad_ok') == 'on',
+            boton_emergencia_ok=request.POST.get('boton_emergencia_ok') == 'on',
+            observaciones=request.POST.get('observaciones', ''),
+        )
+        messages.success(request, f'Inspección de {maquina.nombre} registrada correctamente.')
+        return redirect('inspeccion_diaria')
+
+    context = {
+        'maquinas': maquinas,
+        'pendientes': pendientes,
+        'inspeccionadas_hoy': inspeccionadas_hoy,
+        'hoy': hoy,
+    }
+    return render(request, 'usuarios/inspeccion_diaria.html', context)
+
+
+@login_required(login_url='login')
+def lista_usuarios(request):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard_admin')
+
+    usuarios = Usuario.objects.select_related('rol').filter(is_superuser=False)
+    context = {
+        'usuarios': usuarios,
+        'total': usuarios.count(),
+        'activos': usuarios.filter(estado='ACTIVO').count(),
+        'inactivos': usuarios.filter(estado='INACTIVO').count(),
+        'suspendidos': usuarios.filter(estado='SUSPENDIDO').count(),
+    }
+    return render(request, 'usuarios/lista_usuarios.html', context)
+
+
+@login_required(login_url='login')
+def detalle_usuario(request, pk):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('dashboard_admin')
+
+    usuario = get_object_or_404(Usuario, pk=pk, is_superuser=False)
+    context = {'usuario': usuario}
+    return render(request, 'usuarios/detalle_usuario.html', context)
+
+
+@login_required(login_url='login')
+def crear_usuario(request):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('lista_usuarios')
+
+    if request.method == 'POST':
+        form = UsuarioCrearForm(request.POST)
+        if form.is_valid():
+            usuario = form.save()
+            messages.success(request, f'Usuario "{usuario.username}" creado correctamente.')
+            return redirect('detalle_usuario', pk=usuario.pk)
+    else:
+        form = UsuarioCrearForm()
+
+    context = {
+        'form': form,
+        'titulo': 'Nuevo usuario',
+        'accion': 'Crear usuario',
+    }
+    return render(request, 'usuarios/form_usuario.html', context)
+
+
+@login_required(login_url='login')
+def editar_usuario(request, pk):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('lista_usuarios')
+
+    usuario = get_object_or_404(Usuario, pk=pk, is_superuser=False)
+
+    if request.method == 'POST':
+        form = UsuarioEditarForm(request.POST, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Usuario "{usuario.username}" actualizado correctamente.')
+            return redirect('detalle_usuario', pk=usuario.pk)
+    else:
+        form = UsuarioEditarForm(instance=usuario)
+
+    context = {
+        'form': form,
+        'usuario': usuario,
+        'titulo': f'Editar — {usuario.get_full_name() or usuario.username}',
+        'accion': 'Guardar cambios',
+    }
+    return render(request, 'usuarios/form_usuario.html', context)
+
+
+@login_required(login_url='login')
+def cambiar_estado_usuario(request, pk):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('lista_usuarios')
+
+    usuario = get_object_or_404(Usuario, pk=pk, is_superuser=False)
+
+    if request.method == 'POST':
+        nuevo_estado = request.POST.get('estado')
+        if nuevo_estado in ['ACTIVO', 'INACTIVO', 'SUSPENDIDO']:
+            usuario.estado = nuevo_estado
+            usuario.save()
+            messages.success(
+                request,
+                f'Estado de "{usuario.username}" actualizado a {usuario.get_estado_display()}.'
+            )
+    return redirect('detalle_usuario', pk=usuario.pk)
+
+
+@login_required(login_url='login')
+def eliminar_usuario(request, pk):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('lista_usuarios')
+
+    usuario = get_object_or_404(Usuario, pk=pk, is_superuser=False)
+
+    # Proteger: no puede eliminarse a sí mismo
+    if usuario.pk == request.user.pk:
+        messages.error(request, 'No puedes eliminar tu propia cuenta.')
+        return redirect('detalle_usuario', pk=pk)
+
+    if request.method == 'POST':
+        nombre = usuario.get_full_name() or usuario.username
+        usuario.delete()
+        messages.success(request, f'Usuario "{nombre}" eliminado permanentemente.')
+        return redirect('lista_usuarios')
+
+    context = {'usuario': usuario}
+    return render(request, 'usuarios/confirmar_eliminar_usuario.html', context)

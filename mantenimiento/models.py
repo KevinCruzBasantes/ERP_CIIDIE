@@ -84,7 +84,7 @@ class PlanMantenimiento(models.Model):
 # Cada vez que se realiza (o programa) un mantenimiento se crea un registro.
 # ─────────────────────────────────────────────────────────────────────────────
 class Mantenimiento(models.Model):
-
+    
     TIPOS = [
         ('PREVENTIVO', 'Preventivo'),
         ('CORRECTIVO', 'Correctivo'),
@@ -154,11 +154,15 @@ class Mantenimiento(models.Model):
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-fecha_programada']
         verbose_name = 'Mantenimiento'
         verbose_name_plural = 'Mantenimientos'
+
+    
+
 
     def clean(self):
         if self.fecha_inicio and self.fecha_fin:

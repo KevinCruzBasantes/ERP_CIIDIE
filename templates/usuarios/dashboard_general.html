@@ -1,0 +1,124 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Inicio — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Inicio{% endblock %}
+{% block nav_inicio %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
+    <p>{{ user.rol|default:"Usuario" }} — Laboratorio CIIDIE · Universidad Central del Ecuador</p>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Máquinas disponibles</div>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; padding:0.2rem 0.6rem; border-radius:4px; font-weight:500; background:rgba(34,197,94,0.15); color:var(--success);">
+                {{ maquinas_operativas.count }} operativa{{ maquinas_operativas.count|pluralize:"s" }}
+            </span>
+        </div>
+        {% if maquinas_operativas %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for m in maquinas_operativas %}
+            <a href="{% url 'detalle_maquina' m.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ m.nombre }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); margin-top:0.1rem;">{{ m.codigo }}</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; padding:0.2rem 0.5rem; border-radius:3px; background:rgba(34,197,94,0.15); color:var(--success);">● Operativa</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:2rem; opacity:0.2;">⚙</span>
+            <div style="font-size:0.82rem;">Sin máquinas operativas disponibles.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Mis reservas recientes</div>
+                <a href="{% url 'lista_reservas' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
+            </div>
+            {% if mis_reservas %}
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+                {% for r in mis_reservas %}
+                <a href="{% url 'detalle_reserva' r.pk %}"
+                   style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+                   onmouseover="this.style.borderColor='var(--accent)'"
+                   onmouseout="this.style.borderColor='var(--border)'">
+                    <div>
+                        <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ r.maquina.nombre }}</div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.fecha|date:"d/m/Y" }} · {{ r.hora_inicio|time:"H:i" }} – {{ r.hora_fin|time:"H:i" }}</div>
+                    </div>
+                    <span data-estado-r="{{ r.estado }}"
+                          style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; padding:0.2rem 0.5rem; border-radius:3px; text-transform:uppercase; font-weight:500;">
+                        {{ r.get_estado_display }}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+                <span style="font-size:1.8rem; opacity:0.2;">◷</span>
+                <div style="font-size:0.82rem;">Sin reservas registradas.</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Accesos rápidos</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                <a href="{% url 'lista_reservas' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="color:var(--accent)">◷</span> Mis reservas
+                </a>
+                <a href="{% url 'inspeccion_diaria' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="color:var(--accent)">✓</span>
+                    Inspección diaria
+                    {% if not inspeccion_hoy %}
+                    <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(245,158,11,0.15); color:var(--warning); padding:0.15rem 0.5rem; border-radius:3px;">Pendiente</span>
+                    {% else %}
+                    <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(34,197,94,0.15); color:var(--success); padding:0.15rem 0.5rem; border-radius:3px;">Realizada</span>
+                    {% endif %}
+                </a>
+                <a href="{% url 'lista_maquinas' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="color:var(--accent)">⚙</span> Ver máquinas
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-estado-r]').forEach(el => {
+        const s = el.dataset.estadoR;
+        const colores = {
+            'PENDIENTE': ['rgba(245,158,11,0.15)', 'var(--warning)'],
+            'APROBADA': ['rgba(34,197,94,0.15)', 'var(--success)'],
+            'EN_USO': ['rgba(59,130,246,0.15)', 'var(--info)'],
+            'COMPLETADA': ['rgba(232,160,32,0.15)', 'var(--accent)'],
+            'CANCELADA': ['rgba(239,68,68,0.15)', 'var(--danger)'],
+        };
+        if (colores[s]) {
+            el.style.background = colores[s][0];
+            el.style.color = colores[s][1];
+        }
+    });
+</script>
+{% endblock %}

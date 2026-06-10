@@ -1,0 +1,134 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Máquinas — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Máquinas{% endblock %}
+{% block nav_maquinas %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <h1>Máquinas</h1>
+        <p>Inventario de equipos del laboratorio CIIDIE</p>
+    </div>
+    {% if es_admin %}
+    <a href="{% url 'crear_maquina' %}"
+       style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:background 0.15s;"
+       onmouseover="this.style.background='var(--accent2)'"
+       onmouseout="this.style.background='var(--accent)'">
+        + Nueva máquina
+    </a>
+    {% endif %}
+</div>
+
+<!-- STATS -->
+<div class="stats-grid">
+    <div class="stat-card accent">
+        <div class="stat-label">Total registradas</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">en el sistema</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-label">Operativas</div>
+        <div class="stat-value">{{ operativas }}</div>
+        <div class="stat-sub">disponibles para reserva</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">En mantenimiento</div>
+        <div class="stat-value">{{ en_mantenimiento }}</div>
+        <div class="stat-sub">no disponibles</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-label">Fuera de servicio</div>
+        <div class="stat-value">{{ fuera_servicio }}</div>
+        <div class="stat-sub">requieren atención</div>
+    </div>
+</div>
+
+<!-- TABLA -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Listado de máquinas</div>
+    </div>
+
+    {% if maquinas %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Código</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fabricante / Modelo</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Ubicación</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Estado</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Responsable</th>
+                    <th style="padding:0.6rem 0.75rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in maquinas %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent);">
+                        {{ m.codigo }}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        <div style="font-weight:500; color:var(--text);">{{ m.nombre }}</div>
+                        {% if m.numero_serie %}
+                        <div style="font-size:0.68rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; margin-top:0.15rem;">S/N: {{ m.numero_serie }}</div>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; color:var(--text-muted);">
+                        {% if m.fabricante or m.modelo %}
+                            {{ m.fabricante }}{% if m.fabricante and m.modelo %} · {% endif %}{{ m.modelo }}
+                        {% else %}
+                            <span style="opacity:0.4;">—</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; color:var(--text-muted); font-size:0.8rem;">
+                        {{ m.ubicacion|default:"—" }}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if m.estado == 'OPERATIVA' %}
+                            <span class="badge badge-success">● Operativa</span>
+                        {% elif m.estado == 'MANTENIMIENTO' %}
+                            <span class="badge badge-warning">● Mantenimiento</span>
+                        {% else %}
+                            <span class="badge badge-danger">● Fuera de servicio</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; color:var(--text-muted); font-size:0.8rem;">
+                        {{ m.responsable.get_full_name|default:"—" }}
+                    </td>
+
+                    <td style="padding:0.75rem; text-align:right;">
+                        <a href="{% url 'detalle_maquina' m.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--accent)'"
+                           onmouseout="this.style.borderColor='var(--border)'">
+                            Ver →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+        <span style="font-size:2.5rem; opacity:0.2;">⚙</span>
+        <div style="font-size:0.85rem;">No hay máquinas registradas aún.</div>
+        <div style="font-size:0.75rem; opacity:0.6;">Agrega máquinas desde el panel de administración.</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
