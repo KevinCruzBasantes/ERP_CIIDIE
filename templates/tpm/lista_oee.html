@@ -1,85 +1,84 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Registros OEE — ERP CIIDIE{% endblock %}
-{% block breadcrumb %}TPM / OEE{% endblock %}
-{% block nav_tpm %}active{% endblock %}
+{% block title %}
+  Registros OEE — ERP CIIDIE
+{% endblock %}
+{% block breadcrumb %}
+  TPM / OEE
+{% endblock %}
+{% block nav_tpm %}
+  active
+{% endblock %}
 
 {% block content %}
-
-<div class="page-header" style="margin-bottom:1.5rem;">
+  <div class="page-header" style="margin-bottom:1.5rem;">
     <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
-        <span style="margin:0 0.4rem;">›</span> OEE
+      <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+      <span style="margin:0 0.4rem;">›</span> OEE
     </div>
     <h1>Registros OEE</h1>
     <p>Pilar 3 TPM — Eficiencia Global del Equipo (Overall Equipment Effectiveness)</p>
-</div>
-
-<div class="card">
+  </div>
+  <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+    <a href="{% url 'calcular_oee' %}" style="padding:0.55rem 1.1rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; text-decoration:none;">▲ Calcular OEE</a>
+  </div>
+  <div class="card">
     <div class="card-header">
-        <div class="card-title">Historial OEE por máquina y período</div>
-        <span class="badge badge-accent">{{ total }} registro{{ total|pluralize:"s" }}</span>
+      <div class="card-title">Historial OEE por máquina y período</div>
+      <span class="badge badge-accent">{{ total }} registro{{ total|pluralize:'s' }}</span>
     </div>
     {% if registros %}
-    <div style="overflow-x:auto;">
+      <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
-            <thead>
-                <tr style="border-bottom:1px solid var(--border);">
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Período</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Disponibilidad</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Rendimiento</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Calidad</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">OEE Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
-                    onmouseover="this.style.background='var(--surface2)'"
-                    onmouseout="this.style.background='transparent'">
-                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">
-                        {{ r.mes|stringformat:"02d" }}/{{ r.anio }}
-                    </td>
-                    <td style="padding:0.75rem;">
-                        <a href="{% url 'detalle_maquina' r.maquina.pk %}" style="color:var(--accent); text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">{{ r.maquina.codigo }}</a>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.maquina.nombre }}</div>
-                    </td>
-                    <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--info);">{{ r.disponibilidad }}%</td>
-                    <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--accent);">{{ r.rendimiento }}%</td>
-                    <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--success);">{{ r.calidad }}%</td>
-                    <td style="padding:0.75rem; text-align:center;">
-                        <span data-oee="{{ r.oee }}"
-                              style="font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:500; color:var(--text);">
-                            {{ r.oee }}%
-                        </span>
-                        <div style="font-size:0.62rem; color:var(--text-muted); margin-top:0.1rem;" data-oee-label="{{ r.oee }}"></div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Período</th>
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+              <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Disponibilidad</th>
+              <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Rendimiento</th>
+              <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Calidad</th>
+              <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">OEE Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in registros %}
+              <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">{{ r.mes|stringformat:'02d' }}/{{ r.anio }}</td>
+                <td style="padding:0.75rem;">
+                  <a href="{% url 'detalle_maquina' r.maquina.pk %}" style="color:var(--accent); text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">{{ r.maquina.codigo }}</a>
+                  <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.maquina.nombre }}</div>
+                </td>
+                <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--info);">{{ r.disponibilidad }}%</td>
+                <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--accent);">{{ r.rendimiento }}%</td>
+                <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--success);">{{ r.calidad }}%</td>
+                <td style="padding:0.75rem; text-align:center;">
+                  <span data-oee="{{ r.oee }}" style="font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:500; color:var(--text);">{{ r.oee }}%</span>
+                  <div style="font-size:0.62rem; color:var(--text-muted); margin-top:0.1rem;" data-oee-label="{{ r.oee }}"></div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
         </table>
-    </div>
+      </div>
     {% else %}
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
         <span style="font-size:2.5rem; opacity:0.2;">▲</span>
         <div style="font-size:0.85rem;">No hay registros OEE aún.</div>
         <div style="font-size:0.75rem; opacity:0.6;">Se calculan automáticamente desde las órdenes de trabajo finalizadas.</div>
-    </div>
+      </div>
     {% endif %}
-</div>
-
+  </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.querySelectorAll('[data-oee]').forEach(el => {
-        const v = parseFloat(el.dataset.oee);
-        el.style.color = v >= 85 ? 'var(--success)' : v >= 60 ? 'var(--warning)' : 'var(--danger)';
-    });
-    document.querySelectorAll('[data-oee-label]').forEach(el => {
-        const v = parseFloat(el.dataset.oeeLabel);
-        el.textContent = v >= 85 ? 'World class' : v >= 60 ? 'Aceptable' : 'Mejorar';
-    });
-</script>
+  <script>
+    document.querySelectorAll('[data-oee]').forEach((el) => {
+      const v = parseFloat(el.dataset.oee)
+      el.style.color = v >= 85 ? 'var(--success)' : v >= 60 ? 'var(--warning)' : 'var(--danger)'
+    })
+    document.querySelectorAll('[data-oee-label]').forEach((el) => {
+      const v = parseFloat(el.dataset.oeeLabel)
+      el.textContent = v >= 85 ? 'World class' : v >= 60 ? 'Aceptable' : 'Mejorar'
+    })
+  </script>
 {% endblock %}

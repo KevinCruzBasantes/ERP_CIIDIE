@@ -1,113 +1,125 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Incidentes — ERP CIIDIE{% endblock %}
-{% block breadcrumb %}TPM / Incidentes{% endblock %}
-{% block nav_tpm %}active{% endblock %}
+{% block title %}
+  Incidentes — ERP CIIDIE
+{% endblock %}
+{% block breadcrumb %}
+  TPM / Incidentes
+{% endblock %}
+{% block nav_tpm %}
+  active
+{% endblock %}
 
 {% block content %}
-
-<div class="page-header" style="margin-bottom:1.5rem;">
+  <div class="page-header" style="margin-bottom:1.5rem;">
     <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
-        <span style="margin:0 0.4rem;">›</span> Incidentes
+      <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+      <span style="margin:0 0.4rem;">›</span> Incidentes
     </div>
     <h1>Incidentes</h1>
+    <a href="{% url 'crear_incidente' %}" style="padding:0.55rem 1.1rem; background:var(--danger); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; text-decoration:none;">+ Registrar incidente</a>
+    <p>---</p>
     <p>Pilar 7 TPM — Seguridad y condiciones de riesgo</p>
-</div>
+  </div>
 
-<div class="stats-grid">
+  <div class="stats-grid">
     <div class="stat-card accent">
-        <div class="stat-label">Total incidentes</div>
-        <div class="stat-value">{{ total }}</div>
-        <div class="stat-sub">registrados</div>
+      <div class="stat-label">Total incidentes</div>
+      <div class="stat-value">{{ total }}</div>
+      <div class="stat-sub">registrados</div>
     </div>
     <div class="stat-card danger">
-        <div class="stat-label">Críticos</div>
-        <div class="stat-value">{{ criticos }}</div>
-        <div class="stat-sub">severidad crítica</div>
+      <div class="stat-label">Críticos</div>
+      <div class="stat-value">{{ criticos }}</div>
+      <div class="stat-sub">severidad crítica</div>
     </div>
     <div class="stat-card warning">
-        <div class="stat-label">Requieren mantenimiento</div>
-        <div class="stat-value">{{ requieren_mto }}</div>
-        <div class="stat-sub">generaron alerta</div>
+      <div class="stat-label">Requieren mantenimiento</div>
+      <div class="stat-value">{{ requieren_mto }}</div>
+      <div class="stat-sub">generaron alerta</div>
     </div>
-</div>
+  </div>
 
-<div class="card">
+  <div class="card">
     <div class="card-header">
-        <div class="card-title">Historial de incidentes</div>
-        <span class="badge {% if criticos > 0 %}badge-danger{% else %}badge-success{% endif %}">
-            {% if criticos > 0 %}{{ criticos }} crítico{{ criticos|pluralize:"s" }}{% else %}Sin críticos{% endif %}
-        </span>
+      <div class="card-title">Historial de incidentes</div>
+      <span class="badge {% if criticos > 0 %}
+          badge-danger
+        {% else %}
+          badge-success
+        {% endif %}">
+        {% if criticos > 0 %}
+          {{ criticos }} crítico{{ criticos|pluralize:'s' }}
+        {% else %}
+          Sin críticos
+        {% endif %}
+      </span>
     </div>
     {% if incidentes %}
-    <div style="overflow-x:auto;">
+      <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
-            <thead>
-                <tr style="border-bottom:1px solid var(--border);">
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tipo</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Descripción</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Reportado por</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Severidad</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Req. Mto.</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for inc in incidentes %}
-                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
-                    onmouseover="this.style.background='var(--surface2)'"
-                    onmouseout="this.style.background='transparent'">
-                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">{{ inc.fecha_ocurrencia|date:"d/m/Y H:i" }}</td>
-                    <td style="padding:0.75rem;">
-                        <a href="{% url 'detalle_maquina' inc.maquina.pk %}" style="color:var(--accent); text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">{{ inc.maquina.codigo }}</a>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ inc.maquina.nombre }}</div>
-                    </td>
-                    <td style="padding:0.75rem;">
-                        {% if inc.tipo == 'ACCIDENTE' %}
-                            <span class="badge badge-danger">Accidente</span>
-                        {% elif inc.tipo == 'CASI_ACCIDENTE' %}
-                            <span class="badge badge-warning">Casi accidente</span>
-                        {% elif inc.tipo == 'CONDICION_RIESGO' %}
-                            <span class="badge badge-warning">Cond. riesgo</span>
-                        {% else %}
-                            <span class="badge badge-info">Anomalía</span>
-                        {% endif %}
-                    </td>
-                    <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted); max-width:220px;">
-                        <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ inc.descripcion }}</div>
-                    </td>
-                    <td style="padding:0.75rem; font-size:0.8rem; color:var(--text);">{{ inc.reportado_por.get_full_name|default:"—" }}</td>
-                    <td style="padding:0.75rem;">
-                        {% if inc.severidad == 'CRITICA' %}
-                            <span class="badge badge-danger">Crítica</span>
-                        {% elif inc.severidad == 'ALTA' %}
-                            <span class="badge badge-warning">Alta</span>
-                        {% elif inc.severidad == 'MEDIA' %}
-                            <span class="badge badge-info">Media</span>
-                        {% else %}
-                            <span class="badge badge-accent">Baja</span>
-                        {% endif %}
-                    </td>
-                    <td style="padding:0.75rem; text-align:center;">
-                        {% if inc.requiere_mantenimiento %}
-                            <span style="color:var(--warning);">⚠</span>
-                        {% else %}
-                            <span style="color:var(--text-muted); opacity:0.4;">—</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tipo</th>
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Descripción</th>
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Reportado por</th>
+              <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Severidad</th>
+              <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Req. Mto.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inc in incidentes %}
+              <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">{{ inc.fecha_ocurrencia|date:'d/m/Y H:i' }}</td>
+                <td style="padding:0.75rem;">
+                  <a href="{% url 'detalle_maquina' inc.maquina.pk %}" style="color:var(--accent); text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">{{ inc.maquina.codigo }}</a>
+                  <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ inc.maquina.nombre }}</div>
+                </td>
+                <td style="padding:0.75rem;">
+                  {% if inc.tipo == 'ACCIDENTE' %}
+                    <span class="badge badge-danger">Accidente</span>
+                  {% elif inc.tipo == 'CASI_ACCIDENTE' %}
+                    <span class="badge badge-warning">Casi accidente</span>
+                  {% elif inc.tipo == 'CONDICION_RIESGO' %}
+                    <span class="badge badge-warning">Cond. riesgo</span>
+                  {% else %}
+                    <span class="badge badge-info">Anomalía</span>
+                  {% endif %}
+                </td>
+                <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted); max-width:220px;">
+                  <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ inc.descripcion }}</div>
+                </td>
+                <td style="padding:0.75rem; font-size:0.8rem; color:var(--text);">{{ inc.reportado_por.get_full_name|default:'—' }}</td>
+                <td style="padding:0.75rem;">
+                  {% if inc.severidad == 'CRITICA' %}
+                    <span class="badge badge-danger">Crítica</span>
+                  {% elif inc.severidad == 'ALTA' %}
+                    <span class="badge badge-warning">Alta</span>
+                  {% elif inc.severidad == 'MEDIA' %}
+                    <span class="badge badge-info">Media</span>
+                  {% else %}
+                    <span class="badge badge-accent">Baja</span>
+                  {% endif %}
+                </td>
+                <td style="padding:0.75rem; text-align:center;">
+                  {% if inc.requiere_mantenimiento %}
+                    <span style="color:var(--warning);">⚠</span>
+                  {% else %}
+                    <span style="color:var(--text-muted); opacity:0.4;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
         </table>
-    </div>
+      </div>
     {% else %}
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
         <span style="font-size:2.5rem; opacity:0.2;">⚠</span>
         <div style="font-size:0.85rem;">No hay incidentes registrados.</div>
-    </div>
+      </div>
     {% endif %}
-</div>
-
+  </div>
 {% endblock %}

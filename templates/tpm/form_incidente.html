@@ -1,0 +1,133 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}{{ titulo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / Incidentes / {{ titulo }}{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+        <span style="margin:0 0.4rem;">›</span>
+        <a href="{% url 'lista_incidentes' %}" style="color:var(--text-muted); text-decoration:none;">Incidentes</a>
+        <span style="margin:0 0.4rem;">›</span> {{ titulo }}
+    </div>
+    <h1>{{ titulo }}</h1>
+    <p>Pilar 7 TPM — Registro de condiciones de riesgo, casi accidentes y anomalías operacionales.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
+                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header"><div class="card-title">Datos del incidente</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Máquina <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.maquina }}
+                {% if form.maquina.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.maquina.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Tipo de incidente <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.tipo }}
+                {% if form.tipo.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.tipo.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Severidad <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.severidad }}
+                {% if form.severidad.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.severidad.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Fecha y hora de ocurrencia <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.fecha_ocurrencia }}
+                {% if form.fecha_ocurrencia.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.fecha_ocurrencia.errors.0 }}</div>{% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header"><div class="card-title">Descripción y acciones</div></div>
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Descripción del incidente <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.descripcion.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Acción tomada
+                </label>
+                {{ form.accion_tomada }}
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
+                {{ form.requiere_mantenimiento }}
+                <div>
+                    <div style="font-size:0.85rem; font-weight:500; color:var(--text);">Requiere mantenimiento</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.1rem;">
+                        Activar para generar automáticamente una alerta crítica al ingeniero responsable.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger);">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'lista_incidentes' %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+            Cancelar
+        </a>
+        <button type="submit"
+                style="padding:0.7rem 1.5rem; background:var(--danger); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">
+            {{ accion }}
+        </button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-msg-tag]').forEach(el => {
+    if (!el.dataset.msgTag.includes('success')) {
+        el.style.background = 'rgba(239,68,68,0.1)';
+        el.style.border     = '1px solid rgba(239,68,68,0.25)';
+        el.style.color      = 'var(--danger)';
+    }
+});
+</script>
+{% endblock %}

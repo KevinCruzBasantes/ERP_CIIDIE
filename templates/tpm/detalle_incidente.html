@@ -1,0 +1,114 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Incidente #{{ incidente.pk }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / Incidentes / #{{ incidente.pk }}{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+            <span style="margin:0 0.4rem;">›</span>
+            <a href="{% url 'lista_incidentes' %}" style="color:var(--text-muted); text-decoration:none;">Incidentes</a>
+            <span style="margin:0 0.4rem;">›</span> #{{ incidente.pk }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">
+            Incidente — {{ incidente.maquina.nombre }}
+        </h1>
+        <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+            {% if incidente.tipo == 'ACCIDENTE' %}
+                <span class="badge badge-danger">Accidente</span>
+            {% elif incidente.tipo == 'CASI_ACCIDENTE' %}
+                <span class="badge badge-warning">Casi accidente</span>
+            {% elif incidente.tipo == 'CONDICION_RIESGO' %}
+                <span class="badge badge-warning">Condición de riesgo</span>
+            {% else %}
+                <span class="badge badge-info">Anomalía operacional</span>
+            {% endif %}
+
+            {% if incidente.severidad == 'CRITICA' %}
+                <span class="badge badge-danger">Severidad crítica</span>
+            {% elif incidente.severidad == 'ALTA' %}
+                <span class="badge badge-warning">Severidad alta</span>
+            {% elif incidente.severidad == 'MEDIA' %}
+                <span class="badge badge-info">Severidad media</span>
+            {% else %}
+                <span class="badge badge-accent">Severidad baja</span>
+            {% endif %}
+
+            {% if incidente.requiere_mantenimiento %}
+                <span class="badge badge-warning">⚠ Requiere mantenimiento</span>
+            {% endif %}
+        </div>
+    </div>
+    <a href="{% url 'detalle_maquina' incidente.maquina.pk %}"
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px;">
+        ⚙ Ver máquina
+    </a>
+</div>
+
+<div class="grid-2">
+
+    <!-- DESCRIPCIÓN -->
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <div class="card">
+            <div class="card-header"><div class="card-title">Descripción del incidente</div></div>
+            <div style="font-size:0.85rem; color:var(--text); line-height:1.7;">
+                {{ incidente.descripcion }}
+            </div>
+        </div>
+
+        {% if incidente.accion_tomada %}
+        <div class="card">
+            <div class="card-header"><div class="card-title">Acción tomada</div></div>
+            <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.7;">
+                {{ incidente.accion_tomada }}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- DATOS -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Datos del registro</div></div>
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                <div style="color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.85rem;">{{ incidente.maquina.codigo }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">{{ incidente.maquina.nombre }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha de ocurrencia</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ incidente.fecha_ocurrencia|date:"d/m/Y H:i" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Reportado por</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username|default:"—" }}</div>
+            </div>
+
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Registrado en sistema</div>
+                <div style="font-size:0.85rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">{{ incidente.fecha_creacion|date:"d/m/Y H:i" }}</div>
+            </div>
+
+            {% if incidente.requiere_mantenimiento %}
+            <div style="padding:0.75rem; background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.25); border-radius:6px;">
+                <div style="font-size:0.78rem; color:var(--warning); font-weight:500;">⚠ Alerta de mantenimiento generada</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">
+                    Este incidente requiere intervención del técnico. Se generó una alerta crítica automáticamente.
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Calcular OEE — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}TPM / OEE / Calcular{% endblock %}
+{% block nav_tpm %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+        <span style="margin:0 0.4rem;">›</span>
+        <a href="{% url 'lista_oee' %}" style="color:var(--text-muted); text-decoration:none;">OEE</a>
+        <span style="margin:0 0.4rem;">›</span> Calcular
+    </div>
+    <h1>Calcular OEE</h1>
+    <p>Agrega automáticamente las órdenes de trabajo finalizadas del período seleccionado.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div data-msg-tag="{{ message.tags }}"
+         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
+                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="grid-2" style="align-items:start;">
+
+    <!-- FORMULARIO -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Parámetros de cálculo</div></div>
+        <form method="post" style="display:flex; flex-direction:column; gap:1rem;">
+            {% csrf_token %}
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Máquina <span style="color:var(--danger);">*</span>
+                </label>
+                <select name="maquina" required
+                        style="width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;">
+                    <option value="">— Seleccionar máquina —</option>
+                    {% for m in maquinas %}
+                    <option value="{{ m.pk }}"
+                        {% if resultado and resultado.maquina.pk == m.pk %}selected{% endif %}>
+                        {{ m.codigo }} — {{ m.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                        Mes <span style="color:var(--danger);">*</span>
+                    </label>
+                    <select name="mes" required
+                            style="width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;">
+                        {% for m in "123456789" %}{% endfor %}
+                        <option value="1"  {% if resultado.mes == 1  %}selected{% endif %}>01 — Enero</option>
+                        <option value="2"  {% if resultado.mes == 2  %}selected{% endif %}>02 — Febrero</option>
+                        <option value="3"  {% if resultado.mes == 3  %}selected{% endif %}>03 — Marzo</option>
+                        <option value="4"  {% if resultado.mes == 4  %}selected{% endif %}>04 — Abril</option>
+                        <option value="5"  {% if resultado.mes == 5  %}selected{% endif %}>05 — Mayo</option>
+                        <option value="6"  {% if resultado.mes == 6  %}selected{% endif %}>06 — Junio</option>
+                        <option value="7"  {% if resultado.mes == 7  %}selected{% endif %}>07 — Julio</option>
+                        <option value="8"  {% if resultado.mes == 8  %}selected{% endif %}>08 — Agosto</option>
+                        <option value="9"  {% if resultado.mes == 9  %}selected{% endif %}>09 — Septiembre</option>
+                        <option value="10" {% if resultado.mes == 10 %}selected{% endif %}>10 — Octubre</option>
+                        <option value="11" {% if resultado.mes == 11 %}selected{% endif %}>11 — Noviembre</option>
+                        <option value="12" {% if resultado.mes == 12 %}selected{% endif %}>12 — Diciembre</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                        Año <span style="color:var(--danger);">*</span>
+                    </label>
+                    <input type="number" name="anio" required
+                           min="2020" max="{{ hoy.year }}"
+                           value="{% if resultado %}{{ resultado.anio }}{% else %}{{ hoy.year }}{% endif %}"
+                           style="width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; box-sizing:border-box;">
+                </div>
+            </div>
+
+            <div style="padding:0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); font-size:0.78rem; color:var(--text-muted); line-height:1.6;">
+                <strong style="color:var(--text);">Cómo funciona:</strong> El sistema busca todas las órdenes de trabajo
+                <em>finalizadas</em> de la máquina seleccionada en el período indicado y calcula:<br>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem;">
+                    D = Σ t_real / Σ t_plan × 100 &nbsp;|&nbsp;
+                    R = Σ u_prod / Σ u_esp × 100 &nbsp;|&nbsp;
+                    C = Σ u_ok / Σ u_prod × 100
+                </span>
+            </div>
+
+            <button type="submit"
+                    style="padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">
+                Calcular OEE
+            </button>
+        </form>
+    </div>
+
+    <!-- RESULTADO -->
+    {% if resultado %}
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Resultado — {{ resultado.mes|stringformat:"02d" }}/{{ resultado.anio }}</div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent);">{{ resultado.maquina.codigo }}</span>
+            </div>
+
+            <!-- OEE PRINCIPAL -->
+            <div style="text-align:center; padding:1.5rem 0 1rem;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">OEE Total</div>
+                <div id="oee-valor" style="font-size:3rem; font-weight:600; font-family:'IBM Plex Mono',monospace;"
+                     data-oee="{{ resultado.oee }}">
+                    {{ resultado.oee }}%
+                </div>
+                <div id="oee-label" style="font-size:0.78rem; margin-top:0.3rem; font-family:'IBM Plex Mono',monospace;"></div>
+                <div style="margin-top:0.6rem; font-size:0.72rem; color:var(--text-muted);">
+                    Basado en {{ resultado.ordenes_count }} orden{{ resultado.ordenes_count|pluralize:"es" }} de trabajo
+                </div>
+            </div>
+
+            <!-- TRES COMPONENTES -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+                <div style="text-align:center; padding:0.85rem 0.5rem; background:var(--surface2); border-radius:6px;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.35rem;">Disponibilidad</div>
+                    <div style="font-size:1.5rem; font-weight:600; font-family:'IBM Plex Mono',monospace; color:var(--info);">{{ resultado.disponibilidad }}%</div>
+                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.2rem;">{{ resultado.t_real }} / {{ resultado.t_plan }} min</div>
+                </div>
+                <div style="text-align:center; padding:0.85rem 0.5rem; background:var(--surface2); border-radius:6px;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.35rem;">Rendimiento</div>
+                    <div style="font-size:1.5rem; font-weight:600; font-family:'IBM Plex Mono',monospace; color:var(--accent);">{{ resultado.rendimiento }}%</div>
+                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.2rem;">{{ resultado.u_prod }} / {{ resultado.u_esp }} uds</div>
+                </div>
+                <div style="text-align:center; padding:0.85rem 0.5rem; background:var(--surface2); border-radius:6px;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.35rem;">Calidad</div>
+                    <div style="font-size:1.5rem; font-weight:600; font-family:'IBM Plex Mono',monospace; color:var(--success);">{{ resultado.calidad }}%</div>
+                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.2rem;">{{ resultado.u_ok }} / {{ resultado.u_prod }} uds OK</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+                <a href="{% url 'lista_oee' %}"
+                   style="flex:1; text-align:center; padding:0.6rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none;">
+                    Ver todos los OEE
+                </a>
+            </div>
+        </div>
+
+        <!-- REFERENCIA CLASE MUNDIAL -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">Referencia TPM</div></div>
+            <div style="display:flex; flex-direction:column; gap:0.4rem; font-size:0.78rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0.6rem; border-radius:4px;"
+                     style="{% if resultado.oee >= 85 %}background:rgba(34,197,94,0.08);{% endif %}">
+                    <span style="color:var(--success);">● World class</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; color:var(--text-muted);">≥ 85%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0.6rem; border-radius:4px;">
+                    <span style="color:var(--warning);">● Aceptable</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; color:var(--text-muted);">60 – 84%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0.6rem; border-radius:4px;">
+                    <span style="color:var(--danger);">● Mejorar</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; color:var(--text-muted);">&lt; 60%</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% else %}
+    <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem; min-height:260px;">
+        <span style="font-size:2.5rem; opacity:0.2;">▲</span>
+        <div style="font-size:0.85rem;">Selecciona una máquina y período para calcular el OEE.</div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-msg-tag]').forEach(el => {
+    if (!el.dataset.msgTag.includes('success') && !el.dataset.msgTag.includes('warning')) {
+        el.style.background = 'rgba(239,68,68,0.1)';
+        el.style.border     = '1px solid rgba(239,68,68,0.25)';
+        el.style.color      = 'var(--danger)';
+    } else if (el.dataset.msgTag.includes('warning')) {
+        el.style.background = 'rgba(234,179,8,0.08)';
+        el.style.border     = '1px solid rgba(234,179,8,0.25)';
+        el.style.color      = 'var(--warning)';
+    }
+});
+
+const oeeEl = document.getElementById('oee-valor');
+const lblEl = document.getElementById('oee-label');
+if (oeeEl) {
+    const v = parseFloat(oeeEl.dataset.oee);
+    if (v >= 85) {
+        oeeEl.style.color = 'var(--success)';
+        if (lblEl) { lblEl.textContent = '★ World class'; lblEl.style.color = 'var(--success)'; }
+    } else if (v >= 60) {
+        oeeEl.style.color = 'var(--warning)';
+        if (lblEl) { lblEl.textContent = '◉ Aceptable'; lblEl.style.color = 'var(--warning)'; }
+    } else {
+        oeeEl.style.color = 'var(--danger)';
+        if (lblEl) { lblEl.textContent = '✗ Requiere mejora'; lblEl.style.color = 'var(--danger)'; }
+    }
+}
+</script>
+{% endblock %}

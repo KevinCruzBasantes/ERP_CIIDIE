@@ -6,7 +6,7 @@ from .models import (
     CertificacionUsuario, InspeccionDiaria,
     RegistroOEE, Incidente, Alerta
 )
-from .forms import CertificacionForm
+from .forms import CertificacionForm, IncidenteForm
 
 
 def es_admin(user):
@@ -44,7 +44,7 @@ def dashboard_tpm(request):
             fecha_vencimiento__lte=hoy + timezone.timedelta(days=30),
             activo=True
         ).count(),
-        'incidentes_criticos': Incidente.objects.filter(severidad='CRITICA').count(),
+        'incidentes_criticos': Incidente.objects.filter(severidad='CRITICA', activo=True).count(),
         'alertas_activas':     Alerta.objects.filter(resuelta=False).count(),
         'alertas_criticas':    Alerta.objects.filter(resuelta=False, severidad='CRITICA').count(),
         'ultimas_alertas':     Alerta.objects.filter(resuelta=False).select_related('maquina')[:8],
@@ -184,6 +184,42 @@ def lista_incidentes(request):
     return render(request, 'tpm/lista_incidentes.html', context)
 
 
+@login_required(login_url='login')
+def crear_incidente(request):
+    if request.method == 'POST':
+        form = IncidenteForm(request.POST)
+        if form.is_valid():
+            incidente = form.save(commit=False)
+            incidente.reportado_por = request.user
+            incidente.activo        = True
+            incidente.save()
+            messages.success(
+                request,
+                f'Incidente registrado en {incidente.maquina.nombre}.'
+                + (' Se generó una alerta de mantenimiento.' if incidente.requiere_mantenimiento else '')
+            )
+            return redirect('detalle_incidente', pk=incidente.pk)
+    else:
+        # Pre-cargar fecha actual como valor por defecto
+        now_str = timezone.now().strftime('%Y-%m-%dT%H:%M')
+        form = IncidenteForm(initial={'fecha_ocurrencia': now_str})
+
+    return render(request, 'tpm/form_incidente.html', {
+        'form':   form,
+        'titulo': 'Registrar incidente',
+        'accion': 'Registrar incidente',
+    })
+
+
+@login_required(login_url='login')
+def detalle_incidente(request, pk):
+    incidente = get_object_or_404(
+        Incidente.objects.select_related('maquina', 'reportado_por'),
+        pk=pk, activo=True
+    )
+    return render(request, 'tpm/detalle_incidente.html', {'incidente': incidente})
+
+
 # ── OEE ───────────────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
@@ -195,6 +231,139 @@ def lista_oee(request):
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
     }
     return render(request, 'tpm/lista_oee.html', context)
+
+
+@login_required(login_url='login')
+def calcular_oee(request):
+    """
+    Calcula el OEE de una máquina para un mes/año dado,
+    agregando todas las órdenes de trabajo FINALIZADAS de ese período.
+
+    Fórmulas:
+      Disponibilidad = (Σ tiempo_real_min) / (Σ tiempo_planificado_min) × 100
+      Rendimiento    = (Σ unidades_producidas) / (Σ unidades_esperadas) × 100
+      Calidad        = (Σ unidades_sin_defecto) / (Σ unidades_producidas) × 100
+      OEE            = (D × R × C) / 10 000
+    """
+    from maquinas.models import Maquina
+    from reservas.models import OrdenTrabajo
+    from django.db.models import Sum
+
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para calcular el OEE.')
+        return redirect('lista_oee')
+
+    maquinas = Maquina.objects.filter(estado='OPERATIVA').order_by('nombre')
+    hoy      = timezone.now().date()
+
+    # Resultados del cálculo (si se envió el formulario)
+    resultado = None
+    errores   = []
+
+    if request.method == 'POST':
+        maquina_id = request.POST.get('maquina')
+        mes_str    = request.POST.get('mes')
+        anio_str   = request.POST.get('anio')
+
+        try:
+            maquina = Maquina.objects.get(pk=maquina_id)
+            mes     = int(mes_str)
+            anio    = int(anio_str)
+
+            if not (1 <= mes <= 12):
+                raise ValueError('El mes debe estar entre 1 y 12.')
+            if anio < 2020 or anio > hoy.year:
+                raise ValueError(f'El año debe estar entre 2020 y {hoy.year}.')
+
+        except (Maquina.DoesNotExist, TypeError, ValueError) as e:
+            messages.error(request, f'Datos inválidos: {e}')
+            return render(request, 'tpm/calcular_oee.html', {
+                'maquinas': maquinas, 'hoy': hoy,
+            })
+
+        # Órdenes del período para esa máquina
+        ordenes = OrdenTrabajo.objects.filter(
+            estado='FINALIZADA',
+            reserva__maquina=maquina,
+            reserva__fecha__year=anio,
+            reserva__fecha__month=mes,
+            activo=True,
+        )
+
+        if not ordenes.exists():
+            messages.warning(
+                request,
+                f'No hay órdenes de trabajo finalizadas para {maquina.nombre} '
+                f'en {mes:02d}/{anio}. No se puede calcular el OEE.'
+            )
+            return render(request, 'tpm/calcular_oee.html', {
+                'maquinas': maquinas, 'hoy': hoy,
+            })
+
+        # Agregar totales
+        totales = ordenes.aggregate(
+            t_plan  = Sum('tiempo_planificado_min'),
+            t_real  = Sum('tiempo_real_min'),
+            u_prod  = Sum('unidades_producidas'),
+            u_esp   = Sum('unidades_esperadas'),
+            u_ok    = Sum('unidades_sin_defecto'),
+        )
+
+        t_plan = float(totales['t_plan'] or 0)
+        t_real = float(totales['t_real'] or 0)
+        u_prod = float(totales['u_prod'] or 0)
+        u_esp  = float(totales['u_esp']  or 0)
+        u_ok   = float(totales['u_ok']   or 0)
+
+        # Calcular componentes (evitar división por cero)
+        disponibilidad = round((t_real / t_plan * 100), 2) if t_plan > 0 else 0
+        rendimiento    = round((u_prod / u_esp  * 100), 2) if u_esp  > 0 else 0
+        calidad        = round((u_ok   / u_prod * 100), 2) if u_prod > 0 else 0
+        oee_calc       = round((disponibilidad * rendimiento * calidad) / 10000, 2)
+
+        # Crear o actualizar el registro (unique_together: maquina+mes+anio)
+        registro, creado = RegistroOEE.objects.update_or_create(
+            maquina=maquina,
+            mes=mes,
+            anio=anio,
+            defaults={
+                'disponibilidad': disponibilidad,
+                'rendimiento':    rendimiento,
+                'calidad':        calidad,
+                'observaciones':  f'Calculado automáticamente desde {ordenes.count()} OT finalizadas.',
+                'activo':         True,
+            }
+        )
+
+        accion = 'Creado' if creado else 'Actualizado'
+        messages.success(
+            request,
+            f'{accion} OEE de {maquina.nombre} para {mes:02d}/{anio}: '
+            f'D={disponibilidad}% | R={rendimiento}% | C={calidad}% → OEE={oee_calc}%'
+        )
+
+        resultado = {
+            'maquina':        maquina,
+            'mes':            mes,
+            'anio':           anio,
+            'ordenes_count':  ordenes.count(),
+            'disponibilidad': disponibilidad,
+            'rendimiento':    rendimiento,
+            'calidad':        calidad,
+            'oee':            oee_calc,
+            't_plan':         round(t_plan, 1),
+            't_real':         round(t_real, 1),
+            'u_prod':         int(u_prod),
+            'u_esp':          int(u_esp),
+            'u_ok':           int(u_ok),
+            'registro_pk':    registro.pk,
+        }
+
+    return render(request, 'tpm/calcular_oee.html', {
+        'maquinas': maquinas,
+        'hoy':      hoy,
+        'resultado': resultado,
+    })
 
 
 # ── ALERTAS ───────────────────────────────────────────────────────────────────
@@ -220,6 +389,6 @@ def resolver_alerta(request, pk):
     alerta = get_object_or_404(Alerta, pk=pk)
     if request.method == 'POST':
         alerta.resolver(request.user)
-        messages.success(request, f'Alerta resuelta correctamente.')
+        messages.success(request, 'Alerta resuelta correctamente.')
         return redirect('lista_alertas')
     return redirect('lista_alertas')
