@@ -41,9 +41,33 @@
                 <span class="badge badge-warning">⚠ Requiere mantenimiento</span>
             {% endif %}
         </div>
+
+        {% if es_admin_o_tecnico %}
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem;">
+            <a href="{% url 'editar_incidente' incidente.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
+               onmouseover="this.style.background='var(--accent2)'"
+               onmouseout="this.style.background='var(--accent)'">✎ Editar</a>
+            {% with orden_existente=incidente.ordenes_generadas.first %}
+            {% if orden_existente %}
+            <a href="{% url 'detalle_orden_mantenimiento' orden_existente.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--info); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(59,130,246,0.35); border-radius:4px;">
+                ◈ Ver orden {{ orden_existente.numero }}
+            </a>
+            {% else %}
+            <a href="{% url 'crear_orden_mantenimiento' %}?incidente={{ incidente.pk }}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.4); border-radius:4px; transition:background 0.15s;"
+               onmouseover="this.style.background='rgba(239,68,68,0.1)'"
+               onmouseout="this.style.background='transparent'">⚠ Generar orden de mantenimiento</a>
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% endif %}
     </div>
     <a href="{% url 'detalle_maquina' incidente.maquina.pk %}"
-       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px;">
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+       onmouseover="this.style.borderColor='var(--accent)'"
+       onmouseout="this.style.borderColor='var(--border)'">
         ⚙ Ver máquina
     </a>
 </div>
@@ -89,7 +113,7 @@
 
             <div>
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Reportado por</div>
-                <div style="font-size:0.85rem; color:var(--text);">{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username|default:"—" }}</div>
+                <div style="font-size:0.85rem; color:var(--text);">{% if incidente.reportado_por %}{% if incidente.reportado_por.get_full_name %}{{ incidente.reportado_por.get_full_name }}{% else %}{{ incidente.reportado_por.username }}{% endif %}{% else %}—{% endif %}</div>
             </div>
 
             <div>

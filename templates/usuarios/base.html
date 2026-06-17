@@ -431,10 +431,10 @@
       </div>
 
       <div class="sidebar-user">
-        <div class="user-avatar">{{ user.get_full_name|default:user.username|slice:':1'|upper }}</div>
+        <div class="user-avatar">{% if user.get_full_name %}{{ user.get_full_name|slice:':1'|upper }}{% else %}{{ user.username|slice:':1'|upper }}{% endif %}</div>
         <div class="user-info">
-          <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-          <div class="user-role">{{ user.rol|default:'Sin rol' }}</div>
+          <div class="user-name">{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}</div>
+          <div class="user-role">{% if user.rol %}{{ user.rol }}{% else %}Sin rol{% endif %}</div>
         </div>
       </div>
 
@@ -488,7 +488,7 @@
             {% endblock %}">
             <span class="nav-icon">◎</span> Usuarios
           </a>
-          <a href="{% url 'lista_mantenimientos' %}"
+          <a href="{% url 'lista_ordenes_mantenimiento' %}"
             class="nav-item {% block nav_mantenimiento %}
             {% endblock %}">
             <span class="nav-icon">◉</span> Mantenimiento
@@ -533,6 +533,8 @@
         </div>
       </div>
 
+      {# consume messages silently so they never carry over to other pages #}
+      {% for message in messages %}{% endfor %}
       <div class="content">
         {% block content %}
         {% endblock %}

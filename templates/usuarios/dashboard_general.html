@@ -104,21 +104,3 @@
 
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    document.querySelectorAll('[data-estado-r]').forEach(el => {
-        const s = el.dataset.estadoR;
-        const colores = {
-            'PENDIENTE': ['rgba(245,158,11,0.15)', 'var(--warning)'],
-            'APROBADA': ['rgba(34,197,94,0.15)', 'var(--success)'],
-            'EN_USO': ['rgba(59,130,246,0.15)', 'var(--info)'],
-            'COMPLETADA': ['rgba(232,160,32,0.15)', 'var(--accent)'],
-            'CANCELADA': ['rgba(239,68,68,0.15)', 'var(--danger)'],
-        };
-        if (colores[s]) {
-            el.style.background = colores[s][0];
-            el.style.color = colores[s][1];
-        }
-    });
-</script>
-{% endblock %}

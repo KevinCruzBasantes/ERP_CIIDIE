@@ -15,17 +15,6 @@
     <h1>Calcular OEE</h1>
     <p>Agrega automáticamente las órdenes de trabajo finalizadas del período seleccionado.</p>
 </div>
-
-{% if messages %}
-    {% for message in messages %}
-    <div data-msg-tag="{{ message.tags }}"
-         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
-                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
-        {{ message }}
-    </div>
-    {% endfor %}
-{% endif %}
-
 <div class="grid-2" style="align-items:start;">
 
     <!-- FORMULARIO -->
@@ -183,34 +172,4 @@
 
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.querySelectorAll('[data-msg-tag]').forEach(el => {
-    if (!el.dataset.msgTag.includes('success') && !el.dataset.msgTag.includes('warning')) {
-        el.style.background = 'rgba(239,68,68,0.1)';
-        el.style.border     = '1px solid rgba(239,68,68,0.25)';
-        el.style.color      = 'var(--danger)';
-    } else if (el.dataset.msgTag.includes('warning')) {
-        el.style.background = 'rgba(234,179,8,0.08)';
-        el.style.border     = '1px solid rgba(234,179,8,0.25)';
-        el.style.color      = 'var(--warning)';
-    }
-});
 
-const oeeEl = document.getElementById('oee-valor');
-const lblEl = document.getElementById('oee-label');
-if (oeeEl) {
-    const v = parseFloat(oeeEl.dataset.oee);
-    if (v >= 85) {
-        oeeEl.style.color = 'var(--success)';
-        if (lblEl) { lblEl.textContent = '★ World class'; lblEl.style.color = 'var(--success)'; }
-    } else if (v >= 60) {
-        oeeEl.style.color = 'var(--warning)';
-        if (lblEl) { lblEl.textContent = '◉ Aceptable'; lblEl.style.color = 'var(--warning)'; }
-    } else {
-        oeeEl.style.color = 'var(--danger)';
-        if (lblEl) { lblEl.textContent = '✗ Requiere mejora'; lblEl.style.color = 'var(--danger)'; }
-    }
-}
-</script>
-{% endblock %}

@@ -1,0 +1,263 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Transferencias de piezas — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Máquinas / Transferencias{% endblock %}
+{% block nav_maquinas %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
+            <span style="margin:0 0.4rem;">›</span> Transferencias
+        </div>
+        <h1>Transferencias de piezas</h1>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.25rem;">
+            Historial global de movimientos de piezas entre máquinas
+        </p>
+    </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid" style="margin-bottom:1.5rem;">
+    <div class="stat-card accent">
+        <div class="stat-label">Total transferencias</div>
+        <div class="stat-value">{{ total }}</div>
+        {% if hay_filtros %}<div class="stat-sub">con filtros activos</div>{% endif %}
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Piezas involucradas</div>
+        <div class="stat-value">{{ piezas_dist }}</div>
+        <div class="stat-sub">piezas distintas</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Máquinas destino</div>
+        <div class="stat-value">{{ maquinas_mov }}</div>
+        <div class="stat-sub">que recibieron piezas</div>
+    </div>
+</div>
+
+<!-- NUEVA TRANSFERENCIA -->
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Nueva transferencia</div>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+        <div style="flex:1; min-width:240px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
+                Pieza o ensamble a transferir
+            </label>
+            <select id="select-pieza-transferir"
+                    style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none; cursor:pointer;">
+                <option value="">— Seleccionar —</option>
+                {% for p in piezas %}
+                <option value="{% url 'crear_transferencia' p.pk %}">{{ p.nombre }} ({{ p.maquina.codigo }}){% if p.es_ensamble %} — Ensamble{% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="button" onclick="irATransferir()"
+                style="padding:0.6rem 1.2rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.06em;"
+                onmouseover="this.style.background='var(--accent2)'"
+                onmouseout="this.style.background='var(--accent)'">
+            Continuar
+        </button>
+    </div>
+</div>
+
+<!-- FILTROS -->
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Filtros</div>
+        {% if hay_filtros %}
+        <a href="{% url 'lista_transferencias' %}"
+           style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--danger); text-decoration:none; padding:0.25rem 0.65rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;"
+           onmouseover="this.style.background='rgba(239,68,68,0.08)'"
+           onmouseout="this.style.background='transparent'">✕ Limpiar</a>
+        {% endif %}
+    </div>
+    <form method="get" style="display:flex; flex-wrap:wrap; gap:0.85rem; align-items:flex-end;">
+        <div style="flex:1; min-width:180px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
+                Máquina (origen o destino)
+            </label>
+            <select name="maquina"
+                    style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none; cursor:pointer;">
+                <option value="">— Todas —</option>
+                {% for m in maquinas %}
+                <option value="{{ m.pk }}" {% if filtro_maquina == m.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ m.codigo }} — {{ m.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex:1; min-width:180px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
+                Pieza
+            </label>
+            <select name="pieza"
+                    style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none; cursor:pointer;">
+                <option value="">— Todas —</option>
+                {% for p in piezas %}
+                <option value="{{ p.pk }}" {% if filtro_pieza == p.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ p.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="min-width:140px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
+                Desde
+            </label>
+            <input type="date" name="desde" value="{{ filtro_desde }}"
+                   style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none; cursor:pointer;">
+        </div>
+
+        <div style="min-width:140px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
+                Hasta
+            </label>
+            <input type="date" name="hasta" value="{{ filtro_hasta }}"
+                   style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none; cursor:pointer;">
+        </div>
+
+        <div style="display:flex; align-items:flex-end;">
+            <button type="submit"
+                    style="padding:0.6rem 1.2rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.06em; transition:background 0.15s;"
+                    onmouseover="this.style.background='var(--accent2)'"
+                    onmouseout="this.style.background='var(--accent)'">
+                Filtrar
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- TABLA -->
+{% if transferencias %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <div class="card-header" style="border-radius:0;">
+        <div class="card-title">Historial de transferencias</div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">
+            {{ total }} registro{{ total|pluralize:"s" }}{% if total > 200 %} — mostrando los últimos 200{% endif %}
+        </span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+            <thead>
+                <tr style="background:var(--surface2);">
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border); white-space:nowrap;">Fecha</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Pieza</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Origen</th>
+                    <th style="padding:0.65rem 0.5rem; text-align:center; border-bottom:1px solid var(--border); color:var(--text-muted);"></th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Destino</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Autorizado por</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transferencias %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <td style="padding:0.7rem 1rem; white-space:nowrap;">
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text);">{{ t.fecha|date:"d/m/Y" }}</div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ t.fecha|date:"H:i" }}</div>
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        <a href="{% url 'detalle_maquina' t.pieza.maquina.pk %}"
+                           style="color:var(--accent); text-decoration:none; font-size:0.82rem;"
+                           onmouseover="this.style.textDecoration='underline'"
+                           onmouseout="this.style.textDecoration='none'">
+                            {{ t.pieza.nombre }}
+                        </a>
+                        {% if t.pieza.numero_serie %}
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">S/N {{ t.pieza.numero_serie }}</div>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        {% if t.maquina_origen %}
+                        <a href="{% url 'detalle_maquina' t.maquina_origen.pk %}"
+                           style="color:var(--text); text-decoration:none; font-size:0.8rem;"
+                           onmouseover="this.style.color='var(--accent)'"
+                           onmouseout="this.style.color='var(--text)'">
+                            {{ t.maquina_origen.nombre }}
+                        </a>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ t.maquina_origen.codigo }}</div>
+                        {% else %}
+                        <span style="color:var(--text-muted); font-size:0.78rem;">— Sin máquina —</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 0.5rem; text-align:center;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">→</span>
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        {% if t.maquina_destino %}
+                        <a href="{% url 'detalle_maquina' t.maquina_destino.pk %}"
+                           style="color:var(--text); text-decoration:none; font-size:0.8rem;"
+                           onmouseover="this.style.color='var(--accent)'"
+                           onmouseout="this.style.color='var(--text)'">
+                            {{ t.maquina_destino.nombre }}
+                        </a>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ t.maquina_destino.codigo }}</div>
+                        {% else %}
+                        <span style="color:var(--text-muted); font-size:0.78rem;">— Sin máquina —</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        <div style="font-size:0.8rem; color:var(--text);">
+                            {% if t.autorizado_por %}{% if t.autorizado_por.get_full_name %}{{ t.autorizado_por.get_full_name }}{% else %}{{ t.autorizado_por.username }}{% endif %}{% else %}—{% endif %}
+                        </div>
+                    </td>
+
+                    <td style="padding:0.7rem 1rem; max-width:260px;">
+                        {% if t.motivo %}
+                        <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.45; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;" title="{{ t.motivo }}">
+                            {{ t.motivo }}
+                        </div>
+                        {% else %}
+                        <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.5;">—</span>
+                        {% endif %}
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:3rem; text-align:center;">
+    <div style="font-size:2rem; margin-bottom:0.75rem; opacity:0.3;">⇄</div>
+    <div style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.4rem;">
+        {% if hay_filtros %}No se encontraron transferencias con los filtros aplicados.{% else %}No hay transferencias registradas todavía.{% endif %}
+    </div>
+    {% if hay_filtros %}
+    <a href="{% url 'lista_transferencias' %}"
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none;">
+        Limpiar filtros
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function irATransferir() {
+    const sel = document.getElementById('select-pieza-transferir');
+    if (sel.value) {
+        window.location.href = sel.value;
+    }
+}
+</script>
+{% endblock %}

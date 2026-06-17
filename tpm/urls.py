@@ -5,8 +5,13 @@ urlpatterns = [
     # Dashboard
     path('',                                  views.dashboard_tpm,          name='dashboard_tpm'),
     # Inspecciones
-    path('inspecciones/',                     views.lista_inspecciones,     name='lista_inspecciones'),
-    path('inspecciones/<int:pk>/',            views.detalle_inspeccion,     name='detalle_inspeccion'),
+    path('inspecciones/',                                        views.lista_inspecciones,  name='lista_inspecciones'),
+    path('inspecciones/<int:pk>/',                               views.detalle_inspeccion,  name='detalle_inspeccion'),
+    path('inspecciones/<int:inspeccion_pk>/hallazgos/crear/',    views.agregar_hallazgo,    name='agregar_hallazgo'),
+    # Hallazgos
+    path('hallazgos/<int:pk>/editar/',                           views.editar_hallazgo,     name='editar_hallazgo'),
+    path('hallazgos/<int:pk>/resolver/',                         views.resolver_hallazgo,   name='resolver_hallazgo'),
+    path('hallazgos/<int:pk>/eliminar/',                         views.eliminar_hallazgo,   name='eliminar_hallazgo'),
     # Certificaciones
     path('certificaciones/',                  views.lista_certificaciones,  name='lista_certificaciones'),
     path('certificaciones/crear/',            views.crear_certificacion,    name='crear_certificacion'),
@@ -16,6 +21,7 @@ urlpatterns = [
     path('incidentes/',                       views.lista_incidentes,       name='lista_incidentes'),
     path('incidentes/crear/',                 views.crear_incidente,        name='crear_incidente'),
     path('incidentes/<int:pk>/',              views.detalle_incidente,      name='detalle_incidente'),
+    path('incidentes/<int:pk>/editar/',       views.editar_incidente,       name='editar_incidente'),
     # OEE
     path('oee/',                              views.lista_oee,              name='lista_oee'),
     path('oee/calcular/',                     views.calcular_oee,           name='calcular_oee'),

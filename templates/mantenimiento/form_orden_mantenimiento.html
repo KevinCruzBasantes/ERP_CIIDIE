@@ -1,0 +1,158 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}{{ titulo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Órdenes / {{ titulo }}{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_ordenes_mantenimiento' %}" style="color:var(--text-muted); text-decoration:none;">Órdenes</a>
+        <span style="margin:0 0.4rem;">›</span> {{ titulo }}
+    </div>
+    <h1>{{ titulo }}</h1>
+</div>
+
+{% if incidente_obj %}
+<div style="max-width:720px; margin-bottom:1.25rem; padding:0.85rem 1rem; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:6px;">
+    <div style="font-size:0.78rem; color:var(--danger); font-weight:500;">⚠ Generando orden correctiva desde incidente</div>
+    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem;">
+        {{ incidente_obj.get_tipo_display }} — {{ incidente_obj.maquina.codigo }} — {{ incidente_obj.fecha_ocurrencia|date:"d/m/Y H:i" }}
+    </div>
+</div>
+{% endif %}
+
+<div style="max-width:720px;">
+<form method="post">
+{% csrf_token %}
+{% if incidente_obj %}<input type="hidden" name="_incidente_pk" value="{{ incidente_obj.pk }}">{% endif %}
+<div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+    <!-- Máquina y tipo -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Máquina y tipo</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div style="grid-column:1/-1;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Máquina *</label>
+                {{ form.maquina }}
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Tipo *</label>
+                {{ form.tipo }}
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Prioridad *</label>
+                {{ form.prioridad }}
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Plan de mantenimiento (opcional)</label>
+                {{ form.plan }}
+                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.25rem;">Solo para órdenes preventivas generadas desde un plan existente</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Descripción del trabajo -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Descripción del trabajo</div></div>
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Título *</label>
+                {{ form.titulo }}
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Procedimiento detallado</label>
+                {{ form.descripcion_tarea }}
+                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.25rem;">Pasos a seguir, herramientas, precauciones de seguridad</div>
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Repuestos y materiales necesarios</label>
+                {{ form.repuestos_necesarios }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Responsables -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Responsables</div></div>
+        <div style="display:flex; flex-direction:column; gap:0.85rem;">
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Responsable principal</label>
+                {{ form.responsable_1 }}
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Responsable 2</label>
+                {{ form.responsable_2 }}
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Responsable 3</label>
+                {{ form.responsable_3 }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Fechas y tiempo -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Planificación</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Fecha programada *</label>
+                {{ form.fecha_programada }}
+            </div>
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Tiempo estimado (horas)</label>
+                {{ form.tiempo_estimado_horas }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Flags de impacto -->
+    <div class="card">
+        <div class="card-header"><div class="card-title">Impacto operacional</div></div>
+        <div style="display:flex; flex-direction:column; gap:0.85rem;">
+            <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; padding:0.65rem; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:6px;">
+                {{ form.afecta_seguridad }}
+                <div>
+                    <div style="font-size:0.83rem; color:var(--danger); font-weight:500;">⚠ Afecta seguridad</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">La falla o intervención representa un riesgo para las personas</div>
+                </div>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; padding:0.65rem; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:6px;">
+                {{ form.para_produccion }}
+                <div>
+                    <div style="font-size:0.83rem; color:var(--warning); font-weight:500;">⊘ Para producción</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">La máquina queda fuera de servicio durante la intervención</div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <!-- Errores del form -->
+    {% if form.errors %}
+    <div style="padding:0.85rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px;">
+        <div style="font-size:0.78rem; color:var(--danger); font-weight:500; margin-bottom:0.4rem;">Corrige los siguientes errores:</div>
+        {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+        <div style="font-size:0.75rem; color:var(--danger);">· {{ field }}: {{ error }}</div>
+        {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div style="display:flex; gap:0.75rem; padding-top:0.5rem;">
+        <a href="{% if om %}{% url 'detalle_orden_mantenimiento' om.pk %}{% else %}{% url 'lista_ordenes_mantenimiento' %}{% endif %}"
+           style="padding:0.65rem 1.25rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+            Cancelar
+        </a>
+        <button type="submit"
+                style="flex:1; padding:0.65rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.08em;">
+            {{ accion }}
+        </button>
+    </div>
+
+</div>
+</form>
+</div>
+
+{% endblock %}

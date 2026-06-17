@@ -1,341 +1,444 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}{{ maquina.nombre }} — ERP CIIDIE{% endblock %}
-{% block breadcrumb %}Máquinas / {{ maquina.codigo }}{% endblock %}
-{% block nav_maquinas %}active{% endblock %}
+{% block title %}
+  {{ maquina.nombre }} — ERP CIIDIE
+{% endblock %}
+{% block breadcrumb %}
+  Maquinas / {{ maquina.codigo }}
+{% endblock %}
+{% block nav_maquinas %}
+  active
+{% endblock %}
 
 {% block content %}
-
-<!-- CABECERA -->
-<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+  <!-- CABECERA -->
+  <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
     <div>
-        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-            <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
-            <span style="margin:0 0.4rem;">›</span>
-            {{ maquina.codigo }}
-        </div>
-        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.25rem;">{{ maquina.nombre }}</h1>
-        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-            {% if maquina.estado == 'OPERATIVA' %}
-                <span class="badge badge-success">● Operativa</span>
-            {% elif maquina.estado == 'MANTENIMIENTO' %}
-                <span class="badge badge-warning">● En mantenimiento</span>
-            {% else %}
-                <span class="badge badge-danger">● Fuera de servicio</span>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Maquinas</a>
+        <span style="margin:0 0.4rem;">›</span>
+        {{ maquina.codigo }}
+      </div>
+      <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.25rem;">{{ maquina.nombre }}</h1>
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        {% if maquina.estado == 'OPERATIVA' %}
+          <span class="badge badge-success">Operativa</span>
+        {% elif maquina.estado == 'MANTENIMIENTO' %}
+          <span class="badge badge-warning">En mantenimiento</span>
+        {% else %}
+          <span class="badge badge-danger">Fuera de servicio</span>
+        {% endif %}
+        {% if maquina.fabricante %}
+          <span style="font-size:0.75rem; color:var(--text-muted);">
+            {{ maquina.fabricante }}{% if maquina.modelo %}
+              - {{ maquina.modelo }}
             {% endif %}
-            {% if maquina.fabricante %}
-                <span style="font-size:0.75rem; color:var(--text-muted);">{{ maquina.fabricante }}{% if maquina.modelo %} · {{ maquina.modelo }}{% endif %}</span>
-            {% endif %}
-            
-        </div>
+          </span>
+        {% endif %}
+      </div>
     </div>
-</div>
-{% if es_admin %}
-<div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;">
-    <a href="{% url 'editar_maquina' maquina.pk %}"
-       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
-       onmouseover="this.style.background='var(--accent2)'"
-       onmouseout="this.style.background='var(--accent)'">
-        ✎ Editar
-    </a>
+  </div>
 
-    <form method="post" action="{% url 'cambiar_estado_maquina' maquina.pk %}" style="display:inline;">
+  {% if es_admin %}
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem; margin-bottom:1.5rem;">
+      <a href="{% url 'editar_maquina' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">Editar</a>
+      <form method="post" action="{% url 'cambiar_estado_maquina' maquina.pk %}" style="display:inline;">
         {% csrf_token %}
         {% if maquina.estado == 'OPERATIVA' %}
-            <button type="submit" name="estado" value="MANTENIMIENTO"
-                    style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--warning); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer; transition:opacity 0.15s;"
-                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-                → Pasar a mantenimiento
-            </button>
+          <button type="submit" name="estado" value="MANTENIMIENTO" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--warning); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Pasar a mantenimiento</button>
         {% elif maquina.estado == 'MANTENIMIENTO' %}
-            <button type="submit" name="estado" value="OPERATIVA"
-                    style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--success); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer; transition:opacity 0.15s;"
-                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-                → Marcar operativa
-            </button>
+          <button type="submit" name="estado" value="OPERATIVA" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--success); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Marcar operativa</button>
         {% endif %}
-    </form>
+      </form>
+      <a href="{% url 'eliminar_maquina' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">Desactivar</a>
+    </div>
+  {% endif %}
 
-    <a href="{% url 'eliminar_maquina' maquina.pk %}"
-       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px; transition:border-color 0.15s;"
-       onmouseover="this.style.borderColor='var(--danger)'"
-       onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">
-        ✕ Desactivar
-    </a>
-</div>
-{% endif %}
-    
-{% if maquina.imagen %}
-<div style="margin-bottom:1.5rem;">
-    <img src="{{ maquina.imagen.url }}"
-         alt="{{ maquina.nombre }}"
-         style="width:200px; max-height:280px; border-radius:8px; border:1px solid var(--border); object-fit:cover; object-position:center;">
-</div>
-{% endif %}
-<div class="grid-2">
+  {% if maquina.imagen %}
+    <div style="margin-bottom:1.5rem;">
+      <img src="{{ maquina.imagen.url }}" alt="{{ maquina.nombre }}" style="width:200px; max-height:280px; border-radius:8px; border:1px solid var(--border); object-fit:cover;" />
+    </div>
+  {% endif %}
 
-    <!-- DATOS GENERALES -->
+  <div class="grid-2">
+    <!-- IDENTIFICACION -->
     <div class="card">
-        <div class="card-header">
-            <div class="card-title">Identificación</div>
+      <div class="card-header">
+        <div class="card-title">Identificacion</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Codigo interno</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">{{ maquina.codigo }}</div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:0.85rem;">
-
-            {% with fields=maquina %}
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Código interno</div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.9rem; color:var(--accent);">{{ maquina.codigo }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">N° de serie</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.numero_serie|default:"—" }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fabricante</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.fabricante|default:"—" }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Modelo</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.modelo|default:"—" }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Año fabricación</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.anio_fabricacion|default:"—" }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha adquisición</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.fecha_adquisicion|date:"d/m/Y"|default:"—" }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Ubicación</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.ubicacion|default:"—" }}</div>
-                </div>
-
-                <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Responsable</div>
-                    <div style="font-size:0.85rem; color:var(--text);">{{ maquina.responsable.get_full_name|default:"—" }}</div>
-                </div>
-
-                {% if maquina.codigo_barras_universidad %}
-                <div style="grid-column:span 2;">
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Código barras UCE</div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text);">{{ maquina.codigo_barras_universidad }}</div>
-                </div>
-                {% endif %}
-
-            </div>
-
-            {% if maquina.descripcion %}
-            <div style="padding-top:0.75rem; border-top:1px solid var(--border);">
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Descripción</div>
-                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ maquina.descripcion }}</div>
-            </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">N de serie</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.numero_serie|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fabricante</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.fabricante|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Modelo</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.modelo|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Anio fabricacion</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.anio_fabricacion|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha adquisicion</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.fecha_adquisicion|date:'d/m/Y'|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Ubicacion</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.ubicacion|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Responsable</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.responsable %}
+              {{ maquina.responsable.get_full_name|default:maquina.responsable.username }}
+            {% else %}
+              —
             {% endif %}
-
-            {% endwith %}
+          </div>
         </div>
+        {% if maquina.codigo_barras_universidad %}
+          <div style="grid-column:span 2;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Codigo barras UCE</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text);">{{ maquina.codigo_barras_universidad }}</div>
+          </div>
+        {% endif %}
+      </div>
+      {% if maquina.descripcion %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Descripcion</div>
+          <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.6;">{{ maquina.descripcion }}</div>
+        </div>
+      {% endif %}
     </div>
 
-    <!-- FICHA TÉCNICA -->
+    <!-- FICHA TECNICA -->
     <div class="card">
-        <div class="card-header">
-            <div class="card-title">Ficha técnica</div>
+      <div class="card-header">
+        <div class="card-title">Ficha tecnica</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Voltaje</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.voltaje_v %}
+              {{ maquina.voltaje_v }} V
+            {% else %}
+              —
+            {% endif %}
+          </div>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Voltaje</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.voltaje_v %}{{ maquina.voltaje_v }} V{% else %}—{% endif %}
-                </div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Frecuencia</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.frecuencia_hz %}{{ maquina.frecuencia_hz }} Hz{% else %}—{% endif %}
-                </div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Presión neumática</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.presion_neumatica_min_bar %}
-                        {{ maquina.presion_neumatica_min_bar }} – {{ maquina.presion_neumatica_max_bar|default:"?" }} bar
-                    {% else %}—{% endif %}
-                </div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Refrigerante</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.capacidad_refrigerante_l %}{{ maquina.capacidad_refrigerante_l }} L{% else %}—{% endif %}
-                </div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">RPM husillo máx.</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.rpm_husillo_max %}{{ maquina.rpm_husillo_max }} rpm{% else %}—{% endif %}
-                </div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Control CNC</div>
-                <div style="font-size:0.85rem; color:var(--text);">{{ maquina.tipo_control_cnc|default:"—" }}</div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Peso</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.peso_kg %}{{ maquina.peso_kg }} kg{% else %}—{% endif %}
-                </div>
-            </div>
-
-            <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Dimensiones (L×A×H)</div>
-                <div style="font-size:0.85rem; color:var(--text);">
-                    {% if maquina.largo_mm %}
-                        {{ maquina.largo_mm }} × {{ maquina.ancho_mm }} × {{ maquina.alto_mm }} mm
-                    {% else %}—{% endif %}
-                </div>
-            </div>
-
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Frecuencia</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.frecuencia_hz %}
+              {{ maquina.frecuencia_hz }} Hz
+            {% else %}
+              —
+            {% endif %}
+          </div>
         </div>
-
-        <!-- Archivos -->
-        {% if maquina.imagen or maquina.manual_pdf %}
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Presion neumatica</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.presion_neumatica_min_bar %}
+              {{ maquina.presion_neumatica_min_bar }} - {{ maquina.presion_neumatica_max_bar|default:'?' }} bar
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Refrigerante</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.capacidad_refrigerante_l %}
+              {{ maquina.capacidad_refrigerante_l }} L
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">RPM husillo max</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.rpm_husillo_max %}
+              {{ maquina.rpm_husillo_max }} rpm
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Control CNC</div>
+          <div style="font-size:0.85rem; color:var(--text);">{{ maquina.tipo_control_cnc|default:'—' }}</div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Peso</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.peso_kg %}
+              {{ maquina.peso_kg }} kg
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Dimensiones (LxAxH)</div>
+          <div style="font-size:0.85rem; color:var(--text);">
+            {% if maquina.largo_mm %}
+              {{ maquina.largo_mm }} x {{ maquina.ancho_mm }} x {{ maquina.alto_mm }} mm
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% if maquina.imagen or maquina.manual_pdf %}
         <div style="margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border); display:flex; gap:0.75rem; flex-wrap:wrap;">
-            {% if maquina.manual_pdf %}
-            <a href="{{ maquina.manual_pdf.url }}" target="_blank"
-               style="display:inline-flex; align-items:center; gap:0.5rem; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.4rem 0.8rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
-               onmouseover="this.style.borderColor='var(--accent)'"
-               onmouseout="this.style.borderColor='var(--border)'">
-                ▤ Manual PDF
-            </a>
-            {% endif %}
-            {% if maquina.imagen %}
-            <a href="{{ maquina.imagen.url }}" target="_blank"
-               style="display:inline-flex; align-items:center; gap:0.5rem; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.8rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
-               onmouseover="this.style.borderColor='var(--accent)'"
-               onmouseout="this.style.borderColor='var(--border)'">
-                ◎ Ver imagen
-            </a>
-            {% endif %}
+          {% if maquina.manual_pdf %}
+            <a href="{{ maquina.manual_pdf.url }}" target="_blank" style="display:inline-flex; align-items:center; gap:0.5rem; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.4rem 0.8rem; border:1px solid var(--border); border-radius:4px;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Manual PDF</a>
+          {% endif %}
+          {% if maquina.imagen %}
+            <a href="{{ maquina.imagen.url }}" target="_blank" style="display:inline-flex; align-items:center; gap:0.5rem; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.8rem; border:1px solid var(--border); border-radius:4px;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Ver imagen</a>
+          {% endif %}
         </div>
-        {% endif %}
+      {% endif %}
     </div>
+  </div>
 
-</div>
-
-<!-- PIEZAS Y ENSAMBLES -->
-<div class="card" style="margin-top:1.5rem;">
+  <!-- PIEZAS Y ENSAMBLES -->
+  <div class="card" style="margin-top:1.5rem;">
     <div class="card-header">
-        <div class="card-title">Piezas y ensambles</div>
-        <span class="badge badge-accent">{{ ensambles.count }} ensamble{{ ensambles.count|pluralize:"s" }}</span>
+      <div class="card-title">Piezas y ensambles</div>
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <span class="badge badge-accent">{{ total_piezas }} pieza{{ total_piezas|pluralize:'s' }}</span>
+        {% if es_admin_o_tecnico %}
+          <a href="{% url 'crear_ensamble' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); background:transparent; border:1px solid var(--accent); text-decoration:none; padding:0.3rem 0.75rem; border-radius:4px;">+ Nuevo ensamble</a>
+          <a href="{% url 'crear_pieza' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.3rem 0.75rem; border-radius:4px;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">+ Nueva pieza</a>
+        {% endif %}
+      </div>
     </div>
 
     {% if ensambles %}
-        {% for ensamble in ensambles %}
+      {% for ensamble in ensambles %}
         <div style="margin-bottom:1rem; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
-
-            <!-- Cabecera del ensamble -->
-            <div style="background:var(--surface2); padding:0.65rem 1rem; display:flex; align-items:center; justify-content:space-between; cursor:pointer;"
-                 onclick="toggleEnsamble('{{ ensamble.pk }}')">
-                <div style="display:flex; align-items:center; gap:0.75rem;">
-                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--accent);">▶</span>
-                    <span style="font-weight:500; font-size:0.85rem;">{{ ensamble.nombre }}</span>
-                    {% if ensamble.nombre_original %}
-                        <span style="font-size:0.72rem; color:var(--text-muted);">({{ ensamble.nombre_original }})</span>
-                    {% endif %}
-                </div>
-                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">
-                    {{ ensamble.piezas_hijas.count }} pieza{{ ensamble.piezas_hijas.count|pluralize:"s" }}
-                </span>
+          <!-- Cabecera del ensamble -->
+          <div style="background:var(--surface2); padding:0.65rem 1rem; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleEnsamble('{{ ensamble.pk }}')">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--accent);">▶</span>
+              <span style="font-weight:500; font-size:0.85rem;">{{ ensamble.nombre }}</span>
+              {% if ensamble.nombre_original %}
+                <span style="font-size:0.72rem; color:var(--text-muted);">({{ ensamble.nombre_original }})</span>
+              {% endif %}
             </div>
-
-            <!-- Piezas hijas -->
-            <div id="ensamble-{{ ensamble.pk }}" style="display:none;">
-                {% if ensamble.piezas_hijas.all %}
-                <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
-                    <thead>
-                        <tr style="border-bottom:1px solid var(--border);">
-                            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pos.</th>
-                            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pieza</th>
-                            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">N° parte</th>
-                            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Especificación</th>
-                            <th style="text-align:center; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Cant.</th>
-                            <th style="text-align:center; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Stock</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pieza in ensamble.piezas_hijas.all %}
-                        <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
-                            onmouseover="this.style.background='var(--surface2)'"
-                            onmouseout="this.style.background='transparent'">
-                            <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
-                                {{ pieza.numero_posicion|default:"—" }}
-                            </td>
-                            <td style="padding:0.6rem 1rem;">
-                                <div style="font-weight:500; color:var(--text);">{{ pieza.nombre }}</div>
-                                {% if pieza.nombre_original %}
-                                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
-                                {% endif %}
-                            </td>
-                            <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
-                                {{ pieza.numero_parte|default:"—" }}
-                            </td>
-                            <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted);">
-                                {{ pieza.especificacion|default:"—" }}
-                            </td>
-                            <td style="padding:0.6rem 1rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">
-                                {{ pieza.cantidad_en_maquina }}
-                            </td>
-                            <td style="padding:0.6rem 1rem; text-align:center;">
-                                {% if pieza.stock_bajo %}
-                                    <span class="badge badge-danger">{{ pieza.stock_repuestos }}</span>
-                                {% else %}
-                                    <span class="badge badge-success">{{ pieza.stock_repuestos }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div style="padding:1rem 1.25rem; font-size:0.78rem; color:var(--text-muted);">
-                    Sin piezas registradas en este ensamble.
-                </div>
-                {% endif %}
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ ensamble.piezas_hijas.count }} pieza{{ ensamble.piezas_hijas.count|pluralize:'s' }}</span>
+              {% if es_admin_o_tecnico %}
+                <a href="{% url 'editar_pieza' ensamble.pk %}" onclick="event.stopPropagation();" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Editar</a>
+                <a href="{% url 'crear_transferencia' ensamble.pk %}" onclick="event.stopPropagation();" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none;">Transferir</a>
+              {% endif %}
+              {% if es_admin %}
+                <a href="{% url 'eliminar_pieza' ensamble.pk %}" onclick="event.stopPropagation();" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--danger); text-decoration:none;">Eliminar</a>
+              {% endif %}
             </div>
+          </div>
+
+          <!-- Piezas hijas -->
+          <div id="ensamble-{{ ensamble.pk }}" style="display:none;">
+            {% if ensamble.piezas_hijas.all %}
+              <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pos.</th>
+                    <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pieza</th>
+                    <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">N parte</th>
+                    <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Especificacion</th>
+                    <th style="text-align:center; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Cant.</th>
+                    <th style="text-align:center; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Stock</th>
+                    <th style="text-align:right; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pieza in ensamble.piezas_hijas.all %}
+                    <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+                      <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_posicion|default:'—' }}</td>
+                      <td style="padding:0.6rem 1rem;">
+                        <div style="font-weight:500; color:var(--text);">{{ pieza.nombre }}</div>
+                        {% if pieza.nombre_original %}
+                          <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
+                        {% endif %}
+                      </td>
+                      <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_parte|default:'—' }}</td>
+                      <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted);">{{ pieza.especificacion|default:'—' }}</td>
+                      <td style="padding:0.6rem 1rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">{{ pieza.cantidad_en_maquina }}</td>
+                      <td style="padding:0.6rem 1rem; text-align:center;">
+                        {% if pieza.stock_bajo %}
+                          <span class="badge badge-danger">{{ pieza.stock_repuestos }}</span>
+                        {% else %}
+                          <span class="badge badge-success">{{ pieza.stock_repuestos }}</span>
+                        {% endif %}
+                      </td>
+                      <td style="padding:0.6rem 1rem; text-align:right; white-space:nowrap;">
+                        {% if es_admin_o_tecnico %}
+                          <a href="{% url 'editar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none; margin-right:0.75rem;">Editar</a>
+                          <a href="{% url 'crear_transferencia' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none; margin-right:0.75rem;">Transferir</a>
+                        {% endif %}
+                        {% if es_admin %}
+                          <a href="{% url 'eliminar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--danger); text-decoration:none;">Eliminar</a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div style="padding:1rem 1.25rem; font-size:0.78rem; color:var(--text-muted);">Sin piezas individuales en este ensamble.</div>
+            {% endif %}
+          </div>
         </div>
-        {% endfor %}
-
-    {% else %}
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
-        <span style="font-size:2rem; opacity:0.2;">◈</span>
-        <div style="font-size:0.82rem;">Sin piezas registradas para esta máquina.</div>
-    </div>
+      {% endfor %}
     {% endif %}
-</div>
 
+    <!-- PIEZAS SIN ENSAMBLE (huerfanas) -->
+    {% if piezas_sin_ensamble %}
+      <div style="margin-bottom:1rem; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+        <div style="background:var(--surface2); padding:0.65rem 1rem; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleEnsamble('sin-ensamble')">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">▶</span>
+            <span style="font-weight:500; font-size:0.85rem; color:var(--text-muted);">Sin ensamble asignado</span>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ piezas_sin_ensamble.count }} pieza{{ piezas_sin_ensamble.count|pluralize:'s' }}</span>
+        </div>
+        <div id="ensamble-sin-ensamble" style="display:none;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);">
+                <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pos.</th>
+                <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pieza</th>
+                <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">N parte</th>
+                <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Especificacion</th>
+                <th style="text-align:center; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Cant.</th>
+                <th style="text-align:center; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Stock</th>
+                <th style="text-align:right; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for pieza in piezas_sin_ensamble %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+                  <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_posicion|default:'—' }}</td>
+                  <td style="padding:0.6rem 1rem;">
+                    <div style="font-weight:500; color:var(--text);">{{ pieza.nombre }}</div>
+                    {% if pieza.nombre_original %}
+                      <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
+                    {% endif %}
+                  </td>
+                  <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_parte|default:'—' }}</td>
+                  <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted);">{{ pieza.especificacion|default:'—' }}</td>
+                  <td style="padding:0.6rem 1rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">{{ pieza.cantidad_en_maquina }}</td>
+                  <td style="padding:0.6rem 1rem; text-align:center;">
+                    {% if pieza.stock_bajo %}
+                      <span class="badge badge-danger">{{ pieza.stock_repuestos }}</span>
+                    {% else %}
+                      <span class="badge badge-success">{{ pieza.stock_repuestos }}</span>
+                    {% endif %}
+                  </td>
+                  <td style="padding:0.6rem 1rem; text-align:right; white-space:nowrap;">
+                    {% if es_admin_o_tecnico %}
+                      <a href="{% url 'editar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none; margin-right:0.75rem;">Editar</a>
+                      <a href="{% url 'crear_transferencia' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none; margin-right:0.75rem;">Transferir</a>
+                    {% endif %}
+                    {% if es_admin %}
+                      <a href="{% url 'eliminar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--danger); text-decoration:none;">Eliminar</a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if not ensambles and not piezas_sin_ensamble %}
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:2rem; opacity:0.2;">◈</span>
+        <div style="font-size:0.82rem;">Sin piezas registradas para esta maquina.</div>
+        {% if es_admin_o_tecnico %}
+          <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+            <a href="{% url 'crear_ensamble' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); background:transparent; border:1px solid var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px;">+ Crear ensamble</a>
+            <a href="{% url 'crear_pieza' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px;">+ Agregar pieza suelta</a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+  <!-- HISTORIAL DE TRANSFERENCIAS -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+      <div class="card-title">Historial de transferencias</div>
+      <span class="badge badge-accent">Ultimas 20</span>
+    </div>
+
+    {% if transferencias %}
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pieza</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Destino</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Motivo</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Autorizado por</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transferencias %}
+            <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">{{ t.fecha|date:'d/m/Y H:i' }}</td>
+              <td style="padding:0.6rem 1rem;">
+                <div style="font-weight:500; color:var(--text);">{{ t.pieza.nombre }}</div>
+                {% if t.pieza.numero_parte %}
+                  <div style="font-size:0.68rem; color:var(--text-muted);">{{ t.pieza.numero_parte }}</div>
+                {% endif %}
+              </td>
+              <td style="padding:0.6rem 1rem;">
+                <a href="{% url 'detalle_maquina' t.maquina_destino.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent); text-decoration:none;">{{ t.maquina_destino.codigo }}</a>
+                <div style="font-size:0.68rem; color:var(--text-muted);">{{ t.maquina_destino.nombre }}</div>
+              </td>
+              <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted); max-width:200px;">{{ t.motivo|truncatechars:60 }}</td>
+              <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text);">
+                {% if t.autorizado_por %}
+                  {{ t.autorizado_por.get_full_name|default:t.autorizado_por.username }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:1.5rem; opacity:0.2;">⇄</span>
+        <div style="font-size:0.82rem;">Sin transferencias registradas para esta maquina.</div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-function toggleEnsamble(pk) {
-    const el = document.getElementById('ensamble-' + pk);
-    const isHidden = el.style.display === 'none';
-    el.style.display = isHidden ? 'block' : 'none';
-}
-</script>
+  <script>
+    function toggleEnsamble(pk) {
+      const el = document.getElementById('ensamble-' + pk)
+      const isHidden = el.style.display === 'none'
+      el.style.display = isHidden ? 'block' : 'none'
+    }
+  </script>
 {% endblock %}

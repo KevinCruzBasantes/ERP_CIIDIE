@@ -139,25 +139,3 @@
 
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    document.querySelectorAll('[data-severidad]').forEach(el => {
-        const s = el.dataset.severidad;
-        if (s === 'CRITICA') el.style.borderLeftColor = 'var(--danger)';
-        else if (s === 'ADVERTENCIA') el.style.borderLeftColor = 'var(--warning)';
-        else el.style.borderLeftColor = 'var(--info)';
-    });
-    document.querySelectorAll('[data-badge-sev]').forEach(el => {
-        const s = el.dataset.badgeSev;
-        if (s === 'CRITICA') { el.style.background = 'rgba(239,68,68,0.15)'; el.style.color = 'var(--danger)'; }
-        else if (s === 'ADVERTENCIA') { el.style.background = 'rgba(245,158,11,0.15)'; el.style.color = 'var(--warning)'; }
-        else { el.style.background = 'rgba(59,130,246,0.15)'; el.style.color = 'var(--info)'; }
-    });
-    const badge = document.getElementById('badge-alertas');
-    if (badge) {
-        const n = parseInt('{{ alertas_activas }}');
-        badge.style.background = n > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(232,160,32,0.15)';
-        badge.style.color = n > 0 ? 'var(--danger)' : 'var(--accent)';
-    }
-</script>
-{% endblock %}

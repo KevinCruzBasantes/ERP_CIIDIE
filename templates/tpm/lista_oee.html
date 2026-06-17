@@ -70,15 +70,4 @@
   </div>
 {% endblock %}
 
-{% block extra_js %}
-  <script>
-    document.querySelectorAll('[data-oee]').forEach((el) => {
-      const v = parseFloat(el.dataset.oee)
-      el.style.color = v >= 85 ? 'var(--success)' : v >= 60 ? 'var(--warning)' : 'var(--danger)'
-    })
-    document.querySelectorAll('[data-oee-label]').forEach((el) => {
-      const v = parseFloat(el.dataset.oeeLabel)
-      el.textContent = v >= 85 ? 'World class' : v >= 60 ? 'Aceptable' : 'Mejorar'
-    })
-  </script>
-{% endblock %}
+

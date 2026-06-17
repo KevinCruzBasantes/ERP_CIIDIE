@@ -1,0 +1,92 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Eliminar pieza — {{ pieza.nombre }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Máquinas / {{ maquina.codigo }} / Eliminar pieza{% endblock %}
+{% block nav_maquinas %}active{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
+        <span style="margin:0 0.4rem;">›</span>
+        <a href="{% url 'detalle_maquina' maquina.pk %}" style="color:var(--text-muted); text-decoration:none;">{{ maquina.codigo }}</a>
+        <span style="margin:0 0.4rem;">›</span> Eliminar pieza
+    </div>
+    <h1>Eliminar pieza</h1>
+</div>
+
+<div class="card" style="max-width:560px;">
+    <div class="card-header">
+        <div class="card-title">Confirmar eliminación</div>
+        <span class="badge badge-danger">Soft delete</span>
+    </div>
+
+    <div style="padding:1rem 0; border-bottom:1px solid var(--border); margin-bottom:1.25rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Pieza</div>
+                <div style="font-size:0.85rem; color:var(--text); font-weight:500;">{{ pieza.nombre }}</div>
+                {% if pieza.nombre_original %}<div style="font-size:0.72rem; color:var(--text-muted);">{{ pieza.nombre_original }}</div>{% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">N° parte</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--accent);">{{ pieza.numero_parte|default:"—" }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ maquina.nombre }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Tipo</div>
+                {% if pieza.es_ensamble %}
+                    <span class="badge badge-info">Ensamble</span>
+                {% else %}
+                    <span class="badge badge-accent">Pieza individual</span>
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Stock repuestos</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--text);">{{ pieza.stock_repuestos }} unidades</div>
+            </div>
+            {% if pieza.es_ensamble %}
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Piezas hijas</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--warning);">{{ pieza.piezas_hijas.count }} pieza{{ pieza.piezas_hijas.count|pluralize:"s" }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if pieza.es_ensamble and pieza.piezas_hijas.count > 0 %}
+    <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:0.85rem; margin-bottom:1.25rem;">
+        <div style="font-size:0.8rem; color:var(--warning); line-height:1.6;">
+            <strong>Atención:</strong> Este ensamble tiene {{ pieza.piezas_hijas.count }} pieza{{ pieza.piezas_hijas.count|pluralize:"s" }} hija{{ pieza.piezas_hijas.count|pluralize:"s" }} asociada{{ pieza.piezas_hijas.count|pluralize:"s" }}. Al eliminar el ensamble, las piezas hijas quedarán sin ensamble padre pero no serán eliminadas.
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:6px; padding:0.85rem; margin-bottom:1.25rem;">
+        <div style="font-size:0.8rem; color:var(--danger); line-height:1.6;">
+            Esta acción marcará la pieza como inactiva. No se eliminan datos del sistema — el registro permanece en la base de datos pero dejará de aparecer en los listados.
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'detalle_maquina' maquina.pk %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;"
+           onmouseover="this.style.borderColor='var(--text-muted)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            Cancelar
+        </a>
+        <form method="post" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit"
+                    style="padding:0.7rem 1.5rem; background:var(--danger); color:white; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;"
+                    onmouseover="this.style.opacity='0.85'"
+                    onmouseout="this.style.opacity='1'">
+                Confirmar eliminación
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -10,14 +10,7 @@
   active
 {% endblock %}
 
-{% block content %}
-  {% if messages %}
-    {% for message in messages %}
-      <div data-msg-tag="{{ message.tags }}" style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
-                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-  <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+{% block content %}  <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
     <div>
       <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
         <a href="{% url 'lista_materiales' %}" style="color:var(--text-muted); text-decoration:none;">Inventario</a>
@@ -270,12 +263,5 @@
       const bajo = valor.dataset.bajo === '1'
       valor.style.color = bajo ? 'var(--danger)' : 'var(--success)'
     }
-    document.querySelectorAll('[data-msg-tag]').forEach((el) => {
-      if (!el.dataset.msgTag.includes('success')) {
-        el.style.background = 'rgba(239,68,68,0.1)'
-        el.style.border = '1px solid rgba(239,68,68,0.25)'
-        el.style.color = 'var(--danger)'
-      }
-    })
   </script>
 {% endblock %}

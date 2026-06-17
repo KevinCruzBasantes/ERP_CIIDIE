@@ -1,0 +1,151 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Transferir pieza — {{ pieza.nombre }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Máquinas / {{ maquina_origen.codigo }} / Transferir pieza{% endblock %}
+{% block nav_maquinas %}active{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
+        <span style="margin:0 0.4rem;">›</span>
+        <a href="{% url 'detalle_maquina' maquina_origen.pk %}" style="color:var(--text-muted); text-decoration:none;">{{ maquina_origen.codigo }}</a>
+        <span style="margin:0 0.4rem;">›</span> Transferir pieza
+    </div>
+    <h1>Transferir pieza</h1>
+</div>
+
+<!-- Resumen de la pieza -->
+<div class="card" style="max-width:640px; margin-bottom:1.25rem;">
+    <div class="card-header">
+        <div class="card-title">Pieza a transferir</div>
+        <span class="badge badge-accent">Desde: {{ maquina_origen.codigo }}</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.85rem;">
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Pieza</div>
+            <div style="font-size:0.85rem; color:var(--text); font-weight:500;">{{ pieza.nombre }}</div>
+            {% if pieza.nombre_original %}<div style="font-size:0.72rem; color:var(--text-muted);">{{ pieza.nombre_original }}</div>{% endif %}
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">N° parte</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--accent);">{{ pieza.numero_parte|default:"—" }}</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina origen</div>
+            <div style="font-size:0.85rem; color:var(--text);">{{ maquina_origen.nombre }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de transferencia -->
+<form method="post" style="max-width:640px;">
+    {% csrf_token %}
+
+    <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header">
+            <div class="card-title">Destino y motivo</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Máquina destino <span style="color:var(--danger);">*</span></div>
+                {{ form.maquina_destino }}
+                {% if form.maquina_destino.errors %}<div style="color:var(--danger);font-size:0.75rem;margin-top:0.3rem;">{{ form.maquina_destino.errors }}</div>{% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Motivo de la transferencia <span style="color:var(--danger);">*</span></div>
+                {{ form.motivo }}
+                {% if form.motivo.errors %}<div style="color:var(--danger);font-size:0.75rem;margin-top:0.3rem;">{{ form.motivo.errors }}</div>{% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">Observaciones</div>
+                {{ form.observaciones }}
+            </div>
+        </div>
+    </div>
+
+    {% if form.ensamble_destino %}
+    <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header">
+            <div class="card-title">Ensamble en destino (opcional)</div>
+        </div>
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.4rem;">
+                Asignar a un ensamble ya existente en la máquina destino
+            </div>
+            <select name="ensamble_destino" id="id_ensamble_destino" style="{{ select_style }}width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;">
+                <option value="">— Sin ensamble (pieza suelta) —</option>
+                {% for e in form.fields.ensamble_destino.queryset %}
+                <option value="{{ e.pk }}" data-maquina="{{ e.maquina_id }}"
+                    {% if form.ensamble_destino.value|stringformat:"s" == e.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ e.nombre }} ({{ e.maquina.codigo }})
+                </option>
+                {% endfor %}
+            </select>
+            {% if form.ensamble_destino.errors %}<div style="color:var(--danger);font-size:0.75rem;margin-top:0.3rem;">{{ form.ensamble_destino.errors }}</div>{% endif %}
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.4rem;">
+                Solo se muestran los ensambles que pertenecen a la máquina destino seleccionada arriba.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="background:rgba(232,160,32,0.08); border:1px solid rgba(232,160,32,0.2); border-radius:6px; padding:0.85rem; margin-bottom:1.25rem;">
+        <div style="font-size:0.8rem; color:var(--accent); line-height:1.6;">
+            Esta acción reasignará la pieza a la máquina destino y quedará registrada en el historial de transferencias. El autorizador será tu usuario ({{ request.user.get_full_name|default:request.user.username }}).
+            {% if pieza.es_ensamble %}
+                <br><strong>Es un ensamble:</strong> sus {{ pieza.piezas_hijas.count }} pieza{{ pieza.piezas_hijas.count|pluralize:"s" }} hija{{ pieza.piezas_hijas.count|pluralize:"s" }} viajará{{ pieza.piezas_hijas.count|pluralize:"n" }} junto con él a la máquina destino.
+            {% elif pieza.ensamble %}
+                <br><strong>Pertenece al ensamble "{{ pieza.ensamble.nombre }}":</strong> un ensamble no puede tener piezas de otra máquina, así que quedará desvinculada de él. Si en la máquina destino existe un ensamble equivalente, puedes elegirlo abajo para no dejarla suelta.
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'detalle_maquina' maquina_origen.pk %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;"
+           onmouseover="this.style.borderColor='var(--text-muted)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            Cancelar
+        </a>
+        <button type="submit"
+                style="padding:0.7rem 1.5rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;"
+                onmouseover="this.style.background='var(--accent2)'"
+                onmouseout="this.style.background='var(--accent)'">
+            Confirmar transferencia
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filtrarEnsambleDestino() {
+    const maquinaSel = document.getElementById('id_maquina_destino');
+    const ensambleSel = document.getElementById('id_ensamble_destino');
+    if (!maquinaSel || !ensambleSel) return;
+
+    const maquinaId = maquinaSel.value;
+    let huboSeleccionVisible = false;
+
+    Array.from(ensambleSel.options).forEach(function (opt) {
+        if (!opt.value) { opt.hidden = false; return; }
+        const visible = opt.dataset.maquina === maquinaId;
+        opt.hidden = !visible;
+        if (visible && opt.selected) huboSeleccionVisible = true;
+    });
+
+    if (!huboSeleccionVisible && ensambleSel.value) {
+        ensambleSel.value = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const maquinaSel = document.getElementById('id_maquina_destino');
+    if (maquinaSel) {
+        maquinaSel.addEventListener('change', filtrarEnsambleDestino);
+        filtrarEnsambleDestino();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Planes de mantenimiento — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Planes{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_mantenimientos' %}" style="color:var(--text-muted); text-decoration:none;">Mantenimiento</a>
+            <span style="margin:0 0.4rem;">›</span> Planes
+        </div>
+        <h1>Planes de mantenimiento</h1>
+        <p>Plantillas periódicas definidas por fabricante (Wartungsplaner)</p>
+    </div>
+    {% if es_admin_o_tecnico %}
+    <a href="{% url 'crear_plan' %}"
+       style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:background 0.15s;"
+       onmouseover="this.style.background='var(--accent2)'"
+       onmouseout="this.style.background='var(--accent)'">
+        + Nuevo plan
+    </a>
+    {% endif %}
+</div>
+
+<!-- STATS -->
+<div class="stats-grid">
+    <div class="stat-card accent">
+        <div class="stat-label">Total planes</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">activos en el sistema</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-label">Autónomos (P1)</div>
+        <div class="stat-value">{{ autonomos }}</div>
+        <div class="stat-sub">a cargo del operador</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">Preventivos (P2)</div>
+        <div class="stat-value">{{ preventivos }}</div>
+        <div class="stat-sub">planificados</div>
+    </div>
+    <div class="stat-card danger">
+        <div class="stat-label">Mejora / Seguridad</div>
+        <div class="stat-value">{{ mejora|add:seguridad }}</div>
+        <div class="stat-sub">P3 + P7</div>
+    </div>
+</div>
+
+<!-- TABLA -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Catálogo de planes</div>
+        <span class="badge badge-accent">{{ total }} plan{{ total|pluralize:"es" }}</span>
+    </div>
+
+    {% if planes %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tarea</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pilar TPM</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Intervalo</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Ejecuciones</th>
+                    <th style="padding:0.6rem 0.75rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in planes %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'">
+
+                    <td style="padding:0.75rem;">
+                        <a href="{% url 'detalle_maquina' p.maquina.pk %}"
+                           style="font-weight:500; color:var(--accent); text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">
+                            {{ p.maquina.codigo }}
+                        </a>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.1rem;">{{ p.maquina.nombre }}</div>
+                    </td>
+
+                    <td style="padding:0.75rem; max-width:280px;">
+                        <div style="font-size:0.83rem; color:var(--text); font-weight:500;">{{ p.nombre_tarea }}</div>
+                        {% if p.descripcion_detallada %}
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ p.descripcion_detallada|truncatechars:60 }}
+                        </div>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem;">
+                        {% if p.tipo_tpm == 'P1_AUTONOMO' %}
+                            <span class="badge badge-info">P1 — Autónomo</span>
+                        {% elif p.tipo_tpm == 'P2_PREVENTIVO' %}
+                            <span class="badge badge-warning">P2 — Preventivo</span>
+                        {% elif p.tipo_tpm == 'P3_MEJORA' %}
+                            <span class="badge badge-accent">P3 — Mejora</span>
+                        {% else %}
+                            <span class="badge badge-danger">P7 — Seguridad</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">
+                        c/ {{ p.intervalo_valor }} {{ p.get_intervalo_unidad_display }}
+                    </td>
+
+                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">
+                        {{ p.ejecuciones.count }}
+                    </td>
+
+                    <td style="padding:0.75rem; text-align:right;">
+                        <a href="{% url 'detalle_plan' p.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--accent)'"
+                           onmouseout="this.style.borderColor='var(--border)'">
+                            Ver →
+                        </a>
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
+        <span style="font-size:2.5rem; opacity:0.2;">◉</span>
+        <div style="font-size:0.85rem;">No hay planes de mantenimiento registrados aún.</div>
+        {% if es_admin_o_tecnico %}
+        <a href="{% url 'crear_plan' %}"
+           style="margin-top:0.5rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none;">
+            + Crear el primer plan
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% if es_admin_o_tecnico and total_eliminados %}
+<div class="card" style="margin-top:1.5rem; border-color:rgba(239,68,68,0.2);">
+    <div class="card-header" style="border-bottom-color:rgba(239,68,68,0.2);">
+        <div class="card-title" style="color:var(--text-muted);">Planes eliminados</div>
+        <span class="badge" style="background:rgba(239,68,68,0.1); color:var(--danger); border:1px solid rgba(239,68,68,0.2);">
+            {{ total_eliminados }} inactivo{{ total_eliminados|pluralize:"s" }}
+        </span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+            <thead>
+                <tr style="border-bottom:1px solid rgba(239,68,68,0.15);">
+                    <th style="text-align:left; padding:0.55rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
+                    <th style="text-align:left; padding:0.55rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tarea</th>
+                    <th style="text-align:left; padding:0.55rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pilar TPM</th>
+                    <th style="text-align:left; padding:0.55rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Intervalo</th>
+                    <th style="padding:0.55rem 0.75rem;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in eliminados %}
+                <tr style="border-bottom:1px solid rgba(239,68,68,0.08); opacity:0.65;">
+                    <td style="padding:0.65rem 0.75rem;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">{{ p.maquina.codigo }}</span>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">{{ p.maquina.nombre }}</div>
+                    </td>
+                    <td style="padding:0.65rem 0.75rem;">
+                        <span style="font-size:0.82rem; color:var(--text-muted); text-decoration:line-through;">{{ p.nombre_tarea }}</span>
+                    </td>
+                    <td style="padding:0.65rem 0.75rem;">
+                        {% if p.tipo_tpm == 'P1_AUTONOMO' %}<span class="badge badge-info" style="opacity:0.5;">P1</span>
+                        {% elif p.tipo_tpm == 'P2_PREVENTIVO' %}<span class="badge badge-warning" style="opacity:0.5;">P2</span>
+                        {% elif p.tipo_tpm == 'P3_MEJORA' %}<span class="badge badge-accent" style="opacity:0.5;">P3</span>
+                        {% else %}<span class="badge badge-danger" style="opacity:0.5;">P7</span>{% endif %}
+                    </td>
+                    <td style="padding:0.65rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">
+                        c/ {{ p.intervalo_valor }} {{ p.get_intervalo_unidad_display }}
+                    </td>
+                    <td style="padding:0.65rem 0.75rem; text-align:right;">
+                        <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
+                            <form method="post" action="{% url 'restaurar_plan' p.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--success); background:rgba(34,197,94,0.08); padding:0.28rem 0.75rem; border:1px solid rgba(34,197,94,0.25); border-radius:4px; cursor:pointer; transition:background 0.15s;"
+                                        onmouseover="this.style.background='rgba(34,197,94,0.18)'"
+                                        onmouseout="this.style.background='rgba(34,197,94,0.08)'">
+                                    ↩ Restaurar
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'eliminar_plan_definitivo' p.pk %}" style="display:inline;"
+                                  onsubmit="return confirm('¿Eliminar definitivamente el plan «{{ p.nombre_tarea }}»? Esta acción no se puede deshacer.');">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--danger); background:rgba(239,68,68,0.08); padding:0.28rem 0.75rem; border:1px solid rgba(239,68,68,0.25); border-radius:4px; cursor:pointer; transition:background 0.15s;"
+                                        onmouseover="this.style.background='rgba(239,68,68,0.18)'"
+                                        onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+                                    ✕ Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,3 +1,5 @@
+import unicodedata
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -9,11 +11,17 @@ from .forms import (ReservaForm, OrdenTrabajoForm, CerrarOrdenForm,
 from inventario.models import Material, ConsumoMaterial
 
 
+def _normalizar_rol(nombre_rol):
+    """Minúsculas y sin tildes, para que 'TECNICO' y 'Técnico' coincidan igual."""
+    sin_tildes = unicodedata.normalize('NFKD', nombre_rol).encode('ascii', 'ignore').decode('ascii')
+    return sin_tildes.lower()
+
+
 def es_admin(user):
     if user.is_superuser:
         return True
     if user.rol:
-        rol = user.rol.nombre.lower()
+        rol = _normalizar_rol(user.rol.nombre)
         return 'administrador' in rol or 'phd' in rol
     return False
 
@@ -22,8 +30,8 @@ def es_admin_o_tecnico(user):
     if user.is_superuser:
         return True
     if user.rol:
-        rol = user.rol.nombre.lower()
-        return any(r in rol for r in ['administrador', 'phd', 'técnico', 'ingeniero'])
+        rol = _normalizar_rol(user.rol.nombre)
+        return any(r in rol for r in ['administrador', 'phd', 'tecnico', 'ingeniero'])
     return False
 
 
@@ -99,6 +107,41 @@ def cambiar_estado_reserva(request, pk):
         if nuevo_estado == 'APROBADA' and not hasattr(reserva, 'orden_trabajo'):
             return redirect('crear_orden', reserva_pk=reserva.pk)
     return redirect('detalle_reserva', pk=pk)
+
+
+@login_required(login_url='login')
+def editar_reserva(request, pk):
+    reserva = get_object_or_404(Reserva, pk=pk)
+
+    puede = reserva.usuario == request.user or es_admin_o_tecnico(request.user)
+    if not puede:
+        messages.error(request, 'No tienes permisos para editar esta reserva.')
+        return redirect('detalle_reserva', pk=pk)
+
+    if reserva.estado != 'PENDIENTE':
+        messages.error(request, 'Solo se pueden editar reservas en estado Pendiente.')
+        return redirect('detalle_reserva', pk=pk)
+
+    if request.method == 'POST':
+        form = ReservaForm(request.POST, instance=reserva)
+        form.fields['fecha'].widget.attrs.pop('min', None)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, f'Reserva #{reserva.pk} actualizada correctamente.')
+                return redirect('detalle_reserva', pk=reserva.pk)
+            except Exception as e:
+                messages.error(request, f'No se pudo guardar: {e}')
+    else:
+        form = ReservaForm(instance=reserva)
+        form.fields['fecha'].widget.attrs.pop('min', None)
+
+    return render(request, 'reservas/form_reserva.html', {
+        'form':    form,
+        'reserva': reserva,
+        'titulo':  f'Editar reserva #{reserva.pk}',
+        'accion':  'Guardar cambios',
+    })
 
 
 @login_required(login_url='login')

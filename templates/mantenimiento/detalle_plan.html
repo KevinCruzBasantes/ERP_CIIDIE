@@ -1,0 +1,206 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Plan: {{ plan.nombre_tarea }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Planes / {{ plan.pk }}{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+<!-- ENCABEZADO -->
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_mantenimientos' %}" style="color:var(--text-muted); text-decoration:none;">Mantenimiento</a>
+            <span style="margin:0 0.4rem;">›</span>
+            <a href="{% url 'lista_planes' %}" style="color:var(--text-muted); text-decoration:none;">Planes</a>
+            <span style="margin:0 0.4rem;">›</span> #{{ plan.pk }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">{{ plan.nombre_tarea }}</h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if plan.tipo_tpm == 'P1_AUTONOMO' %}
+                <span class="badge badge-info">P1 — Autónomo</span>
+            {% elif plan.tipo_tpm == 'P2_PREVENTIVO' %}
+                <span class="badge badge-warning">P2 — Preventivo</span>
+            {% elif plan.tipo_tpm == 'P3_MEJORA' %}
+                <span class="badge badge-accent">P3 — Mejora enfocada</span>
+            {% else %}
+                <span class="badge badge-danger">P7 — Seguridad</span>
+            {% endif %}
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                c/ {{ plan.intervalo_valor }} {{ plan.get_intervalo_unidad_display }}
+            </span>
+        </div>
+
+        {% if es_admin_o_tecnico %}
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem;">
+            <a href="{% url 'editar_plan' plan.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
+               onmouseover="this.style.background='var(--accent2)'"
+               onmouseout="this.style.background='var(--accent)'">✎ Editar</a>
+            <a href="{% url 'eliminar_plan' plan.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--danger)'"
+               onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">✕ Eliminar</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
+        <a href="{% url 'detalle_maquina' plan.maquina.pk %}"
+           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'">⚙ Ver máquina</a>
+        {% if es_admin_o_tecnico %}
+        <a href="{% url 'crear_orden_mantenimiento' %}?plan={{ plan.pk }}&maquina={{ plan.maquina.pk }}"
+           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
+           onmouseover="this.style.background='var(--accent2)'"
+           onmouseout="this.style.background='var(--accent)'">▶ Generar orden de mantenimiento</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid-2">
+
+    <!-- INFO DEL PLAN -->
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Datos del plan</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                    <div style="font-size:0.85rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ plan.maquina.codigo }}</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">{{ plan.maquina.nombre }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Pilar TPM</div>
+                    <div style="font-size:0.85rem; color:var(--text);">{{ plan.get_tipo_tpm_display }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Intervalo</div>
+                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                        cada {{ plan.intervalo_valor }} {{ plan.get_intervalo_unidad_display }}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Total ejecuciones</div>
+                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ total_ejecuciones }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Creado</div>
+                    <div style="font-size:0.82rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">{{ plan.fecha_creacion|date:'d/m/Y' }}</div>
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Estado</div>
+                    {% if plan.activo %}
+                        <span class="badge badge-success">Activo</span>
+                    {% else %}
+                        <span class="badge badge-danger">Inactivo</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if plan.descripcion_detallada %}
+            <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">Procedimiento</div>
+                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.7; white-space:pre-line;">{{ plan.descripcion_detallada }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ÓRDENES DE MANTENIMIENTO GENERADAS -->
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Órdenes generadas desde este plan</div>
+            <span class="badge badge-accent">{{ ordenes_generadas|length }}</span>
+        </div>
+        {% if ordenes_generadas %}
+        <div style="display:flex; flex-direction:column; gap:0.1rem;">
+            {% for om in ordenes_generadas %}
+            <a href="{% url 'detalle_orden_mantenimiento' om.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.7rem 0.5rem; border-bottom:1px solid var(--border); text-decoration:none; transition:background 0.1s;"
+               onmouseover="this.style.background='var(--surface2)'"
+               onmouseout="this.style.background='transparent'">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ om.numero }}</div>
+                    <div style="font-size:0.82rem; color:var(--text); margin-top:0.1rem;">{{ om.fecha_programada|date:'d/m/Y' }}</div>
+                </div>
+                <div style="text-align:right;">
+                    {% if om.estado == 'PROGRAMADA' %}<span class="badge badge-warning">Programada</span>
+                    {% elif om.estado == 'EN_PROCESO' %}<span class="badge badge-info">En proceso</span>
+                    {% elif om.estado == 'FINALIZADA' %}<span class="badge badge-success">Finalizada</span>
+                    {% else %}<span class="badge" style="background:rgba(107,113,148,0.15); color:var(--text-muted);">Cancelada</span>{% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:1.5rem; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+            Aún no se ha generado ninguna orden desde este plan.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- HISTORIAL DE EJECUCIONES (legado) -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Últimas ejecuciones</div>
+            <span class="badge badge-accent">{{ total_ejecuciones }}</span>
+        </div>
+
+        {% if ejecuciones %}
+        <div style="display:flex; flex-direction:column; gap:0.1rem;">
+            {% for e in ejecuciones %}
+            <a href="{% url 'detalle_mantenimiento' e.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.7rem 0.5rem; border-bottom:1px solid var(--border); text-decoration:none; transition:background 0.1s;"
+               onmouseover="this.style.background='var(--surface2)'"
+               onmouseout="this.style.background='transparent'">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">#{{ e.pk }}</div>
+                    <div style="font-size:0.82rem; color:var(--text); margin-top:0.1rem;">{{ e.fecha_programada|date:'d/m/Y' }}</div>
+                    {% if e.responsable %}
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.05rem;">{{ e.responsable.get_full_name }}</div>
+                    {% endif %}
+                </div>
+                <div style="text-align:right;">
+                    {% if e.estado == 'PROGRAMADO' %}
+                        {% if e.esta_vencido %}
+                            <span class="badge badge-danger">Vencido</span>
+                        {% else %}
+                            <span class="badge badge-warning">Programado</span>
+                        {% endif %}
+                    {% elif e.estado == 'EN_PROCESO' %}
+                        <span class="badge badge-info">En proceso</span>
+                    {% elif e.estado == 'FINALIZADO' %}
+                        <span class="badge badge-success">Finalizado</span>
+                    {% else %}
+                        <span class="badge badge-accent">Cancelado</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% if total_ejecuciones > 10 %}
+        <div style="padding:0.75rem 0.5rem; font-size:0.72rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">
+            Mostrando las 10 más recientes de {{ total_ejecuciones }} en total.
+        </div>
+        {% endif %}
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+            Sin ejecuciones registradas para este plan.
+        </div>
+        {% endif %}
+    </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+

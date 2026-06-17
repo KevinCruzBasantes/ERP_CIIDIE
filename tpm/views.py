@@ -1,19 +1,27 @@
+import unicodedata
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from .models import (
     CertificacionUsuario, InspeccionDiaria,
-    RegistroOEE, Incidente, Alerta
+    RegistroOEE, Incidente, Alerta, HallazgoInspeccion
 )
-from .forms import CertificacionForm, IncidenteForm
+from .forms import CertificacionForm, IncidenteForm, HallazgoForm
+
+
+def _normalizar_rol(nombre_rol):
+    """Minúsculas y sin tildes, para que 'TECNICO' y 'Técnico' coincidan igual."""
+    sin_tildes = unicodedata.normalize('NFKD', nombre_rol).encode('ascii', 'ignore').decode('ascii')
+    return sin_tildes.lower()
 
 
 def es_admin(user):
     if user.is_superuser:
         return True
     if user.rol:
-        rol = user.rol.nombre.lower()
+        rol = _normalizar_rol(user.rol.nombre)
         return 'administrador' in rol or 'phd' in rol
     return False
 
@@ -22,8 +30,8 @@ def es_admin_o_tecnico(user):
     if user.is_superuser:
         return True
     if user.rol:
-        rol = user.rol.nombre.lower()
-        return any(r in rol for r in ['administrador', 'phd', 'técnico', 'ingeniero'])
+        rol = _normalizar_rol(user.rol.nombre)
+        return any(r in rol for r in ['administrador', 'phd', 'tecnico', 'ingeniero'])
     return False
 
 
@@ -76,10 +84,83 @@ def detalle_inspeccion(request, pk):
     inspeccion = get_object_or_404(
         InspeccionDiaria.objects.select_related('maquina', 'inspector'), pk=pk)
     context = {
-        'inspeccion': inspeccion,
-        'hallazgos':  inspeccion.hallazgos.all(),
+        'inspeccion':         inspeccion,
+        'hallazgos':          inspeccion.hallazgos.all().order_by('-fecha_creacion'),
+        'hallazgo_form':      HallazgoForm(),
+        'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
     }
     return render(request, 'tpm/detalle_inspeccion.html', context)
+
+
+# ── HALLAZGOS DE INSPECCIÓN ───────────────────────────────────────────────────
+
+@login_required(login_url='login')
+def agregar_hallazgo(request, inspeccion_pk):
+    inspeccion = get_object_or_404(InspeccionDiaria, pk=inspeccion_pk)
+    if request.method == 'POST':
+        form = HallazgoForm(request.POST)
+        if form.is_valid():
+            hallazgo            = form.save(commit=False)
+            hallazgo.inspeccion = inspeccion
+            hallazgo.save()
+            messages.success(request, 'Hallazgo registrado correctamente.')
+        else:
+            messages.error(request, f'Error al registrar hallazgo: {form.errors}')
+    return redirect('detalle_inspeccion', pk=inspeccion_pk)
+
+
+@login_required(login_url='login')
+def editar_hallazgo(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para editar hallazgos.')
+        return redirect('lista_inspecciones')
+
+    hallazgo = get_object_or_404(HallazgoInspeccion, pk=pk)
+
+    if request.method == 'POST':
+        form = HallazgoForm(request.POST, instance=hallazgo)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Hallazgo actualizado correctamente.')
+            return redirect('detalle_inspeccion', pk=hallazgo.inspeccion.pk)
+    else:
+        form = HallazgoForm(instance=hallazgo)
+
+    return render(request, 'tpm/form_hallazgo.html', {
+        'form':      form,
+        'hallazgo':  hallazgo,
+        'titulo':    f'Editar hallazgo — Inspección #{hallazgo.inspeccion.pk}',
+        'accion':    'Guardar cambios',
+    })
+
+
+@login_required(login_url='login')
+def resolver_hallazgo(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para resolver hallazgos.')
+        return redirect('lista_inspecciones')
+
+    hallazgo = get_object_or_404(HallazgoInspeccion, pk=pk)
+    if request.method == 'POST':
+        hallazgo.resuelto = not hallazgo.resuelto
+        hallazgo.save(update_fields=['resuelto'])
+        estado = 'resuelto' if hallazgo.resuelto else 'reabierto'
+        messages.success(request, f'Hallazgo marcado como {estado}.')
+    return redirect('detalle_inspeccion', pk=hallazgo.inspeccion.pk)
+
+
+@login_required(login_url='login')
+def eliminar_hallazgo(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para eliminar hallazgos.')
+        return redirect('lista_inspecciones')
+
+    hallazgo   = get_object_or_404(HallazgoInspeccion, pk=pk)
+    inspeccion_pk = hallazgo.inspeccion.pk
+    if request.method == 'POST':
+        hallazgo.delete()
+        messages.success(request, 'Hallazgo eliminado correctamente.')
+    return redirect('detalle_inspeccion', pk=inspeccion_pk)
 
 
 # ── CERTIFICACIONES ───────────────────────────────────────────────────────────
@@ -217,7 +298,54 @@ def detalle_incidente(request, pk):
         Incidente.objects.select_related('maquina', 'reportado_por'),
         pk=pk, activo=True
     )
-    return render(request, 'tpm/detalle_incidente.html', {'incidente': incidente})
+    return render(request, 'tpm/detalle_incidente.html', {
+        'incidente':          incidente,
+        'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+    })
+
+
+@login_required(login_url='login')
+def editar_incidente(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para editar incidentes.')
+        return redirect('detalle_incidente', pk=pk)
+
+    incidente = get_object_or_404(Incidente, pk=pk, activo=True)
+
+    if request.method == 'POST':
+        requeria_mto_antes = incidente.requiere_mantenimiento
+        form = IncidenteForm(request.POST, instance=incidente)
+        if form.is_valid():
+            incidente_actualizado = form.save()
+            # Si se activó "requiere_mantenimiento" en la edición, generar la alerta
+            # (el signal solo la crea en created=True)
+            if not requeria_mto_antes and incidente_actualizado.requiere_mantenimiento:
+                from tpm.models import Alerta
+                Alerta.objects.create(
+                    tipo='INCIDENTE',
+                    severidad='CRITICA',
+                    maquina=incidente_actualizado.maquina,
+                    referencia_id=incidente_actualizado.pk,
+                    referencia_tipo='Incidente',
+                    mensaje=(
+                        f"Incidente en {incidente_actualizado.maquina.nombre} requiere mantenimiento: "
+                        f"{incidente_actualizado.get_tipo_display()} — "
+                        f"{incidente_actualizado.descripcion[:100]}"
+                    ),
+                )
+            messages.success(request, f'Incidente #{incidente.pk} actualizado correctamente.')
+            return redirect('detalle_incidente', pk=incidente.pk)
+    else:
+        form = IncidenteForm(instance=incidente)
+        # Rellenar el datetime-local con el formato correcto
+        form.initial['fecha_ocurrencia'] = incidente.fecha_ocurrencia.strftime('%Y-%m-%dT%H:%M')
+
+    return render(request, 'tpm/form_incidente.html', {
+        'form':      form,
+        'incidente': incidente,
+        'titulo':    f'Editar incidente #{incidente.pk}',
+        'accion':    'Guardar cambios',
+    })
 
 
 # ── OEE ───────────────────────────────────────────────────────────────────────

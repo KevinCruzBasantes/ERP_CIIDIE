@@ -7,6 +7,229 @@ from usuarios.models import Usuario
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Orden de trabajo de mantenimiento — documento formal para el técnico
+# Inspirado en el sistema DANEC (Access): tabOrden
+# Independiente de reservas; puede existir sin que haya una reserva activa.
+# ─────────────────────────────────────────────────────────────────────────────
+class OrdenMantenimiento(models.Model):
+
+    TIPOS = [
+        ('PREVENTIVO', 'Preventivo'),
+        ('CORRECTIVO', 'Correctivo'),
+    ]
+
+    ESTADOS = [
+        ('PROGRAMADA', 'Programada'),
+        ('EN_PROCESO', 'En proceso'),
+        ('FINALIZADA', 'Finalizada'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+
+    PRIORIDADES = [
+        ('BAJA', 'Baja'),
+        ('MEDIA', 'Media'),
+        ('ALTA', 'Alta'),
+        ('CRITICA', 'Crítica'),
+    ]
+
+    ORIGENES = [
+        ('MANUAL', 'Creación manual'),
+        ('INCIDENTE', 'Incidente'),
+        ('PLAN', 'Plan de mantenimiento'),
+        ('INSPECCION', 'Inspección diaria reprobada'),
+        ('HALLAZGO', 'Hallazgo de inspección autónoma'),
+        ('PARADA', 'Parada no planificada'),
+        ('ESTADO_MAQUINA', 'Cambio de estado de máquina'),
+    ]
+
+    maquina = models.ForeignKey(
+        Maquina,
+        on_delete=models.CASCADE,
+        related_name='ordenes_mantenimiento'
+    )
+    plan = models.ForeignKey(
+        'PlanMantenimiento',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ordenes',
+        help_text="Plan que originó esta orden (preventivos)"
+    )
+    incidente = models.ForeignKey(
+        'tpm.Incidente',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ordenes_generadas',
+        help_text="Incidente que originó esta orden (correctivos)"
+    )
+    inspeccion = models.ForeignKey(
+        'tpm.InspeccionDiaria',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ordenes_generadas',
+        help_text="Inspección diaria reprobada que originó esta orden"
+    )
+    hallazgo = models.ForeignKey(
+        'tpm.HallazgoInspeccion',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ordenes_generadas',
+        help_text="Hallazgo de inspección autónoma (Pilar 1 TPM) que originó esta orden"
+    )
+    parada = models.ForeignKey(
+        'reservas.RegistroParada',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ordenes_generadas',
+        help_text="Parada no planificada que originó esta orden"
+    )
+    origen = models.CharField(
+        max_length=20,
+        choices=ORIGENES,
+        default='MANUAL',
+        help_text="Disparador que generó esta orden"
+    )
+    creado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='ordenes_creadas'
+    )
+
+    tipo = models.CharField(max_length=20, choices=TIPOS, default='PREVENTIVO')
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='PROGRAMADA')
+    prioridad = models.CharField(max_length=20, choices=PRIORIDADES, default='MEDIA')
+
+    titulo = models.CharField(
+        max_length=200,
+        help_text="Descripción breve de lo que se debe hacer"
+    )
+    descripcion_tarea = models.TextField(
+        blank=True,
+        help_text="Procedimiento detallado, pasos a seguir"
+    )
+
+    # Hasta 3 responsables como en DANEC
+    responsable_1 = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='om_responsable_1',
+        verbose_name='Responsable principal'
+    )
+    responsable_2 = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='om_responsable_2',
+        verbose_name='Responsable 2'
+    )
+    responsable_3 = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='om_responsable_3',
+        verbose_name='Responsable 3'
+    )
+
+    fecha_programada = models.DateField()
+    fecha_inicio = models.DateTimeField(null=True, blank=True)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
+    tiempo_estimado_horas = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True
+    )
+
+    repuestos_necesarios = models.TextField(
+        blank=True,
+        help_text="Lista de repuestos y materiales necesarios"
+    )
+    acciones_realizadas = models.TextField(blank=True)
+    observaciones = models.TextField(blank=True)
+
+    # Flags de impacto (como DANEC: bolAfectaseguridad, bolParada)
+    afecta_seguridad = models.BooleanField(
+        default=False,
+        help_text="La falla o tarea representa un riesgo de seguridad"
+    )
+    para_produccion = models.BooleanField(
+        default=False,
+        help_text="La máquina queda fuera de servicio durante la intervención"
+    )
+
+    costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    # Visto bueno del supervisor (como txtVistoBueno en DANEC)
+    autorizado_por = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='om_autorizadas',
+        verbose_name='Visto bueno / Autorizado por'
+    )
+    fecha_autorizacion = models.DateTimeField(null=True, blank=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-fecha_programada', '-fecha_creacion']
+        verbose_name = 'Orden de mantenimiento'
+        verbose_name_plural = 'Órdenes de mantenimiento'
+
+    def numero(self):
+        return f"OM-{self.pk:04d}"
+
+    def __str__(self):
+        return f"{self.numero()} — {self.maquina.codigo} — {self.titulo}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bitácora de mantenimiento — historial a nivel de máquina
+# Inspirado en DANEC: tabBitacora (ligada a tabEquipo, no a tabOrden)
+# Permite ver TODO lo que se ha hecho a una máquina en un solo lugar.
+# ─────────────────────────────────────────────────────────────────────────────
+class BitacoraMantenimiento(models.Model):
+
+    maquina = models.ForeignKey(
+        Maquina,
+        on_delete=models.CASCADE,
+        related_name='bitacora_mantenimiento',
+        help_text="La máquina a la que pertenece este registro"
+    )
+    orden = models.ForeignKey(
+        OrdenMantenimiento,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='entradas_bitacora',
+        help_text="Orden de trabajo asociada (opcional)"
+    )
+    tecnico = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='bitacora_mantenimiento'
+    )
+
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    descripcion = models.TextField(
+        help_text="Qué se realizó: trabajo ejecutado, hallazgos, resultados"
+    )
+    observaciones = models.TextField(blank=True)
+    repuestos_utilizados = models.TextField(
+        blank=True,
+        help_text="Repuestos y materiales que se usaron efectivamente"
+    )
+    requiere_atencion = models.BooleanField(
+        default=False,
+        help_text="Marcar si el ingeniero debe revisar algo urgente"
+    )
+    foto = models.ImageField(
+        upload_to='bitacora_mantenimiento/',
+        null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ['-fecha_registro']
+        verbose_name = 'Entrada de bitácora'
+        verbose_name_plural = 'Bitácora de mantenimiento'
+
+    def __str__(self):
+        orden_str = self.orden.numero() if self.orden else 'Sin OT'
+        return f"{self.maquina.codigo} — {orden_str} ({self.fecha_registro.strftime('%d/%m/%Y')})"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Plan de mantenimiento — plantilla periódica definida por el fabricante
 # Separado del registro de ejecución (Mantenimiento).
 #

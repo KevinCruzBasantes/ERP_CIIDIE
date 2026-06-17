@@ -1,11 +1,43 @@
 from django import forms
-from .models import Mantenimiento, PlanMantenimiento
+from .models import Mantenimiento, PlanMantenimiento, OrdenMantenimiento, BitacoraMantenimiento
 from maquinas.models import Maquina
 from usuarios.models import Usuario
 
 FIELD_STYLE    = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none;'
 SELECT_STYLE   = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;'
 TEXTAREA_STYLE = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.85rem; outline:none; resize:vertical;'
+
+
+class PlanMantenimientoForm(forms.ModelForm):
+
+    class Meta:
+        model  = PlanMantenimiento
+        fields = [
+            'maquina', 'nombre_tarea', 'descripcion_detallada',
+            'tipo_tpm', 'intervalo_valor', 'intervalo_unidad', 'activo',
+        ]
+        widgets = {
+            'maquina':               forms.Select(attrs={'style': SELECT_STYLE}),
+            'nombre_tarea':          forms.TextInput(attrs={
+                'style': FIELD_STYLE,
+                'placeholder': 'Ej: Lubricación guías lineales',
+            }),
+            'descripcion_detallada': forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 4,
+                'placeholder': 'Procedimiento paso a paso según el manual del fabricante',
+            }),
+            'tipo_tpm':         forms.Select(attrs={'style': SELECT_STYLE}),
+            'intervalo_valor':  forms.NumberInput(attrs={
+                'style': FIELD_STYLE, 'min': '1', 'placeholder': 'Ej: 500',
+            }),
+            'intervalo_unidad': forms.Select(attrs={'style': SELECT_STYLE}),
+            'activo':           forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['maquina'].queryset = Maquina.objects.all().order_by('nombre')
+        self.fields['descripcion_detallada'].required = False
 
 
 class MantenimientoForm(forms.ModelForm):
@@ -82,3 +114,97 @@ class MantenimientoForm(forms.ModelForm):
         self.fields['proxima_fecha'].input_formats    = ['%Y-%m-%d']
         self.fields['fecha_inicio'].input_formats     = ['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
         self.fields['fecha_fin'].input_formats        = ['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M']
+
+
+class OrdenMantenimientoForm(forms.ModelForm):
+
+    class Meta:
+        model  = OrdenMantenimiento
+        fields = [
+            'maquina', 'plan', 'tipo', 'prioridad', 'titulo',
+            'descripcion_tarea', 'responsable_1', 'responsable_2', 'responsable_3',
+            'fecha_programada', 'tiempo_estimado_horas',
+            'repuestos_necesarios', 'afecta_seguridad', 'para_produccion',
+        ]
+        widgets = {
+            'maquina':               forms.Select(attrs={'style': SELECT_STYLE}),
+            'plan':                  forms.Select(attrs={'style': SELECT_STYLE}),
+            'tipo':                  forms.Select(attrs={'style': SELECT_STYLE}),
+            'prioridad':             forms.Select(attrs={'style': SELECT_STYLE}),
+            'titulo':                forms.TextInput(attrs={
+                'style': FIELD_STYLE,
+                'placeholder': 'Ej: Cambio de filtro de refrigerante',
+            }),
+            'descripcion_tarea':     forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 5,
+                'placeholder': 'Pasos a seguir, herramientas necesarias, precauciones...',
+            }),
+            'responsable_1':         forms.Select(attrs={'style': SELECT_STYLE}),
+            'responsable_2':         forms.Select(attrs={'style': SELECT_STYLE}),
+            'responsable_3':         forms.Select(attrs={'style': SELECT_STYLE}),
+            'fecha_programada':      forms.DateInput(
+                attrs={'style': FIELD_STYLE, 'type': 'date'},
+                format='%Y-%m-%d'
+            ),
+            'tiempo_estimado_horas': forms.NumberInput(attrs={
+                'style': FIELD_STYLE, 'step': '0.5', 'min': '0',
+                'placeholder': 'Ej: 2.0',
+            }),
+            'repuestos_necesarios':  forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 3,
+                'placeholder': 'Lista de repuestos y materiales necesarios',
+            }),
+            'afecta_seguridad':      forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
+            'para_produccion':       forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['maquina'].queryset      = Maquina.objects.all().order_by('nombre')
+        self.fields['plan'].queryset         = PlanMantenimiento.objects.filter(activo=True).select_related('maquina').order_by('maquina__nombre')
+        self.fields['plan'].empty_label      = '— Sin plan (correctivo) —'
+        tecnicos = Usuario.objects.filter(estado='ACTIVO').order_by('first_name', 'last_name')
+        self.fields['responsable_1'].queryset = tecnicos
+        self.fields['responsable_2'].queryset = tecnicos
+        self.fields['responsable_3'].queryset = tecnicos
+        self.fields['responsable_1'].empty_label = '— Seleccionar —'
+        self.fields['responsable_2'].empty_label = '— Sin responsable adicional —'
+        self.fields['responsable_3'].empty_label = '— Sin responsable adicional —'
+        # Opcionales
+        self.fields['plan'].required              = False
+        self.fields['descripcion_tarea'].required = False
+        self.fields['responsable_1'].required     = False
+        self.fields['responsable_2'].required     = False
+        self.fields['responsable_3'].required     = False
+        self.fields['tiempo_estimado_horas'].required = False
+        self.fields['repuestos_necesarios'].required  = False
+        self.fields['fecha_programada'].input_formats = ['%Y-%m-%d']
+
+
+class BitacoraMantenimientoForm(forms.ModelForm):
+
+    class Meta:
+        model  = BitacoraMantenimiento
+        fields = ['descripcion', 'observaciones', 'repuestos_utilizados', 'requiere_atencion', 'foto']
+        widgets = {
+            'descripcion':         forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 4,
+                'placeholder': 'Qué se hizo, resultados, hallazgos...',
+            }),
+            'observaciones':       forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 2,
+                'placeholder': 'Notas adicionales para el ingeniero',
+            }),
+            'repuestos_utilizados': forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 2,
+                'placeholder': 'Repuestos y materiales que se utilizaron efectivamente',
+            }),
+            'requiere_atencion':   forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
+            'foto':                forms.FileInput(attrs={'style': 'color:#d4d8e8; font-size:0.82rem;'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['observaciones'].required       = False
+        self.fields['repuestos_utilizados'].required = False
+        self.fields['foto'].required                = False

@@ -1,3 +1,5 @@
+import unicodedata
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -13,11 +15,17 @@ from .models import Usuario, Rol
 from .forms import UsuarioCrearForm, UsuarioEditarForm
 
 
+def _normalizar_rol(nombre_rol):
+    """Minúsculas y sin tildes, para que 'TECNICO' y 'Técnico' coincidan igual."""
+    sin_tildes = unicodedata.normalize('NFKD', nombre_rol).encode('ascii', 'ignore').decode('ascii')
+    return sin_tildes.lower()
+
+
 def es_admin(user):
     if user.is_superuser:
         return True
     if user.rol:
-        rol = user.rol.nombre.lower()
+        rol = _normalizar_rol(user.rol.nombre)
         return 'administrador' in rol or 'phd' in rol
     return False
 
@@ -43,10 +51,10 @@ def login_view(request):
 def redirigir_por_rol(user):
     if user.is_superuser:
         return redirect('dashboard_admin')
-    rol = user.rol.nombre.lower() if user.rol else ''
+    rol = _normalizar_rol(user.rol.nombre) if user.rol else ''
     if 'administrador' in rol or 'phd' in rol:
         return redirect('dashboard_admin')
-    elif 'técnico' in rol or 'ingeniero' in rol:
+    elif 'tecnico' in rol or 'ingeniero' in rol:
         return redirect('dashboard_tecnico')
     else:
         return redirect('dashboard_general')

@@ -11,13 +11,6 @@
 {% endblock %}
 
 {% block content %}
-  {% if messages %}
-    {% for message in messages %}
-      <div data-msg-tag="{{ message.tags }}" style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
-                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
   {% if es_admin_o_tecnico %}
     <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:center;">
       <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; text-transform:uppercase; color:var(--text-muted); margin-right:0.4rem;">Cambiar estado:</span>
@@ -108,7 +101,7 @@
 
         <div>
           <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Responsable</div>
-          <div style="font-size:0.85rem; color:var(--text);">{{ m.responsable.get_full_name|default:m.responsable.username|default:"—" }}</div>
+          <div style="font-size:0.85rem; color:var(--text);">{% if m.responsable %}{{ m.responsable.get_full_name|default:m.responsable.username }}{% else %}—{% endif %}</div>
         </div>
 
         <div>

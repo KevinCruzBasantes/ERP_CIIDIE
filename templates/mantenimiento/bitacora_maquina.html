@@ -1,0 +1,110 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Bitácora {{ maquina.codigo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Bitácora / {{ maquina.codigo }}{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_ordenes_mantenimiento' %}" style="color:var(--text-muted); text-decoration:none;">Órdenes</a>
+            <span style="margin:0 0.4rem;">›</span> Bitácora
+        </div>
+        <h1>Bitácora — {{ maquina.codigo }}</h1>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.2rem;">{{ maquina.nombre }} — historial completo de mantenimiento</p>
+    </div>
+    <a href="{% url 'detalle_maquina' maquina.pk %}"
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px;"
+       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        ⚙ Ver máquina
+    </a>
+</div>
+
+<!-- STAT -->
+<div class="stats-grid" style="margin-bottom:1.5rem;">
+    <div class="stat-card accent">
+        <div class="stat-label">Entradas en bitácora</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">historial de mantenimiento</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">Requieren atención</div>
+        <div class="stat-value">{{ entradas|dictsort:"requiere_atencion"|length }}</div>
+    </div>
+</div>
+
+{% if entradas %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <div class="card-header" style="border-radius:0;">
+        <div class="card-title">Historial de mantenimiento</div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ total }} entrada{{ total|pluralize:"s" }}</span>
+    </div>
+    <div style="display:flex; flex-direction:column;">
+        {% for entrada in entradas %}
+        <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--border); border-left:3px solid {% if entrada.requiere_atencion %}var(--warning){% elif entrada.orden %}var(--accent){% else %}transparent{% endif %};">
+
+            <!-- Header de la entrada -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                    {% if entrada.orden %}
+                    <a href="{% url 'detalle_orden_mantenimiento' entrada.orden.pk %}"
+                       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none; padding:0.15rem 0.5rem; border:1px solid rgba(232,160,32,0.3); border-radius:3px;">
+                        {{ entrada.orden.numero }}
+                    </a>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--text-muted);">
+                        {% if entrada.orden.tipo == 'PREVENTIVO' %}▸ Preventivo{% else %}▸ Correctivo{% endif %}
+                    </span>
+                    {% else %}
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--text-muted);">Sin orden asociada</span>
+                    {% endif %}
+                    {% if entrada.requiere_atencion %}
+                    <span style="font-size:0.68rem; color:var(--warning); font-weight:500;">⚠ Requiere atención</span>
+                    {% endif %}
+                </div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--text-muted); white-space:nowrap;">
+                    {{ entrada.fecha_registro|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+
+            <!-- Técnico -->
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.5rem;">
+                Técnico:
+                {% if entrada.tecnico %}{% if entrada.tecnico.get_full_name %}{{ entrada.tecnico.get_full_name }}{% else %}{{ entrada.tecnico.username }}{% endif %}{% else %}—{% endif %}
+            </div>
+
+            <!-- Descripción -->
+            <div style="font-size:0.85rem; color:var(--text); line-height:1.65; white-space:pre-wrap;">{{ entrada.descripcion }}</div>
+
+            {% if entrada.repuestos_utilizados %}
+            <div style="margin-top:0.6rem; padding:0.5rem 0.75rem; background:var(--surface2); border-radius:4px; font-size:0.75rem; color:var(--text-muted);">
+                <span style="color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase;">Repuestos:</span>
+                {{ entrada.repuestos_utilizados }}
+            </div>
+            {% endif %}
+
+            {% if entrada.observaciones %}
+            <div style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-muted); font-style:italic;">{{ entrada.observaciones }}</div>
+            {% endif %}
+
+            {% if entrada.foto %}
+            <div style="margin-top:0.65rem;">
+                <a href="{{ entrada.foto.url }}" target="_blank">
+                    <img src="{{ entrada.foto.url }}" alt="foto" style="max-height:120px; border-radius:4px; object-fit:cover;">
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:3rem; text-align:center;">
+    <div style="font-size:2rem; margin-bottom:0.75rem; opacity:0.3;">▤</div>
+    <div style="font-size:0.88rem; color:var(--text-muted);">No hay entradas en la bitácora de esta máquina todavía.</div>
+    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.4rem;">Las entradas se agregan desde una orden de mantenimiento activa.</div>
+</div>
+{% endif %}
+
+{% endblock %}

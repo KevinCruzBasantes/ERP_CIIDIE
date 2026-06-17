@@ -1,0 +1,150 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}[{{ codigo.modelo_maquina }}] {{ codigo.codigo }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Máquinas / Códigos de parada / {{ codigo.codigo }}{% endblock %}
+{% block nav_maquinas %}active{% endblock %}
+
+{% block content %}
+<!-- ENCABEZADO -->
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
+            <span style="margin:0 0.4rem;">›</span>
+            <a href="{% url 'lista_codigos_parada' %}" style="color:var(--text-muted); text-decoration:none;">Códigos de parada</a>
+            <span style="margin:0 0.4rem;">›</span> {{ codigo.codigo }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:600; color:var(--text); margin-bottom:0.35rem;">
+            <span style="font-family:'IBM Plex Mono',monospace; color:var(--accent);">{{ codigo.codigo }}</span>
+            — {{ codigo.subsistema }}
+        </h1>
+        <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-top:0.4rem;">
+            {% if codigo.tipo == 'PLANIFICADA' %}
+                <span class="badge badge-info">PP — Planificada</span>
+            {% else %}
+                <span class="badge badge-danger">PNP — No planificada</span>
+            {% endif %}
+            <span style="font-size:0.78rem; color:var(--text-muted);">{{ codigo.get_categoria_display }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                {{ codigo.fabricante }} {{ codigo.modelo_maquina }}
+            </span>
+        </div>
+
+        {% if es_admin_o_tecnico %}
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem;">
+            <a href="{% url 'editar_codigo_parada' codigo.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
+               onmouseover="this.style.background='var(--accent2)'"
+               onmouseout="this.style.background='var(--accent)'">✎ Editar</a>
+            <a href="{% url 'eliminar_codigo_parada' codigo.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--danger)'"
+               onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">✕ Eliminar</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'lista_codigos_parada' %}?fabricante={{ codigo.fabricante }}&modelo={{ codigo.modelo_maquina }}"
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; white-space:nowrap; transition:border-color 0.15s;"
+       onmouseover="this.style.borderColor='var(--accent)'"
+       onmouseout="this.style.borderColor='var(--border)'">
+        Ver todos los códigos de {{ codigo.modelo_maquina }}
+    </a>
+</div>
+
+<div class="grid-2">
+
+    <!-- DATOS DEL CÓDIGO -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Datos del código</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Código</div>
+                <div style="font-size:1rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; font-weight:700;">{{ codigo.codigo }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Tipo</div>
+                {% if codigo.tipo == 'PLANIFICADA' %}
+                    <span class="badge badge-info">PP — Planificada</span>
+                {% else %}
+                    <span class="badge badge-danger">PNP — No planificada</span>
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fabricante</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ codigo.fabricante }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Modelo de máquina</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ codigo.modelo_maquina }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Categoría</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ codigo.get_categoria_display }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Total usos registrados</div>
+                <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">{{ total_usos }}</div>
+            </div>
+            <div style="grid-column:span 2;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Subsistema</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ codigo.subsistema }}</div>
+            </div>
+        </div>
+
+        {% if codigo.causa_raiz_comun %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">Causa raíz común</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.7; white-space:pre-line;">{{ codigo.causa_raiz_comun }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- HISTORIAL DE USOS -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Historial de usos</div>
+            <span class="badge badge-accent">{{ total_usos }}</span>
+        </div>
+
+        {% if usos %}
+        <div style="display:flex; flex-direction:column; gap:0.1rem;">
+            {% for u in usos %}
+            <a href="{% url 'detalle_orden' u.orden_trabajo.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.7rem 0.5rem; border-bottom:1px solid var(--border); text-decoration:none; transition:background 0.1s;"
+               onmouseover="this.style.background='var(--surface2)'"
+               onmouseout="this.style.background='transparent'">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent);">OT-{{ u.orden_trabajo.pk|stringformat:"04d" }}</div>
+                    <div style="font-size:0.78rem; color:var(--text); margin-top:0.1rem;">{{ u.orden_trabajo.reserva.maquina.nombre }}</div>
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.05rem;">{{ u.fecha_creacion|date:'d/m/Y H:i' }}</div>
+                </div>
+                <div style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                    {% if u.duracion_minutos %}
+                        {{ u.duracion_minutos|floatformat:0 }} min
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% if total_usos > 15 %}
+        <div style="padding:0.75rem 0.5rem; font-size:0.72rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">
+            Mostrando los 15 más recientes de {{ total_usos }} en total.
+        </div>
+        {% endif %}
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+            Este código aún no ha sido usado en ninguna orden de trabajo.
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
+
+

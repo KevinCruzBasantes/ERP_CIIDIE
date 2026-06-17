@@ -1,0 +1,26 @@
+# Entorno virtual
+venv/
+env/
+.venv/
+
+# Bases de datos pesadas (Access) y locales
+*.accdb
+*.mdb
+db.sqlite3
+
+# Bytecode / cache de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configuración local / secretos
+.env
+
+# Archivos estáticos recolectados
+staticfiles/
+
+# Logs
+*.log
+
+# Archivos temporales de Office
+~$*

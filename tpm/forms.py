@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import CertificacionUsuario, RegistroOEE, Incidente
+from .models import CertificacionUsuario, RegistroOEE, Incidente, HallazgoInspeccion
 
 FIELD_STYLE    = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none;'
 SELECT_STYLE   = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;'
@@ -85,3 +85,23 @@ class IncidenteForm(forms.ModelForm):
             '%Y-%m-%d %H:%M:%S',
             '%Y-%m-%d %H:%M',
         ]
+
+
+class HallazgoForm(forms.ModelForm):
+    class Meta:
+        model  = HallazgoInspeccion
+        fields = ['descripcion', 'prioridad', 'resuelto']
+        widgets = {
+            'descripcion': forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 3,
+                'placeholder': 'Describe el hallazgo encontrado durante la inspección.',
+            }),
+            'prioridad': forms.Select(attrs={'style': SELECT_STYLE}),
+            'resuelto':  forms.CheckboxInput(
+                attrs={'style': 'width:16px; height:16px; cursor:pointer; accent-color:#e8a020;'}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['resuelto'].required = False

@@ -15,17 +15,6 @@
     <h1>{{ titulo }}</h1>
     <p>Pilar 7 TPM — Registro de condiciones de riesgo, casi accidentes y anomalías operacionales.</p>
 </div>
-
-{% if messages %}
-    {% for message in messages %}
-    <div data-msg-tag="{{ message.tags }}"
-         style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem;
-                background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);">
-        {{ message }}
-    </div>
-    {% endfor %}
-{% endif %}
-
 <form method="post">
     {% csrf_token %}
 
@@ -107,12 +96,25 @@
     {% endif %}
 
     <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
-        <a href="{% url 'lista_incidentes' %}"
-           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none;">
+        {% if incidente %}
+        <a href="{% url 'detalle_incidente' incidente.pk %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--text-muted)'"
+           onmouseout="this.style.borderColor='var(--border)'">
             Cancelar
         </a>
+        {% else %}
+        <a href="{% url 'lista_incidentes' %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--text-muted)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            Cancelar
+        </a>
+        {% endif %}
         <button type="submit"
-                style="padding:0.7rem 1.5rem; background:var(--danger); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">
+                style="padding:0.7rem 1.5rem; background:{% if incidente %}var(--accent){% else %}var(--danger){% endif %}; color:{% if incidente %}#0f1117{% else %}#fff{% endif %}; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:opacity 0.15s;"
+                onmouseover="this.style.opacity='0.85'"
+                onmouseout="this.style.opacity='1'">
             {{ accion }}
         </button>
     </div>
@@ -120,14 +122,4 @@
 
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.querySelectorAll('[data-msg-tag]').forEach(el => {
-    if (!el.dataset.msgTag.includes('success')) {
-        el.style.background = 'rgba(239,68,68,0.1)';
-        el.style.border     = '1px solid rgba(239,68,68,0.25)';
-        el.style.color      = 'var(--danger)';
-    }
-});
-</script>
-{% endblock %}
+

@@ -1,0 +1,215 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Órdenes de mantenimiento — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Órdenes{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+            <a href="{% url 'lista_mantenimientos' %}" style="color:var(--text-muted); text-decoration:none;">Mantenimiento</a>
+            <span style="margin:0 0.4rem;">›</span> Órdenes
+        </div>
+        <h1>Órdenes de mantenimiento</h1>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.25rem;">
+            Documentos de trabajo para el técnico — independientes de reservas
+        </p>
+    </div>
+    {% if es_admin_o_tecnico %}
+    <a href="{% url 'crear_orden_mantenimiento' %}"
+       style="padding:0.65rem 1.25rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.06em; white-space:nowrap;"
+       onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">
+        + Nueva orden
+    </a>
+    {% endif %}
+</div>
+
+<!-- STATS -->
+<div class="stats-grid" style="margin-bottom:1.5rem;">
+    <div class="stat-card accent">
+        <div class="stat-label">Total activas</div>
+        <div class="stat-value">{{ total }}</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">Programadas</div>
+        <div class="stat-value">{{ programadas }}</div>
+        {% if vencidas %}<div class="stat-sub" style="color:var(--danger);">{{ vencidas }} vencidas</div>{% endif %}
+    </div>
+    <div class="stat-card info">
+        <div class="stat-label">En proceso</div>
+        <div class="stat-value">{{ en_proceso }}</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-label">Finalizadas</div>
+        <div class="stat-value">{{ finalizadas }}</div>
+    </div>
+</div>
+
+<!-- FILTROS -->
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Filtros</div>
+        {% if hay_filtros %}
+        <a href="{% url 'lista_ordenes_mantenimiento' %}"
+           style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--danger); text-decoration:none; padding:0.25rem 0.65rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;">
+            ✕ Limpiar
+        </a>
+        {% endif %}
+    </div>
+    <form method="get" style="display:flex; flex-wrap:wrap; gap:0.85rem; align-items:flex-end;">
+        <div style="flex:1; min-width:140px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Estado</label>
+            <select name="estado" style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none;">
+                <option value="">— Todos —</option>
+                <option value="PROGRAMADA" {% if filtro_estado == 'PROGRAMADA' %}selected{% endif %}>Programada</option>
+                <option value="EN_PROCESO" {% if filtro_estado == 'EN_PROCESO' %}selected{% endif %}>En proceso</option>
+                <option value="FINALIZADA" {% if filtro_estado == 'FINALIZADA' %}selected{% endif %}>Finalizada</option>
+                <option value="CANCELADA"  {% if filtro_estado == 'CANCELADA'  %}selected{% endif %}>Cancelada</option>
+            </select>
+        </div>
+        <div style="flex:1; min-width:130px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Tipo</label>
+            <select name="tipo" style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none;">
+                <option value="">— Todos —</option>
+                <option value="PREVENTIVO" {% if filtro_tipo == 'PREVENTIVO' %}selected{% endif %}>Preventivo</option>
+                <option value="CORRECTIVO" {% if filtro_tipo == 'CORRECTIVO' %}selected{% endif %}>Correctivo</option>
+            </select>
+        </div>
+        <div style="flex:1; min-width:140px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Prioridad</label>
+            <select name="prioridad" style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none;">
+                <option value="">— Todas —</option>
+                <option value="CRITICA" {% if filtro_prioridad == 'CRITICA' %}selected{% endif %}>Crítica</option>
+                <option value="ALTA"    {% if filtro_prioridad == 'ALTA'    %}selected{% endif %}>Alta</option>
+                <option value="MEDIA"   {% if filtro_prioridad == 'MEDIA'   %}selected{% endif %}>Media</option>
+                <option value="BAJA"    {% if filtro_prioridad == 'BAJA'    %}selected{% endif %}>Baja</option>
+            </select>
+        </div>
+        <div style="flex:2; min-width:180px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Máquina</label>
+            <select name="maquina" style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none;">
+                <option value="">— Todas —</option>
+                {% for m in maquinas %}
+                <option value="{{ m.pk }}" {% if filtro_maquina == m.pk|stringformat:"s" %}selected{% endif %}>{{ m.codigo }} — {{ m.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit" style="padding:0.6rem 1.2rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer;">
+                Filtrar
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- TABLA -->
+{% if ordenes %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <div class="card-header" style="border-radius:0;">
+        <div class="card-title">Órdenes de trabajo</div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ total }} orden{{ total|pluralize:"es" }}</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+            <thead>
+                <tr style="background:var(--surface2);">
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">N° Orden</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Máquina</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Título</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Tipo</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Prioridad</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Estado</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Programada</th>
+                    <th style="padding:0.65rem 1rem; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border);">Responsable</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for om in ordenes %}
+                <tr style="border-bottom:1px solid var(--border); transition:background 0.1s; cursor:pointer;"
+                    onmouseover="this.style.background='var(--surface2)'"
+                    onmouseout="this.style.background='transparent'"
+                    onclick="window.location='{% url 'detalle_orden_mantenimiento' om.pk %}'">
+
+                    <td style="padding:0.7rem 1rem;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--accent);">{{ om.numero }}</span>
+                        {% if om.afecta_seguridad %}<span title="Afecta seguridad" style="color:var(--danger); margin-left:0.4rem;">⚠</span>{% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--accent);">{{ om.maquina.codigo }}</div>
+                        <div style="font-size:0.72rem; color:var(--text-muted);">{{ om.maquina.nombre|truncatechars:20 }}</div>
+                    </td>
+
+                    <td style="padding:0.7rem 1rem; max-width:220px;">
+                        <div style="font-size:0.82rem; color:var(--text); overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ om.titulo }}</div>
+                        {% if om.plan %}<div style="font-size:0.68rem; color:var(--text-muted);">Plan: {{ om.plan.nombre_tarea|truncatechars:25 }}</div>{% endif %}
+                        {% if om.origen != 'MANUAL' %}<div style="font-size:0.65rem; color:var(--warning);">⚡ {{ om.get_origen_display }}</div>{% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        {% if om.tipo == 'PREVENTIVO' %}
+                        <span class="badge badge-info">Preventivo</span>
+                        {% else %}
+                        <span class="badge badge-warning">Correctivo</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        {% if om.prioridad == 'CRITICA' %}<span class="badge badge-danger">Crítica</span>
+                        {% elif om.prioridad == 'ALTA' %}<span class="badge badge-warning">Alta</span>
+                        {% elif om.prioridad == 'MEDIA' %}<span class="badge badge-info">Media</span>
+                        {% else %}<span class="badge badge-accent">Baja</span>{% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        {% if om.estado == 'PROGRAMADA' %}
+                            {% if om.fecha_programada < today %}<span class="badge badge-danger">Vencida</span>
+                            {% else %}<span class="badge badge-warning">Programada</span>{% endif %}
+                        {% elif om.estado == 'EN_PROCESO' %}<span class="badge badge-info">En proceso</span>
+                        {% elif om.estado == 'FINALIZADA' %}<span class="badge badge-success">Finalizada</span>
+                        {% else %}<span class="badge" style="background:rgba(107,113,148,0.15); color:var(--text-muted);">Cancelada</span>{% endif %}
+                    </td>
+
+                    <td style="padding:0.7rem 1rem; white-space:nowrap;">
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text);">{{ om.fecha_programada|date:"d/m/Y" }}</div>
+                    </td>
+
+                    <td style="padding:0.7rem 1rem;">
+                        {% if om.responsable_1 %}
+                        <div style="font-size:0.78rem; color:var(--text);">
+                            {% if om.responsable_1.get_full_name %}{{ om.responsable_1.get_full_name }}{% else %}{{ om.responsable_1.username }}{% endif %}
+                        </div>
+                        {% else %}
+                        <span style="font-size:0.72rem; color:var(--text-muted);">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="padding:3rem; text-align:center;">
+    <div style="font-size:2rem; margin-bottom:0.75rem; opacity:0.3;">◉</div>
+    <div style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">
+        {% if hay_filtros %}No hay órdenes con los filtros aplicados.{% else %}No hay órdenes de mantenimiento registradas.{% endif %}
+    </div>
+    {% if es_admin_o_tecnico and not hay_filtros %}
+    <a href="{% url 'crear_orden_mantenimiento' %}"
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:#0f1117; background:var(--accent); padding:0.6rem 1.2rem; border-radius:6px; text-decoration:none;">
+        + Crear primera orden
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

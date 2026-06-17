@@ -6,6 +6,7 @@ urlpatterns = [
     path('',                                views.lista_reservas,         name='lista_reservas'),
     path('crear/',                          views.crear_reserva,          name='crear_reserva'),
     path('<int:pk>/',                       views.detalle_reserva,        name='detalle_reserva'),
+    path('<int:pk>/editar/',                views.editar_reserva,         name='editar_reserva'),
     path('<int:pk>/estado/',                views.cambiar_estado_reserva, name='cambiar_estado_reserva'),
     path('<int:pk>/cancelar/',              views.cancelar_reserva,       name='cancelar_reserva'),
     # Órdenes de trabajo

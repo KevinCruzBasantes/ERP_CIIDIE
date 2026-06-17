@@ -1,0 +1,87 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Eliminar mantenimiento #{{ mantenimiento.pk }} — ERP CIIDIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Eliminar{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
+        <a href="{% url 'lista_mantenimientos' %}" style="color:var(--text-muted); text-decoration:none;">Mantenimiento</a>
+        <span style="margin:0 0.4rem;">›</span>
+        <a href="{% url 'detalle_mantenimiento' mantenimiento.pk %}" style="color:var(--text-muted); text-decoration:none;">#{{ mantenimiento.pk }}</a>
+        <span style="margin:0 0.4rem;">›</span> Eliminar
+    </div>
+    <h1>Eliminar registro de mantenimiento</h1>
+</div>
+
+<div class="card" style="max-width:560px;">
+    <div class="card-header">
+        <div class="card-title">Confirmar eliminación</div>
+        <span class="badge badge-danger">Soft delete</span>
+    </div>
+
+    <div style="padding:1rem 0; border-bottom:1px solid var(--border); margin-bottom:1.25rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
+                <div style="font-size:0.85rem; color:var(--text); font-weight:500;">{{ mantenimiento.maquina.nombre }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Tipo</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ mantenimiento.get_tipo_display }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Estado actual</div>
+                {% if mantenimiento.estado == 'PROGRAMADO' %}
+                    <span class="badge badge-info">{{ mantenimiento.get_estado_display }}</span>
+                {% elif mantenimiento.estado == 'EN_PROCESO' %}
+                    <span class="badge badge-warning">{{ mantenimiento.get_estado_display }}</span>
+                {% elif mantenimiento.estado == 'FINALIZADO' %}
+                    <span class="badge badge-success">{{ mantenimiento.get_estado_display }}</span>
+                {% else %}
+                    <span class="badge badge-accent">{{ mantenimiento.get_estado_display }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Fecha programada</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--accent);">{{ mantenimiento.fecha_programada|date:"d/m/Y" }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Responsable</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ mantenimiento.responsable|default:"Sin asignar" }}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Prioridad</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ mantenimiento.get_prioridad_display }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:6px; padding:0.85rem; margin-bottom:1.25rem;">
+        <div style="font-size:0.8rem; color:var(--danger); line-height:1.6;">
+            Esta acción marcará el registro como inactivo. No se eliminan datos del sistema — el mantenimiento dejará de aparecer en los listados y reportes activos.
+        </div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <a href="{% url 'detalle_mantenimiento' mantenimiento.pk %}"
+           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--text-muted)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            Cancelar
+        </a>
+        <form method="post" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit"
+                    style="padding:0.7rem 1.5rem; background:var(--danger); color:white; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:opacity 0.15s;"
+                    onmouseover="this.style.opacity='0.85'"
+                    onmouseout="this.style.opacity='1'">
+                Confirmar eliminación
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
