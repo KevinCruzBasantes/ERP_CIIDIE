@@ -10,7 +10,7 @@ from maquinas.models import Maquina
 from mantenimiento.models import Mantenimiento
 from inventario.models import Material
 from reservas.models import Reserva, OrdenTrabajo
-from tpm.models import Alerta, InspeccionDiaria
+from tpm.models import Alerta, InspeccionDiaria, ItemChecklistInspeccion, RespuestaChecklistInspeccion
 from .models import Usuario, Rol
 from .forms import UsuarioCrearForm, UsuarioEditarForm
 
@@ -163,19 +163,19 @@ def inspeccion_diaria(request):
 
     if request.method == 'POST':
         maquina_id = request.POST.get('maquina_id')
-        maquina = Maquina.objects.get(pk=maquina_id)
+        if not maquina_id:
+            messages.error(request, 'Debes seleccionar una máquina.')
+            return redirect('inspeccion_diaria')
+        maquina = get_object_or_404(Maquina, pk=maquina_id)
 
         if InspeccionDiaria.objects.filter(maquina=maquina, fecha=hoy).exists():
             messages.error(request, f'Ya existe una inspección para {maquina.nombre} hoy.')
             return redirect('inspeccion_diaria')
 
-        InspeccionDiaria.objects.create(
+        inspeccion = InspeccionDiaria.objects.create(
             maquina=maquina,
             inspector=request.user,
             fecha=hoy,
-            nivel_aceite_ok=request.POST.get('nivel_aceite_ok') == 'on',
-            presion_neumatica_ok=request.POST.get('presion_neumatica_ok') == 'on',
-            nivel_refrigerante_ok=request.POST.get('nivel_refrigerante_ok') == 'on',
             limpieza_area_ok=request.POST.get('limpieza_area_ok') == 'on',
             ruidos_anormales=request.POST.get('ruidos_anormales') == 'on',
             vibraciones_anormales=request.POST.get('vibraciones_anormales') == 'on',
@@ -184,12 +184,39 @@ def inspeccion_diaria(request):
             boton_emergencia_ok=request.POST.get('boton_emergencia_ok') == 'on',
             observaciones=request.POST.get('observaciones', ''),
         )
+
+        # Ítems específicos del catálogo según fabricante+modelo de la máquina
+        items_especificos = ItemChecklistInspeccion.objects.filter(
+            fabricante=maquina.fabricante, modelo_maquina=maquina.modelo, activo=True
+        )
+        RespuestaChecklistInspeccion.objects.bulk_create([
+            RespuestaChecklistInspeccion(
+                inspeccion=inspeccion,
+                item=item,
+                ok=request.POST.get(f'item_{item.pk}') == 'on',
+            )
+            for item in items_especificos
+        ])
+        inspeccion.recalcular_aprobada()
+
         messages.success(request, f'Inspección de {maquina.nombre} registrada correctamente.')
         return redirect('inspeccion_diaria')
+
+    # Ítems específicos por máquina pendiente, para mostrar el bloque correcto al elegirla
+    pendientes_con_items = [
+        {
+            'maquina': m,
+            'items': ItemChecklistInspeccion.objects.filter(
+                fabricante=m.fabricante, modelo_maquina=m.modelo, activo=True
+            ).order_by('orden', 'nombre'),
+        }
+        for m in pendientes
+    ]
 
     context = {
         'maquinas': maquinas,
         'pendientes': pendientes,
+        'pendientes_con_items': pendientes_con_items,
         'inspeccionadas_hoy': inspeccionadas_hoy,
         'hoy': hoy,
     }

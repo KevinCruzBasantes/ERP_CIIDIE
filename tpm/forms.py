@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import CertificacionUsuario, RegistroOEE, Incidente, HallazgoInspeccion
+from .models import CertificacionUsuario, RegistroOEE, Incidente, HallazgoInspeccion, ItemChecklistInspeccion
 
 FIELD_STYLE    = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none;'
 SELECT_STYLE   = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;'
@@ -105,3 +105,37 @@ class HallazgoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['resuelto'].required = False
+
+
+class ItemChecklistForm(forms.ModelForm):
+
+    class Meta:
+        model  = ItemChecklistInspeccion
+        fields = ['fabricante', 'modelo_maquina', 'nombre', 'descripcion', 'es_critico', 'orden']
+        widgets = {
+            'fabricante':     forms.TextInput(attrs={'style': FIELD_STYLE, 'placeholder': 'Nombre del fabricante'}),
+            'modelo_maquina': forms.TextInput(attrs={'style': FIELD_STYLE, 'placeholder': 'Modelo de la máquina'}),
+            'nombre':         forms.TextInput(attrs={
+                'style': FIELD_STYLE,
+                'placeholder': 'Ej: Nivel de aceite de lubricación OK',
+            }),
+            'descripcion':    forms.Textarea(attrs={
+                'style': TEXTAREA_STYLE, 'rows': 2,
+                'placeholder': 'Criterio de aceptación o detalle adicional (opcional)',
+            }),
+            'es_critico':     forms.CheckboxInput(
+                attrs={'style': 'width:16px; height:16px; cursor:pointer; accent-color:#e8a020;'}
+            ),
+            'orden':          forms.NumberInput(attrs={'style': FIELD_STYLE, 'min': '0'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['descripcion'].required = False
+        self.fields['orden'].required = False
+
+        # Poblar datalists con valores ya existentes, igual que CodigoParadaForm
+        fabricantes = ItemChecklistInspeccion.objects.values_list('fabricante', flat=True).distinct().order_by('fabricante')
+        modelos     = ItemChecklistInspeccion.objects.values_list('modelo_maquina', flat=True).distinct().order_by('modelo_maquina')
+        self.fabricantes_existentes = list(fabricantes)
+        self.modelos_existentes     = list(modelos)

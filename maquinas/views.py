@@ -433,7 +433,7 @@ def lista_transferencias(request):
         qs.values('maquina_destino').distinct().count()
     )
 
-    maquinas = Maquina.objects.exclude(estado='BAJA').order_by('nombre')
+    maquinas = Maquina.objects.exclude(estado='FUERA_SERVICIO').order_by('nombre')
     piezas   = Pieza.objects.filter(activo=True).order_by('nombre')
 
     return render(request, 'maquinas/lista_transferencias.html', {

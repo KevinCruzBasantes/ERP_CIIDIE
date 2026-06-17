@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}TPM / OEE — ERP CIIDIE{% endblock %}
+{% block title %}TPM / OEE — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}TPM / OEE{% endblock %}
 {% block nav_tpm %}active{% endblock %}
 
@@ -170,6 +170,17 @@
             <div>
                 <div style="font-size:0.82rem; font-weight:500; color:var(--text);">Incidentes</div>
                 <div style="font-size:0.68rem; color:var(--text-muted);">Pilar 7 — Seguridad</div>
+            </div>
+        </a>
+
+        <a href="{% url 'lista_items_checklist' %}"
+           style="display:flex; align-items:center; gap:0.75rem; padding:1rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:1.2rem; color:var(--accent);">☰</span>
+            <div>
+                <div style="font-size:0.82rem; font-weight:500; color:var(--text);">Ítems de checklist</div>
+                <div style="font-size:0.68rem; color:var(--text-muted);">Catálogo por fabricante+modelo</div>
             </div>
         </a>
 

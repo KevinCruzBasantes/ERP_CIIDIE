@@ -31,7 +31,7 @@ class MaquinaForm(forms.ModelForm):
             'fabricante':                forms.TextInput(attrs={'style': INPUT}),
             'modelo':                    forms.TextInput(attrs={'style': INPUT}),
             'anio_fabricacion':          forms.NumberInput(attrs={'style': INPUT, 'placeholder': 'Ej: 2020'}),
-            'ubicacion':                 forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: Laboratorio CIIDIE — Planta baja'}),
+            'ubicacion':                 forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: Laboratorio CIDIIE — Planta baja'}),
             'descripcion':               forms.Textarea(attrs={'style': TEXTAREA, 'rows': 3}),
             'estado':                    forms.Select(attrs={'style': SELECT}),
             'responsable':               forms.Select(attrs={'style': SELECT}),
@@ -41,7 +41,7 @@ class MaquinaForm(forms.ModelForm):
             'presion_neumatica_max_bar': forms.NumberInput(attrs={'style': INPUT, 'step': '0.1'}),
             'capacidad_refrigerante_l':  forms.NumberInput(attrs={'style': INPUT, 'step': '0.01'}),
             'rpm_husillo_max':           forms.NumberInput(attrs={'style': INPUT}),
-            'tipo_control_cnc':          forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: Siemens Sinumerik 828D'}),
+            'tipo_control_cnc':          forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Tipo de controlador CNC, si aplica'}),
             'peso_kg':                   forms.NumberInput(attrs={'style': INPUT, 'step': '0.01'}),
             'largo_mm':                  forms.NumberInput(attrs={'style': INPUT}),
             'ancho_mm':                  forms.NumberInput(attrs={'style': INPUT}),
@@ -69,9 +69,9 @@ class EnsambleForm(forms.ModelForm):
         model = Pieza
         fields = ['nombre', 'nombre_original', 'nombre_en', 'descripcion']
         widgets = {
-            'nombre':          forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en español, ej: Cabezal de fresado'}),
-            'nombre_original': forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre del fabricante (ej: Frässpindel)'}),
-            'nombre_en':       forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en inglés (ej: Milling head)'}),
+            'nombre':          forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en español'}),
+            'nombre_original': forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre original del fabricante (si es distinto del español)'}),
+            'nombre_en':       forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en inglés (opcional)'}),
             'descripcion':     forms.Textarea(attrs={'style': TEXTAREA, 'rows': 3}),
         }
 
@@ -101,9 +101,9 @@ class PiezaForm(forms.ModelForm):
         widgets = {
             'ensamble':             forms.Select(attrs={'style': SELECT}),
             'nombre':               forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en español'}),
-            'nombre_original':      forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre del fabricante (ej: Kugelgewindetrieb)'}),
-            'nombre_en':            forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en inglés (ej: Ballscrew)'}),
-            'numero_parte':         forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Artikelnummer del fabricante'}),
+            'nombre_original':      forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre original del fabricante (si es distinto del español)'}),
+            'nombre_en':            forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre en inglés (opcional)'}),
+            'numero_parte':         forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Código o número de parte del fabricante'}),
             'numero_posicion':      forms.NumberInput(attrs={'style': INPUT, 'placeholder': 'Pos. en diagrama del manual'}),
             'especificacion':       forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: M8xP1.25x20L'}),
             'cantidad_en_maquina':  forms.NumberInput(attrs={'style': INPUT, 'step': '0.01', 'min': '0'}),
@@ -138,12 +138,12 @@ class CodigoParadaForm(forms.ModelForm):
             'tipo', 'categoria', 'subsistema', 'causa_raiz_comun',
         ]
         widgets = {
-            'fabricante':      forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: OPTIMUM'}),
-            'modelo_maquina':  forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: F210HSC'}),
+            'fabricante':      forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Nombre del fabricante'}),
+            'modelo_maquina':  forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Modelo de la máquina'}),
             'codigo':          forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: PP01 / PNP-M01'}),
             'tipo':            forms.Select(attrs={'style': SELECT}),
             'categoria':       forms.Select(attrs={'style': SELECT}),
-            'subsistema':      forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Ej: Husillo / Spindle (Inline Motor)'}),
+            'subsistema':      forms.TextInput(attrs={'style': INPUT, 'placeholder': 'Subsistema o componente afectado'}),
             'causa_raiz_comun': forms.Textarea(attrs={
                 'style': TEXTAREA, 'rows': 3,
                 'placeholder': 'Descripción técnica de la causa raíz más frecuente (opcional)',

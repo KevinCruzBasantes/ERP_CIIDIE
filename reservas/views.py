@@ -3,6 +3,7 @@ import unicodedata
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import datetime, date
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
@@ -102,10 +103,13 @@ def cambiar_estado_reserva(request, pk):
         reserva.estado = nuevo_estado
         if nuevo_estado == 'APROBADA':
             reserva.autorizador = request.user
-        reserva.save()
-        messages.success(request, f'Reserva #{reserva.pk} actualizada a {reserva.get_estado_display()}.')
-        if nuevo_estado == 'APROBADA' and not hasattr(reserva, 'orden_trabajo'):
-            return redirect('crear_orden', reserva_pk=reserva.pk)
+        try:
+            reserva.save()
+            messages.success(request, f'Reserva #{reserva.pk} actualizada a {reserva.get_estado_display()}.')
+            if nuevo_estado == 'APROBADA' and not hasattr(reserva, 'orden_trabajo'):
+                return redirect('crear_orden', reserva_pk=reserva.pk)
+        except ValidationError as e:
+            messages.error(request, f'No se pudo actualizar la reserva: {"; ".join(e.messages)}')
     return redirect('detalle_reserva', pk=pk)
 
 

@@ -1,5 +1,5 @@
 {% extends 'usuarios/base.html' %}
-{% block title %}{{ titulo }} — ERP CIIDIE{% endblock %}
+{% block title %}{{ titulo }} — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}TPM / Certificaciones / {{ titulo }}{% endblock %}
 {% block nav_tpm %}active{% endblock %}
 
@@ -15,6 +15,13 @@
 </div>
 <form method="post">
     {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger);">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
     <div class="card" style="margin-bottom:1.5rem;">
         <div class="card-header"><div class="card-title">Datos de la certificación</div></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">

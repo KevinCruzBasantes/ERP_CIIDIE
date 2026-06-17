@@ -12,6 +12,11 @@ urlpatterns = [
     path('hallazgos/<int:pk>/editar/',                           views.editar_hallazgo,     name='editar_hallazgo'),
     path('hallazgos/<int:pk>/resolver/',                         views.resolver_hallazgo,   name='resolver_hallazgo'),
     path('hallazgos/<int:pk>/eliminar/',                         views.eliminar_hallazgo,   name='eliminar_hallazgo'),
+    # Ítems de checklist (catálogo por fabricante+modelo)
+    path('checklist-items/',                       views.lista_items_checklist,  name='lista_items_checklist'),
+    path('checklist-items/crear/',                 views.crear_item_checklist,   name='crear_item_checklist'),
+    path('checklist-items/<int:pk>/editar/',       views.editar_item_checklist,  name='editar_item_checklist'),
+    path('checklist-items/<int:pk>/eliminar/',     views.eliminar_item_checklist, name='eliminar_item_checklist'),
     # Certificaciones
     path('certificaciones/',                  views.lista_certificaciones,  name='lista_certificaciones'),
     path('certificaciones/crear/',            views.crear_certificacion,    name='crear_certificacion'),

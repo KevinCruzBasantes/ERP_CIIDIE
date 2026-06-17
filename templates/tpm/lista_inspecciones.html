@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Inspecciones diarias — ERP CIIDIE{% endblock %}
+{% block title %}Inspecciones diarias — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}TPM / Inspecciones{% endblock %}
 {% block nav_tpm %}active{% endblock %}
 
@@ -51,10 +51,9 @@
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Máquina</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Inspector</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Aceite</th>
-                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Presión</th>
                     <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Guardas</th>
                     <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Emergencia</th>
+                    <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Específicos</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Resultado</th>
                     <th style="padding:0.6rem 0.75rem;"></th>
                 </tr>
@@ -71,16 +70,15 @@
                     </td>
                     <td style="padding:0.75rem; font-size:0.8rem; color:var(--text);">{{ i.inspector.get_full_name|default:i.inspector.username }}</td>
                     <td style="padding:0.75rem; text-align:center;">
-                        {% if i.nivel_aceite_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
-                    </td>
-                    <td style="padding:0.75rem; text-align:center;">
-                        {% if i.presion_neumatica_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
-                    </td>
-                    <td style="padding:0.75rem; text-align:center;">
                         {% if i.guardas_seguridad_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
                     </td>
                     <td style="padding:0.75rem; text-align:center;">
                         {% if i.boton_emergencia_ok %}<span style="color:var(--success);">✓</span>{% else %}<span style="color:var(--danger);">✗</span>{% endif %}
+                    </td>
+                    <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                        {% with total=i.respuestas_checklist.count %}
+                            {% if total %}{{ total }} ítem{{ total|pluralize:"s" }}{% else %}—{% endif %}
+                        {% endwith %}
                     </td>
                     <td style="padding:0.75rem;">
                         {% if i.aprobada %}

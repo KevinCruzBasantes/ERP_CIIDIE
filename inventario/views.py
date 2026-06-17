@@ -60,7 +60,9 @@ def crear_material(request):
     if request.method == 'POST':
         form = MaterialForm(request.POST)
         if form.is_valid():
-            mat = form.save()
+            mat = form.save(commit=False)
+            mat.activo = True
+            mat.save()
             messages.success(request, f'Material "{mat.nombre}" creado correctamente.')
             return redirect('detalle_material', pk=mat.pk)
     else:

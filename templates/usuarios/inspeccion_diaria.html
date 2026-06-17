@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Inspección diaria — ERP CIIDIE{% endblock %}
+{% block title %}Inspección diaria — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Inspección diaria{% endblock %}
 {% block nav_inspeccion %}active{% endblock %}
 
@@ -24,7 +24,7 @@
 
             <div style="margin-bottom:1.25rem;">
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.45rem;">Máquina a inspeccionar</label>
-                <select name="maquina_id" required
+                <select name="maquina_id" required onchange="mostrarChecklistDinamico(this.value)"
                         style="width:100%; padding:0.65rem 0.9rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:0.88rem; outline:none; cursor:pointer;">
                     <option value="">— Seleccionar máquina —</option>
                     {% for m in pendientes %}
@@ -33,30 +33,9 @@
                 </select>
             </div>
 
-            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.75rem;">Checklist de inspección</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.75rem;">Checklist universal</div>
 
             <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem;">
-
-                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
-                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <span style="font-size:0.82rem; color:var(--text);">Nivel de aceite lubricación OK</span>
-                    <input type="checkbox" name="nivel_aceite_ok" checked
-                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
-                </label>
-
-                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
-                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <span style="font-size:0.82rem; color:var(--text);">Presión neumática dentro del rango (5–7 bar)</span>
-                    <input type="checkbox" name="presion_neumatica_ok" checked
-                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
-                </label>
-
-                <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
-                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <span style="font-size:0.82rem; color:var(--text);">Nivel de refrigerante OK</span>
-                    <input type="checkbox" name="nivel_refrigerante_ok" checked
-                           style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
-                </label>
 
                 <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
                        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -105,6 +84,30 @@
                 </label>
 
             </div>
+
+            <div id="checklist-dinamico-vacio" style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1.25rem;">
+                Selecciona una máquina para ver sus ítems de checklist específicos (si tiene).
+            </div>
+
+            {% for entrada in pendientes_con_items %}
+            {% if entrada.items %}
+            <div class="checklist-dinamico" data-maquina="{{ entrada.maquina.pk }}" style="display:none; margin-bottom:1.25rem;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.75rem;">
+                    Checklist específico — {{ entrada.maquina.fabricante }} {{ entrada.maquina.modelo }}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    {% for item in entrada.items %}
+                    <label style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.9rem; background:var(--surface2); border-radius:6px; cursor:pointer; border:1px solid var(--border); transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                        <span style="font-size:0.82rem; color:var(--text);">{{ item.nombre }}{% if not item.es_critico %} <span style="color:var(--text-muted); font-size:0.7rem;">(no crítico)</span>{% endif %}</span>
+                        <input type="checkbox" name="item_{{ item.pk }}" checked
+                               style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;">
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
 
             <div style="margin-bottom:1.25rem;">
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.45rem;">Observaciones</label>
@@ -185,6 +188,25 @@
     </div>
 
 </div>
+
+<script>
+function mostrarChecklistDinamico(maquinaPk) {
+    var bloques = document.querySelectorAll('.checklist-dinamico');
+    var algunoVisible = false;
+    bloques.forEach(function(div) {
+        if (div.dataset.maquina === maquinaPk) {
+            div.style.display = 'block';
+            algunoVisible = true;
+        } else {
+            div.style.display = 'none';
+        }
+    });
+    var vacio = document.getElementById('checklist-dinamico-vacio');
+    if (vacio) {
+        vacio.style.display = (maquinaPk && !algunoVisible) ? 'none' : (maquinaPk ? 'none' : 'block');
+    }
+}
+</script>
 
 {% endblock %}
 

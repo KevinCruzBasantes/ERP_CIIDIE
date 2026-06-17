@@ -6,9 +6,10 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import (
     CertificacionUsuario, InspeccionDiaria,
-    RegistroOEE, Incidente, Alerta, HallazgoInspeccion
+    RegistroOEE, Incidente, Alerta, HallazgoInspeccion,
+    ItemChecklistInspeccion,
 )
-from .forms import CertificacionForm, IncidenteForm, HallazgoForm
+from .forms import CertificacionForm, IncidenteForm, HallazgoForm, ItemChecklistForm
 
 
 def _normalizar_rol(nombre_rol):
@@ -69,7 +70,7 @@ def dashboard_tpm(request):
 
 @login_required(login_url='login')
 def lista_inspecciones(request):
-    inspecciones = InspeccionDiaria.objects.select_related('maquina', 'inspector').all()
+    inspecciones = InspeccionDiaria.objects.select_related('maquina', 'inspector').prefetch_related('respuestas_checklist').all()
     context = {
         'inspecciones': inspecciones,
         'total':        inspecciones.count(),
@@ -82,7 +83,9 @@ def lista_inspecciones(request):
 @login_required(login_url='login')
 def detalle_inspeccion(request, pk):
     inspeccion = get_object_or_404(
-        InspeccionDiaria.objects.select_related('maquina', 'inspector'), pk=pk)
+        InspeccionDiaria.objects.select_related('maquina', 'inspector').prefetch_related('respuestas_checklist__item'),
+        pk=pk
+    )
     context = {
         'inspeccion':         inspeccion,
         'hallazgos':          inspeccion.hallazgos.all().order_by('-fecha_creacion'),
@@ -161,6 +164,112 @@ def eliminar_hallazgo(request, pk):
         hallazgo.delete()
         messages.success(request, 'Hallazgo eliminado correctamente.')
     return redirect('detalle_inspeccion', pk=inspeccion_pk)
+
+
+# ── CATÁLOGO DE ÍTEMS DE CHECKLIST (por fabricante+modelo) ────────────────────
+# Mismo patrón que CodigoParada en maquinas/views.py: catálogo scopeado,
+# no por máquina individual.
+
+@login_required(login_url='login')
+def lista_items_checklist(request):
+    qs = ItemChecklistInspeccion.objects.all()
+
+    fabricante     = request.GET.get('fabricante', '').strip()
+    modelo_maquina = request.GET.get('modelo', '').strip()
+    if fabricante:
+        qs = qs.filter(fabricante__icontains=fabricante)
+    if modelo_maquina:
+        qs = qs.filter(modelo_maquina__icontains=modelo_maquina)
+
+    fabricantes_distintos = ItemChecklistInspeccion.objects.values_list(
+        'fabricante', flat=True
+    ).distinct().order_by('fabricante')
+    modelos_distintos = ItemChecklistInspeccion.objects.values_list(
+        'modelo_maquina', flat=True
+    ).distinct().order_by('modelo_maquina')
+
+    context = {
+        'items':                qs,
+        'total':                qs.count(),
+        'criticos':             qs.filter(es_critico=True).count(),
+        'fabricantes':          fabricantes_distintos,
+        'modelos':              modelos_distintos,
+        'filtro_fabricante':    fabricante,
+        'filtro_modelo':        modelo_maquina,
+        'es_admin_o_tecnico':   es_admin_o_tecnico(request.user),
+    }
+    return render(request, 'tpm/lista_items_checklist.html', context)
+
+
+@login_required(login_url='login')
+def crear_item_checklist(request):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para crear ítems de checklist.')
+        return redirect('lista_items_checklist')
+
+    if request.method == 'POST':
+        form = ItemChecklistForm(request.POST)
+        if form.is_valid():
+            item = form.save()
+            messages.success(
+                request,
+                f'Ítem "{item.nombre}" agregado al checklist de {item.fabricante} {item.modelo_maquina}.'
+            )
+            return redirect('lista_items_checklist')
+    else:
+        initial = {
+            'fabricante':     request.GET.get('fabricante', ''),
+            'modelo_maquina': request.GET.get('modelo', ''),
+        }
+        form = ItemChecklistForm(initial=initial)
+
+    return render(request, 'tpm/form_item_checklist.html', {
+        'form':   form,
+        'titulo': 'Nuevo ítem de checklist',
+        'accion': 'Crear ítem',
+    })
+
+
+@login_required(login_url='login')
+def editar_item_checklist(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para editar ítems de checklist.')
+        return redirect('lista_items_checklist')
+
+    item = get_object_or_404(ItemChecklistInspeccion, pk=pk)
+
+    if request.method == 'POST':
+        form = ItemChecklistForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Ítem "{item.nombre}" actualizado correctamente.')
+            return redirect('lista_items_checklist')
+    else:
+        form = ItemChecklistForm(instance=item)
+
+    return render(request, 'tpm/form_item_checklist.html', {
+        'form':   form,
+        'item':   item,
+        'titulo': f'Editar — {item.nombre}',
+        'accion': 'Guardar cambios',
+    })
+
+
+@login_required(login_url='login')
+def eliminar_item_checklist(request, pk):
+    if not es_admin(request.user):
+        messages.error(request, 'No tienes permisos para eliminar ítems de checklist.')
+        return redirect('lista_items_checklist')
+
+    item = get_object_or_404(ItemChecklistInspeccion, pk=pk)
+
+    if request.method == 'POST':
+        nombre = item.nombre
+        item.delete()
+        messages.success(request, f'Ítem "{nombre}" eliminado correctamente.')
+        return redirect('lista_items_checklist')
+
+    return render(request, 'tpm/confirmar_eliminar_item_checklist.html', {'item': item})
 
 
 # ── CERTIFICACIONES ───────────────────────────────────────────────────────────

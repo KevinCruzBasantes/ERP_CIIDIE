@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Inspección #{{ inspeccion.pk }} — ERP CIIDIE{% endblock %}
+{% block title %}Inspección #{{ inspeccion.pk }} — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}TPM / Inspecciones / #{{ inspeccion.pk }}{% endblock %}
 {% block nav_tpm %}active{% endblock %}
 
@@ -40,20 +40,12 @@
         </div>
         <div style="display:flex; flex-direction:column; gap:0.6rem;">
 
+            {% for respuesta in inspeccion.respuestas_checklist.all %}
             <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
-                <span style="font-size:0.82rem; color:var(--text);">Nivel de aceite lubricación</span>
-                {% if inspeccion.nivel_aceite_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
+                <span style="font-size:0.82rem; color:var(--text);">{{ respuesta.item.nombre }}{% if not respuesta.item.es_critico %} <span style="color:var(--text-muted); font-size:0.7rem;">(no crítico)</span>{% endif %}</span>
+                {% if respuesta.ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
             </div>
-
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
-                <span style="font-size:0.82rem; color:var(--text);">Presión neumática (5–7 bar)</span>
-                {% if inspeccion.presion_neumatica_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-danger">✗ Falla</span>{% endif %}
-            </div>
-
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
-                <span style="font-size:0.82rem; color:var(--text);">Nivel de refrigerante</span>
-                {% if inspeccion.nivel_refrigerante_ok %}<span class="badge badge-success">✓ OK</span>{% else %}<span class="badge badge-warning">⚠ Bajo</span>{% endif %}
-            </div>
+            {% endfor %}
 
             <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px;">
                 <span style="font-size:0.82rem; color:var(--text);">Limpieza del área de trabajo</span>

@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Inicio — ERP CIIDIE{% endblock %}
+{% block title %}Inicio — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Inicio{% endblock %}
 {% block nav_inicio %}active{% endblock %}
 
@@ -8,7 +8,7 @@
 
 <div class="page-header">
     <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
-    <p>{{ user.rol|default:"Usuario" }} — Laboratorio CIIDIE · Universidad Central del Ecuador</p>
+    <p>{{ user.rol|default:"Usuario" }} — Laboratorio CIDIIE · Universidad Central del Ecuador</p>
 </div>
 
 <div class="grid-2">

@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Transferir pieza — {{ pieza.nombre }} — ERP CIIDIE{% endblock %}
+{% block title %}Transferir pieza — {{ pieza.nombre }} — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Máquinas / {{ maquina_origen.codigo }} / Transferir pieza{% endblock %}
 {% block nav_maquinas %}active{% endblock %}
 
@@ -41,6 +41,12 @@
 <!-- Formulario de transferencia -->
 <form method="post" style="max-width:640px;">
     {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger);">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
 
     <div class="card" style="margin-bottom:1.25rem;">
         <div class="card-header">

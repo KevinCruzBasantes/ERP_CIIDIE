@@ -1,4 +1,4 @@
-# Flujo completo de la aplicación — ERP CIIDIE
+# Flujo completo de la aplicación — ERP CIDIIE
 
 > Documento de referencia técnica. Generado a partir del código fuente real (modelos, vistas, urls, signals) al 2026-06-16.
 > Objetivo: tener en un solo lugar el mapa completo del sistema para planificar cambios futuros sin tener que releer todo el código.

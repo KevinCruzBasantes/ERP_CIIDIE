@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from maquinas.models import Maquina, CodigoParada
 from usuarios.models import Usuario
@@ -63,6 +64,10 @@ class Reserva(models.Model):
         verbose_name_plural = 'Reservas'
 
     def clean(self):
+        # Cancelar siempre debe poder hacerse, sin importar si la máquina o la
+        # certificación del usuario cambiaron de estado después de crear la reserva.
+        if self.estado == 'CANCELADA':
+            return
         if self.hora_fin <= self.hora_inicio:
             raise ValidationError(
                 "La hora de fin debe ser mayor que la hora de inicio."
@@ -85,6 +90,20 @@ class Reserva(models.Model):
             raise ValidationError(
                 "La máquina ya tiene una reserva en ese horario."
             )
+        # Verificar certificación vigente (Pilar 4 TPM — Formación)
+        if self.usuario_id and self.maquina_id:
+            from tpm.models import CertificacionUsuario
+            tiene_certificacion = CertificacionUsuario.objects.filter(
+                usuario_id=self.usuario_id,
+                maquina_id=self.maquina_id,
+                activo=True,
+                fecha_vencimiento__gte=timezone.now().date(),
+            ).exists()
+            if not tiene_certificacion:
+                raise ValidationError(
+                    f"{self.usuario} no tiene una certificación vigente para operar "
+                    f"'{self.maquina.nombre}'. Solicita la certificación antes de reservar esta máquina."
+                )
 
     def save(self, *args, **kwargs):
         self.full_clean()

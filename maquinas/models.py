@@ -76,7 +76,7 @@ class Maquina(models.Model):
     )
     tipo_control_cnc = models.CharField(
         max_length=100, blank=True,
-        help_text="Ej: Siemens Sinumerik 828D"
+        help_text="Tipo de controlador CNC, si aplica"
     )
     peso_kg = models.DecimalField(
         max_digits=8, decimal_places=2,
@@ -132,11 +132,11 @@ class CodigoParada(models.Model):
     # un router 1313 tendrá los suyos sin mezclarlos.
     fabricante = models.CharField(
         max_length=100,
-        help_text="Ej: OPTIMUM"
+        help_text="Nombre del fabricante de la máquina"
     )
     modelo_maquina = models.CharField(
         max_length=100,
-        help_text="Ej: F210HSC — aplica a todas las máquinas de este modelo"
+        help_text="Modelo de la máquina — el código aplica a todas las máquinas de este fabricante+modelo"
     )
 
     codigo = models.CharField(
@@ -147,7 +147,7 @@ class CodigoParada(models.Model):
     categoria = models.CharField(max_length=30, choices=CATEGORIAS)
     subsistema = models.CharField(
         max_length=200,
-        help_text="Ej: Husillo / Spindle (Inline Motor)"
+        help_text="Subsistema o componente afectado, ej: Motor principal, Sistema de transmisión"
     )
     causa_raiz_comun = models.TextField(
         blank=True,
@@ -190,12 +190,12 @@ class Pieza(models.Model):
         null=True,
         blank=True,
         related_name='piezas_hijas',
-        help_text="Ensamble padre (Baugruppe). Dejar vacío si esta pieza ES el ensamble."
+        help_text="Ensamble padre. Dejar vacío si esta pieza ES el ensamble."
     )
 
     es_ensamble = models.BooleanField(
         default=False,
-        help_text="Marcar si esta entrada representa un Baugruppe (subconjunto), no una pieza individual"
+        help_text="Marcar si esta entrada representa un subconjunto (ensamble), no una pieza individual"
     )
 
     # ── Identificación ────────────────────────────────────────────────
@@ -206,17 +206,17 @@ class Pieza(models.Model):
     nombre_original = models.CharField(
         max_length=150,
         blank=True,
-        help_text="Nombre en el idioma del manual del fabricante (ej: Kugelgewindetrieb)"
+        help_text="Nombre en el idioma del manual del fabricante, si es distinto del español"
     )
     nombre_en = models.CharField(
         max_length=150,
         blank=True,
-        help_text="Nombre en inglés según el manual (ej: Ballscrew)"
+        help_text="Nombre en inglés según el manual del fabricante"
     )
     numero_parte = models.CharField(
         max_length=50,
         blank=True,
-        help_text="Artikelnummer del fabricante (ej: 035112320103) — necesario para pedir repuestos"
+        help_text="Código o número de parte del fabricante — necesario para pedir repuestos"
     )
     numero_posicion = models.PositiveSmallIntegerField(
         null=True,

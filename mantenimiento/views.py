@@ -323,13 +323,14 @@ def lista_ordenes_mantenimiento(request):
         'en_proceso':      qs.filter(estado='EN_PROCESO').count(),
         'finalizadas':     qs.filter(estado='FINALIZADA').count(),
         'vencidas':        qs.filter(estado='PROGRAMADA', fecha_programada__lt=hoy).count(),
-        'maquinas':        MaquinaModel.objects.exclude(estado='BAJA').order_by('nombre'),
+        'maquinas':        MaquinaModel.objects.exclude(estado='FUERA_SERVICIO').order_by('nombre'),
         'filtro_estado':   estado_f,
         'filtro_tipo':     tipo_f,
         'filtro_maquina':  maquina_f,
         'filtro_prioridad': prioridad_f,
         'hay_filtros':     any([estado_f, tipo_f, maquina_f, prioridad_f]),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+        'today':           hoy,
     }
     return render(request, 'mantenimiento/lista_ordenes_mantenimiento.html', context)
 

@@ -1,26 +1,26 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Códigos de parada — ERP CIDIIE{% endblock %}
-{% block breadcrumb %}Máquinas / Códigos de parada{% endblock %}
-{% block nav_maquinas %}active{% endblock %}
+{% block title %}Ítems de checklist — ERP CIDIIE{% endblock %}
+{% block breadcrumb %}TPM / Ítems de checklist{% endblock %}
+{% block nav_tpm %}active{% endblock %}
 
 {% block content %}
 
 <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
     <div>
         <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-            <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
-            <span style="margin:0 0.4rem;">›</span> Códigos de parada
+            <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
+            <span style="margin:0 0.4rem;">›</span> Ítems de checklist
         </div>
-        <h1>Códigos de parada</h1>
-        <p>Catálogo por fabricante y modelo — PP (planificadas) / PNP (no planificadas)</p>
+        <h1>Ítems de checklist</h1>
+        <p>Catálogo por fabricante y modelo — complementa el checklist universal de la inspección diaria</p>
     </div>
     {% if es_admin_o_tecnico %}
-    <a href="{% url 'crear_codigo_parada' %}"
+    <a href="{% url 'crear_item_checklist' %}"
        style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:background 0.15s;"
        onmouseover="this.style.background='var(--accent2)'"
        onmouseout="this.style.background='var(--accent)'">
-        + Nuevo código
+        + Nuevo ítem
     </a>
     {% endif %}
 </div>
@@ -28,19 +28,14 @@
 <!-- STATS -->
 <div class="stats-grid">
     <div class="stat-card accent">
-        <div class="stat-label">Total códigos</div>
+        <div class="stat-label">Total ítems</div>
         <div class="stat-value">{{ total }}</div>
         <div class="stat-sub">en el catálogo</div>
     </div>
-    <div class="stat-card info">
-        <div class="stat-label">Planificadas (PP)</div>
-        <div class="stat-value">{{ planificados }}</div>
-        <div class="stat-sub">paradas programadas</div>
-    </div>
     <div class="stat-card danger">
-        <div class="stat-label">No planificadas (PNP)</div>
-        <div class="stat-value">{{ no_planificados }}</div>
-        <div class="stat-sub">paradas inesperadas</div>
+        <div class="stat-label">Críticos</div>
+        <div class="stat-value">{{ criticos }}</div>
+        <div class="stat-sub">bloquean la aprobación si fallan</div>
     </div>
     <div class="stat-card warning">
         <div class="stat-label">Modelos cubiertos</div>
@@ -78,7 +73,7 @@
                 Filtrar
             </button>
             {% if filtro_fabricante or filtro_modelo %}
-            <a href="{% url 'lista_codigos_parada' %}"
+            <a href="{% url 'lista_items_checklist' %}"
                style="padding:0.55rem 1rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none; transition:border-color 0.15s;"
                onmouseover="this.style.borderColor='var(--text-muted)'"
                onmouseout="this.style.borderColor='var(--border)'">
@@ -93,65 +88,70 @@
 <div class="card">
     <div class="card-header">
         <div class="card-title">Catálogo</div>
-        <span class="badge badge-accent">{{ total }} código{{ total|pluralize:"s" }}</span>
+        <span class="badge badge-accent">{{ total }} ítem{{ total|pluralize:"s" }}</span>
     </div>
 
-    {% if codigos %}
+    {% if items %}
     <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
             <thead>
                 <tr style="border-bottom:1px solid var(--border);">
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Código</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Ítem</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Modelo</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tipo</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Categoría</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Subsistema</th>
-                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Usos</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Crítico</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Activo</th>
                     <th style="padding:0.6rem 0.75rem;"></th>
                 </tr>
             </thead>
             <tbody>
-                {% for cp in codigos %}
+                {% for item in items %}
                 <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;"
                     onmouseover="this.style.background='var(--surface2)'"
                     onmouseout="this.style.background='transparent'">
 
-                    <td style="padding:0.75rem;">
-                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.82rem; font-weight:600; color:var(--accent);">{{ cp.codigo }}</span>
-                    </td>
-
-                    <td style="padding:0.75rem;">
-                        <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ cp.modelo_maquina }}</div>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ cp.fabricante }}</div>
-                    </td>
-
-                    <td style="padding:0.75rem;">
-                        {% if cp.tipo == 'PLANIFICADA' %}
-                            <span class="badge badge-info">PP — Planificada</span>
-                        {% else %}
-                            <span class="badge badge-danger">PNP — No planificada</span>
+                    <td style="padding:0.75rem; max-width:320px;">
+                        <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ item.nombre }}</div>
+                        {% if item.descripcion %}
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ item.descripcion|truncatechars:80 }}</div>
                         {% endif %}
                     </td>
 
-                    <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted);">
-                        {{ cp.get_categoria_display }}
+                    <td style="padding:0.75rem;">
+                        <div style="font-size:0.82rem; color:var(--text);">{{ item.modelo_maquina }}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ item.fabricante }}</div>
                     </td>
 
-                    <td style="padding:0.75rem; font-size:0.78rem; color:var(--text-muted); max-width:200px;">
-                        <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ cp.subsistema }}</div>
+                    <td style="padding:0.75rem;">
+                        {% if item.es_critico %}
+                            <span class="badge badge-danger">Crítico</span>
+                        {% else %}
+                            <span class="badge badge-accent">Informativo</span>
+                        {% endif %}
                     </td>
 
-                    <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">
-                        {{ cp.registros.count }}
+                    <td style="padding:0.75rem;">
+                        {% if item.activo %}
+                            <span class="badge badge-success">✓ Sí</span>
+                        {% else %}
+                            <span class="badge" style="background:rgba(148,163,184,0.1); color:var(--text-muted); border:1px solid var(--border);">Inactivo</span>
+                        {% endif %}
                     </td>
 
-                    <td style="padding:0.75rem; text-align:right;">
-                        <a href="{% url 'detalle_codigo_parada' cp.pk %}"
-                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                    <td style="padding:0.75rem; text-align:right; white-space:nowrap;">
+                        {% if es_admin_o_tecnico %}
+                        <a href="{% url 'editar_item_checklist' item.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s; margin-right:0.4rem;"
                            onmouseover="this.style.borderColor='var(--accent)'"
                            onmouseout="this.style.borderColor='var(--border)'">
-                            Ver →
+                            Editar
                         </a>
+                        <a href="{% url 'eliminar_item_checklist' item.pk %}"
+                           style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--danger); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                           onmouseover="this.style.borderColor='var(--danger)'"
+                           onmouseout="this.style.borderColor='var(--border)'">
+                            Eliminar
+                        </a>
+                        {% endif %}
                     </td>
 
                 </tr>
@@ -164,12 +164,13 @@
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
         <span style="font-size:2.5rem; opacity:0.2;">◉</span>
         {% if filtro_fabricante or filtro_modelo %}
-        <div style="font-size:0.85rem;">No se encontraron códigos con ese filtro.</div>
-        <a href="{% url 'lista_codigos_parada' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none;">Ver todos</a>
+        <div style="font-size:0.85rem;">No se encontraron ítems con ese filtro.</div>
+        <a href="{% url 'lista_items_checklist' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none;">Ver todos</a>
         {% else %}
-        <div style="font-size:0.85rem;">No hay códigos de parada registrados aún.</div>
+        <div style="font-size:0.85rem;">No hay ítems de checklist registrados aún.</div>
+        <div style="font-size:0.72rem; opacity:0.7; max-width:420px;">El checklist universal (seguridad, limpieza, ruidos/vibraciones) ya se aplica a todas las máquinas. Agrega aquí solo lo específico de cada fabricante+modelo (aceite, presión neumática, refrigerante, etc.).</div>
         {% if es_admin_o_tecnico %}
-        <a href="{% url 'crear_codigo_parada' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none;">+ Crear el primer código</a>
+        <a href="{% url 'crear_item_checklist' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent); text-decoration:none;">+ Crear el primer ítem</a>
         {% endif %}
         {% endif %}
     </div>

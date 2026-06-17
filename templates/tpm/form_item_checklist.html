@@ -1,16 +1,16 @@
 {% extends 'usuarios/base.html' %}
 
 {% block title %}{{ titulo }} — ERP CIDIIE{% endblock %}
-{% block breadcrumb %}Máquinas / Códigos de parada / {{ titulo }}{% endblock %}
-{% block nav_maquinas %}active{% endblock %}
+{% block breadcrumb %}TPM / Ítems de checklist / {{ titulo }}{% endblock %}
+{% block nav_tpm %}active{% endblock %}
 
 {% block content %}
 
 <div class="page-header" style="margin-bottom:1.5rem;">
     <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-        <a href="{% url 'lista_maquinas' %}" style="color:var(--text-muted); text-decoration:none;">Máquinas</a>
+        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
         <span style="margin:0 0.4rem;">›</span>
-        <a href="{% url 'lista_codigos_parada' %}" style="color:var(--text-muted); text-decoration:none;">Códigos de parada</a>
+        <a href="{% url 'lista_items_checklist' %}" style="color:var(--text-muted); text-decoration:none;">Ítems de checklist</a>
         <span style="margin:0 0.4rem;">›</span> {{ titulo }}
     </div>
     <h1>{{ titulo }}</h1>
@@ -26,8 +26,8 @@
 
     <div class="card" style="margin-bottom:1.5rem;">
         <div class="card-header">
-            <div class="card-title">Ámbito del código</div>
-            <span style="font-size:0.7rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">El código aplica a todas las máquinas de este fabricante + modelo</span>
+            <div class="card-title">Ámbito del ítem</div>
+            <span style="font-size:0.7rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">Aplica a todas las máquinas de este fabricante + modelo</span>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
 
@@ -68,71 +68,50 @@
 
     <div class="card" style="margin-bottom:1.5rem;">
         <div class="card-header">
-            <div class="card-title">Datos del código</div>
+            <div class="card-title">Datos del ítem</div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
 
-            <div>
+            <div style="grid-column:span 2;">
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Código <span style="color:var(--danger);">*</span>
+                    Texto del ítem (lo que verá el operario) <span style="color:var(--danger);">*</span>
                 </label>
-                {{ form.codigo }}
-                {% if form.codigo.errors %}
-                <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.codigo.errors.0 }}</div>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.nombre.errors.0 }}</div>
                 {% endif %}
-                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">Debe ser único por fabricante + modelo. Ej: PP01, PNP-M02</div>
-            </div>
-
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Tipo <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.tipo }}
-            </div>
-
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Categoría <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.categoria }}
-            </div>
-
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Subsistema <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.subsistema }}
-                {% if form.subsistema.errors %}
-                <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.subsistema.errors.0 }}</div>
-                {% endif %}
+                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">Incluye aquí el criterio concreto del fabricante, ej: "Presión neumática dentro del rango (X–Y bar)".</div>
             </div>
 
             <div style="grid-column:span 2;">
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Causa raíz común
+                    Descripción adicional
                 </label>
-                {{ form.causa_raiz_comun }}
+                {{ form.descripcion }}
+            </div>
+
+            <div>
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Orden de aparición
+                </label>
+                {{ form.orden }}
+            </div>
+
+            <div style="display:flex; align-items:center; gap:0.6rem; padding-top:1.6rem;">
+                {{ form.es_critico }}
+                <label style="font-size:0.82rem; color:var(--text); cursor:pointer;">Es crítico (si falla, bloquea la aprobación de la inspección)</label>
             </div>
 
         </div>
     </div>
 
     <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
-        {% if codigo %}
-        <a href="{% url 'detalle_codigo_parada' codigo.pk %}"
+        <a href="{% url 'lista_items_checklist' %}"
            style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
            onmouseover="this.style.borderColor='var(--text-muted)'"
            onmouseout="this.style.borderColor='var(--border)'">
             Cancelar
         </a>
-        {% else %}
-        <a href="{% url 'lista_codigos_parada' %}"
-           style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
-           onmouseover="this.style.borderColor='var(--text-muted)'"
-           onmouseout="this.style.borderColor='var(--border)'">
-            Cancelar
-        </a>
-        {% endif %}
         <button type="submit"
                 style="padding:0.7rem 1.5rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:background 0.15s;"
                 onmouseover="this.style.background='var(--accent2)'"
@@ -144,5 +123,3 @@
 </form>
 
 {% endblock %}
-
-

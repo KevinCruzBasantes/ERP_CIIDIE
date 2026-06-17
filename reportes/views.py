@@ -144,12 +144,12 @@ def generar_inspecciones(request):
     ws = wb.active
     ws.title = 'Inspecciones'
 
-    encabezados = ['Fecha', 'Máquina', 'Inspector', 'Aceite', 'Presión',
-                   'Refrigerante', 'Limpieza', 'Temperatura', 'Guardas',
-                   'Emergencia', 'Ruidos', 'Vibraciones', 'Resultado', 'Observaciones']
+    encabezados = ['Fecha', 'Máquina', 'Inspector', 'Limpieza', 'Temperatura', 'Guardas',
+                   'Emergencia', 'Ruidos', 'Vibraciones', 'Ítems específicos (catálogo)',
+                   'Resultado', 'Observaciones']
     estilo_encabezado(ws, 1, encabezados)
 
-    qs = InspeccionDiaria.objects.select_related('maquina', 'inspector')
+    qs = InspeccionDiaria.objects.select_related('maquina', 'inspector').prefetch_related('respuestas_checklist__item')
     if fecha_inicio:
         qs = qs.filter(fecha__gte=fecha_inicio)
     if fecha_fin:
@@ -159,20 +159,21 @@ def generar_inspecciones(request):
     ok_falla = lambda v: 'OK' if v else 'FALLA'
 
     for i, insp in enumerate(qs, 2):
+        items_especificos = '; '.join(
+            f"{r.item.nombre}: {'OK' if r.ok else 'FALLA'}" for r in insp.respuestas_checklist.all()
+        ) or '—'
         ws.cell(row=i, column=1, value=insp.fecha.strftime('%d/%m/%Y'))
         ws.cell(row=i, column=2, value=insp.maquina.nombre)
         ws.cell(row=i, column=3, value=insp.inspector.get_full_name() if insp.inspector else '—')
-        ws.cell(row=i, column=4, value=ok_falla(insp.nivel_aceite_ok))
-        ws.cell(row=i, column=5, value=ok_falla(insp.presion_neumatica_ok))
-        ws.cell(row=i, column=6, value=ok_falla(insp.nivel_refrigerante_ok))
-        ws.cell(row=i, column=7, value=ok_falla(insp.limpieza_area_ok))
-        ws.cell(row=i, column=8, value=ok_falla(insp.temperatura_normal))
-        ws.cell(row=i, column=9, value=ok_falla(insp.guardas_seguridad_ok))
-        ws.cell(row=i, column=10, value=ok_falla(insp.boton_emergencia_ok))
-        ws.cell(row=i, column=11, value=si_no(insp.ruidos_anormales))
-        ws.cell(row=i, column=12, value=si_no(insp.vibraciones_anormales))
-        ws.cell(row=i, column=13, value='Aprobada' if insp.aprobada else 'FALLIDA')
-        ws.cell(row=i, column=14, value=insp.observaciones or '—')
+        ws.cell(row=i, column=4, value=ok_falla(insp.limpieza_area_ok))
+        ws.cell(row=i, column=5, value=ok_falla(insp.temperatura_normal))
+        ws.cell(row=i, column=6, value=ok_falla(insp.guardas_seguridad_ok))
+        ws.cell(row=i, column=7, value=ok_falla(insp.boton_emergencia_ok))
+        ws.cell(row=i, column=8, value=si_no(insp.ruidos_anormales))
+        ws.cell(row=i, column=9, value=si_no(insp.vibraciones_anormales))
+        ws.cell(row=i, column=10, value=items_especificos)
+        ws.cell(row=i, column=11, value='Aprobada' if insp.aprobada else 'FALLIDA')
+        ws.cell(row=i, column=12, value=insp.observaciones or '—')
 
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = 16

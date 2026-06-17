@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Dashboard Administrador — ERP CIIDIE{% endblock %}
+{% block title %}Dashboard Administrador — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Inicio{% endblock %}
 {% block nav_inicio %}active{% endblock %}
 
@@ -8,7 +8,7 @@
 
 <div class="page-header">
     <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
-    <p>{{ user.rol|default:"Administrador" }} — Laboratorio CIIDIE · Universidad Central del Ecuador</p>
+    <p>{{ user.rol|default:"Administrador" }} — Laboratorio CIDIIE · Universidad Central del Ecuador</p>
 </div>
 
 <div class="stats-grid">

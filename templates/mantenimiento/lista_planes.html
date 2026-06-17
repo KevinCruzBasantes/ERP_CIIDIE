@@ -1,6 +1,6 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Planes de mantenimiento — ERP CIIDIE{% endblock %}
+{% block title %}Planes de mantenimiento — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Mantenimiento / Planes{% endblock %}
 {% block nav_mantenimiento %}active{% endblock %}
 
@@ -13,7 +13,7 @@
             <span style="margin:0 0.4rem;">›</span> Planes
         </div>
         <h1>Planes de mantenimiento</h1>
-        <p>Plantillas periódicas definidas por fabricante (Wartungsplaner)</p>
+        <p>Plantillas periódicas definidas por el fabricante de cada máquina</p>
     </div>
     {% if es_admin_o_tecnico %}
     <a href="{% url 'crear_plan' %}"

@@ -54,10 +54,61 @@ class CertificacionUsuario(models.Model):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Catálogo de ítems de checklist específicos por fabricante+modelo
+# (mismo patrón de scope que CodigoParada en maquinas/models.py).
+# Cubre lo que NO es universal: niveles de aceite/refrigerante, presión
+# neumática, etc. — cosas que solo aplican a ciertos tipos de máquina y
+# cuyo rango/criterio depende del fabricante.
+# ─────────────────────────────────────────────────────────────────────────────
+class ItemChecklistInspeccion(models.Model):
+
+    fabricante = models.CharField(
+        max_length=100,
+        help_text="Nombre del fabricante — el ítem aplica a todas las máquinas de este fabricante+modelo"
+    )
+    modelo_maquina = models.CharField(
+        max_length=100,
+        help_text="Modelo de la máquina"
+    )
+
+    nombre = models.CharField(
+        max_length=200,
+        help_text="Texto que verá el operario, incluyendo el criterio concreto del fabricante"
+    )
+    descripcion = models.TextField(
+        blank=True,
+        help_text="Detalle adicional o criterio de aceptación (opcional)"
+    )
+    es_critico = models.BooleanField(
+        default=True,
+        help_text="Si falla, la inspección completa queda como no aprobada"
+    )
+    orden = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="Orden de aparición en el checklist"
+    )
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['fabricante', 'modelo_maquina', 'orden', 'nombre']
+        unique_together = [['fabricante', 'modelo_maquina', 'nombre']]
+        verbose_name = 'Ítem de checklist'
+        verbose_name_plural = 'Ítems de checklist'
+
+    def __str__(self):
+        return f"[{self.modelo_maquina}] {self.nombre}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Inspección diaria (Pilar 1 TPM — Mantenimiento Autónomo)
 # El operario llena este checklist ANTES de usar la máquina.
 # Si aprobada=False → se genera una Alerta automáticamente y la máquina
 # queda bloqueada para reservas ese día.
+#
+# Checklist HÍBRIDO: los campos fijos de abajo son universales (aplican a
+# cualquier máquina); lo específico de cada fabricante+modelo (aceite,
+# presión neumática, refrigerante, etc.) vive en ItemChecklistInspeccion
+# y se responde por inspección en RespuestaChecklistInspeccion.
 # ─────────────────────────────────────────────────────────────────────────────
 class InspeccionDiaria(models.Model):
 
@@ -75,22 +126,10 @@ class InspeccionDiaria(models.Model):
 
     fecha = models.DateField()
 
-    # ── Checklist (campos del manual de la F210HSC y TPM general) ─────
-    nivel_aceite_ok = models.BooleanField(
-        default=True,
-        verbose_name="Nivel de aceite lubricación OK"
-    )
-    presion_neumatica_ok = models.BooleanField(
-        default=True,
-        verbose_name="Presión neumática dentro del rango (5–7 bar)"
-    )
-    nivel_refrigerante_ok = models.BooleanField(
-        default=True,
-        verbose_name="Nivel de refrigerante OK"
-    )
+    # ── Checklist universal (aplica a cualquier máquina) ──────────────
     limpieza_area_ok = models.BooleanField(
         default=True,
-        verbose_name="Área de trabajo limpia (virutas, refrigerante)"
+        verbose_name="Área de trabajo limpia"
     )
     ruidos_anormales = models.BooleanField(
         default=False,
@@ -115,10 +154,10 @@ class InspeccionDiaria(models.Model):
 
     observaciones = models.TextField(blank=True)
 
-    # Campo calculado automáticamente en save()
+    # Campo calculado automáticamente — ver _calcular_aprobada()
     aprobada = models.BooleanField(
         default=True,
-        help_text="False si algún ítem crítico falla — bloquea la máquina ese día"
+        help_text="False si algún ítem crítico (fijo o del catálogo) falla — bloquea la máquina ese día"
     )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -131,24 +170,59 @@ class InspeccionDiaria(models.Model):
         verbose_name = 'Inspección diaria'
         verbose_name_plural = 'Inspecciones diarias'
 
+    def _calcular_aprobada(self):
+        items_criticos_ok = self.guardas_seguridad_ok and self.boton_emergencia_ok
+        items_anomalias = self.ruidos_anormales or self.vibraciones_anormales
+        # Los ítems específicos del catálogo (RespuestaChecklistInspeccion) solo
+        # existen una vez que la inspección ya tiene pk, por eso se evalúan aparte
+        # — ver recalcular_aprobada(), llamado por la vista tras guardar las respuestas.
+        dinamicos_criticos_fallidos = False
+        if self.pk:
+            dinamicos_criticos_fallidos = self.respuestas_checklist.filter(
+                item__es_critico=True, ok=False
+            ).exists()
+        return items_criticos_ok and not items_anomalias and not dinamicos_criticos_fallidos
+
+    def recalcular_aprobada(self):
+        """Recalcula `aprobada` considerando las respuestas del catálogo dinámico.
+        Debe llamarse después de crear/actualizar las RespuestaChecklistInspeccion."""
+        self.aprobada = self._calcular_aprobada()
+        self.save(update_fields=['aprobada'])
+
     def save(self, *args, **kwargs):
-        # La inspección falla si algún ítem crítico está en mal estado
-        items_criticos_ok = all([
-            self.nivel_aceite_ok,
-            self.presion_neumatica_ok,
-            self.guardas_seguridad_ok,
-            self.boton_emergencia_ok,
-        ])
-        items_anomalias = any([
-            self.ruidos_anormales,
-            self.vibraciones_anormales,
-        ])
-        self.aprobada = items_criticos_ok and not items_anomalias
+        self.aprobada = self._calcular_aprobada()
         super().save(*args, **kwargs)
 
     def __str__(self):
         estado = "✓" if self.aprobada else "✗ FALLIDA"
         return f"{self.maquina.codigo} — {self.fecha} [{estado}]"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Respuesta a un ítem del catálogo dinámico, para una inspección concreta.
+# ─────────────────────────────────────────────────────────────────────────────
+class RespuestaChecklistInspeccion(models.Model):
+
+    inspeccion = models.ForeignKey(
+        InspeccionDiaria,
+        on_delete=models.CASCADE,
+        related_name='respuestas_checklist'
+    )
+    item = models.ForeignKey(
+        ItemChecklistInspeccion,
+        on_delete=models.CASCADE,
+        related_name='respuestas'
+    )
+    ok = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['item__orden', 'item__nombre']
+        unique_together = [['inspeccion', 'item']]
+        verbose_name = 'Respuesta de checklist'
+        verbose_name_plural = 'Respuestas de checklist'
+
+    def __str__(self):
+        return f"{self.inspeccion} — {self.item.nombre}: {'OK' if self.ok else 'FALLA'}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

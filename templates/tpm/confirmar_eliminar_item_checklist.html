@@ -1,19 +1,19 @@
 {% extends 'usuarios/base.html' %}
 
-{% block title %}Eliminar plan — ERP CIDIIE{% endblock %}
-{% block breadcrumb %}Mantenimiento / Planes / Eliminar{% endblock %}
-{% block nav_mantenimiento %}active{% endblock %}
+{% block title %}Eliminar ítem — ERP CIDIIE{% endblock %}
+{% block breadcrumb %}TPM / Ítems de checklist / Eliminar{% endblock %}
+{% block nav_tpm %}active{% endblock %}
 
 {% block content %}
 
 <div class="page-header" style="margin-bottom:1.5rem;">
     <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.35rem;">
-        <a href="{% url 'lista_mantenimientos' %}" style="color:var(--text-muted); text-decoration:none;">Mantenimiento</a>
+        <a href="{% url 'dashboard_tpm' %}" style="color:var(--text-muted); text-decoration:none;">TPM</a>
         <span style="margin:0 0.4rem;">›</span>
-        <a href="{% url 'lista_planes' %}" style="color:var(--text-muted); text-decoration:none;">Planes</a>
+        <a href="{% url 'lista_items_checklist' %}" style="color:var(--text-muted); text-decoration:none;">Ítems de checklist</a>
         <span style="margin:0 0.4rem;">›</span> Eliminar
     </div>
-    <h1>Eliminar plan</h1>
+    <h1>Eliminar ítem de checklist</h1>
 </div>
 
 <div class="card" style="max-width:560px;">
@@ -23,21 +23,26 @@
 
     <div style="margin-bottom:1.5rem;">
         <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6; margin-bottom:1rem;">
-            ¿Estás seguro de que deseas eliminar el siguiente plan de mantenimiento?
+            ¿Estás seguro de que deseas eliminar este ítem de checklist? Esta acción es <strong style="color:var(--danger);">permanente</strong>.
         </p>
 
         <div style="background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:1rem; display:flex; flex-direction:column; gap:0.5rem;">
-            <div style="font-size:0.9rem; color:var(--text); font-weight:500;">{{ plan.nombre_tarea }}</div>
-            <div style="font-size:0.78rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">
-                {{ plan.maquina.codigo }} — {{ plan.maquina.nombre }}
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span style="font-size:0.9rem; font-weight:600; color:var(--text);">{{ item.nombre }}</span>
+                {% if item.es_critico %}
+                    <span class="badge badge-danger">Crítico</span>
+                {% else %}
+                    <span class="badge badge-accent">Informativo</span>
+                {% endif %}
             </div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">
-                {{ plan.get_tipo_tpm_display }} · cada {{ plan.intervalo_valor }} {{ plan.get_intervalo_unidad_display }}
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">
+                {{ item.fabricante }} · {{ item.modelo_maquina }}
             </div>
-            {% with total=plan.ejecuciones.count %}
+
+            {% with total=item.respuestas.count %}
             {% if total > 0 %}
             <div style="margin-top:0.5rem; padding:0.5rem 0.75rem; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:4px; font-size:0.75rem; color:var(--danger);">
-                ⚠ Este plan tiene {{ total }} ejecución{{ total|pluralize:"es" }} registrada{{ total|pluralize:"s" }}. Al eliminarlo quedará desvinculado de esos registros.
+                ⚠ Este ítem tiene {{ total }} respuesta{{ total|pluralize:"s" }} registrada{{ total|pluralize:"s" }} en inspecciones pasadas. Al eliminarlo, esas respuestas también se eliminarán.
             </div>
             {% endif %}
             {% endwith %}
@@ -45,7 +50,7 @@
     </div>
 
     <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
-        <a href="{% url 'detalle_plan' plan.pk %}"
+        <a href="{% url 'lista_items_checklist' %}"
            style="padding:0.7rem 1.5rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; transition:border-color 0.15s;"
            onmouseover="this.style.borderColor='var(--text-muted)'"
            onmouseout="this.style.borderColor='var(--border)'">
@@ -57,7 +62,7 @@
                     style="padding:0.7rem 1.5rem; background:var(--danger); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:opacity 0.15s;"
                     onmouseover="this.style.opacity='0.85'"
                     onmouseout="this.style.opacity='1'">
-                Eliminar plan
+                Eliminar permanentemente
             </button>
         </form>
     </div>

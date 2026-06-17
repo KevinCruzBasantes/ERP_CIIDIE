@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
       {% block title %}
-        ERP Laboratorio CIIDIE
+        ERP Laboratorio CIDIIE
       {% endblock %}
     </title>
     <style>
@@ -426,7 +426,7 @@
   <body>
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <div class="lab-name">Lab. CIIDIE</div>
+        <div class="lab-name">Lab. CIDIIE</div>
         <div class="erp-label">Sistema ERP — v1.0</div>
       </div>
 
@@ -508,7 +508,7 @@
             {% endblock %}">
             <span class="nav-icon">▤</span> Reportes
           </a>
-          <a href="/sistema-tecnico-erp-ciidie/" class="nav-item"><span class="nav-icon">◐</span> Panel admin</a>
+          <a href="/sistema-tecnico-erp-cidiie/" class="nav-item"><span class="nav-icon">◐</span> Panel admin</a>
         {% endif %}
       </nav>
 
@@ -533,8 +533,20 @@
         </div>
       </div>
 
-      {# consume messages silently so they never carry over to other pages #}
-      {% for message in messages %}{% endfor %}
+      {% if messages %}
+      <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+        {% for message in messages %}
+        <div style="padding:0.75rem 1rem; border-radius:6px; font-size:0.85rem;
+          {% if message.tags == 'success' %}background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:var(--success);
+          {% elif message.tags == 'error' %}background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger);
+          {% elif message.tags == 'warning' %}background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.25); color:var(--warning);
+          {% else %}background:rgba(232,160,32,0.1); border:1px solid rgba(232,160,32,0.25); color:var(--accent);
+          {% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       <div class="content">
         {% block content %}
         {% endblock %}
