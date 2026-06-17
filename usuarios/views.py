@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import F
 from maquinas.models import Maquina
-from mantenimiento.models import Mantenimiento
+from mantenimiento.models import Mantenimiento, OrdenMantenimiento
 from inventario.models import Material
 from reservas.models import Reserva, OrdenTrabajo
 from tpm.models import Alerta, InspeccionDiaria, ItemChecklistInspeccion, RespuestaChecklistInspeccion
@@ -129,6 +129,14 @@ def dashboard_tecnico(request):
             fecha_programada__gte=hoy,
             fecha_programada__lte=hoy + timezone.timedelta(days=7)
         ).order_by('fecha_programada')[:5],
+        'om_mias_abiertas': OrdenMantenimiento.objects.filter(
+            activo=True, responsable_1=request.user,
+            estado__in=['PROGRAMADA', 'EN_PROCESO']
+        ).count(),
+        'om_sin_asignar': OrdenMantenimiento.objects.filter(
+            activo=True, responsable_1__isnull=True,
+            estado__in=['PROGRAMADA', 'EN_PROCESO']
+        ).count(),
     }
     return render(request, 'usuarios/dashboard_tecnico.html', context)
 

@@ -88,7 +88,7 @@
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
             <div>
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Solicitante</div>
-                <div style="font-size:0.85rem; color:var(--text);">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</div>
+                <div style="font-size:0.85rem; color:var(--text);">{% if reserva.usuario %}{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
                 {% if reserva.usuario.rol %}<div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:0.1rem;">{{ reserva.usuario.rol }}</div>{% endif %}
             </div>
             <div>

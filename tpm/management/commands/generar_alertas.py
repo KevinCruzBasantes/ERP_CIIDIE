@@ -140,6 +140,8 @@ class Command(BaseCommand):
         ).select_related('usuario', 'maquina')
 
         for cert in certs:
+            if not cert.usuario:
+                continue  # certificacion huerfana (usuario eliminado) - nada que alertar
             if cert.fecha_vencimiento < hoy:
                 tipo = 'CERTIFICACION_VENCIDA'
                 severidad = 'CRITICA'

@@ -25,7 +25,8 @@ class Reserva(models.Model):
 
     usuario = models.ForeignKey(
         Usuario,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='reservas'
     )
     maquina = models.ForeignKey(
@@ -64,9 +65,12 @@ class Reserva(models.Model):
         verbose_name_plural = 'Reservas'
 
     def clean(self):
-        # Cancelar siempre debe poder hacerse, sin importar si la máquina o la
-        # certificación del usuario cambiaron de estado después de crear la reserva.
-        if self.estado == 'CANCELADA':
+        # Cancelar o completar (cerrar_orden) siempre debe poder hacerse, sin importar
+        # si la máquina o la certificación del usuario cambiaron de estado después de
+        # crear la reserva o de empezar a usar la máquina — revalidar esas condiciones
+        # al cerrar el trabajo no tiene sentido (el trabajo ya se hizo) y antes rompía
+        # cerrar_orden con un 500 si la certificación vencía a mitad de un trabajo largo.
+        if self.estado in ('CANCELADA', 'COMPLETADA'):
             return
         if self.hora_fin <= self.hora_inicio:
             raise ValidationError(
@@ -110,7 +114,8 @@ class Reserva(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.usuario.username} — {self.maquina.nombre} ({self.fecha})"
+        usuario_str = self.usuario.username if self.usuario else '— usuario eliminado —'
+        return f"{usuario_str} — {self.maquina.nombre} ({self.fecha})"
 
 
 class OrdenTrabajo(models.Model):

@@ -22,6 +22,7 @@ urlpatterns = [
     path('ordenes/crear/',                   views.crear_orden_mantenimiento,     name='crear_orden_mantenimiento'),
     path('ordenes/<int:pk>/',                views.detalle_orden_mantenimiento,   name='detalle_orden_mantenimiento'),
     path('ordenes/<int:pk>/editar/',         views.editar_orden_mantenimiento,    name='editar_orden_mantenimiento'),
+    path('ordenes/<int:pk>/asignarme/',      views.asignarme_orden_mantenimiento, name='asignarme_orden_mantenimiento'),
     path('ordenes/<int:pk>/estado/',         views.cambiar_estado_om,             name='cambiar_estado_om'),
     path('ordenes/<int:pk>/eliminar/',       views.eliminar_orden_mantenimiento,  name='eliminar_orden_mantenimiento'),
     path('ordenes/<int:om_pk>/bitacora/',    views.agregar_entrada_bitacora,      name='agregar_entrada_bitacora'),

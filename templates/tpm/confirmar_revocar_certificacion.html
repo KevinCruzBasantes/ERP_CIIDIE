@@ -16,7 +16,7 @@
     <div style="display:grid; gap:0.75rem; margin-bottom:1.5rem;">
         <div>
             <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Usuario</div>
-            <div style="font-size:0.88rem; color:var(--text);">{{ cert.usuario.get_full_name|default:cert.usuario.username }}</div>
+            <div style="font-size:0.88rem; color:var(--text);">{% if cert.usuario %}{{ cert.usuario.get_full_name|default:cert.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
         </div>
         <div>
             <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Máquina</div>

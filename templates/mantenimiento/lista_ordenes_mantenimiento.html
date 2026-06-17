@@ -95,6 +95,14 @@
                 {% endfor %}
             </select>
         </div>
+        <div style="flex:1; min-width:160px;">
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Responsable</label>
+            <select name="responsable" style="width:100%; padding:0.6rem 0.85rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem; outline:none;">
+                <option value="">— Todos —</option>
+                <option value="yo" {% if filtro_responsable == 'yo' %}selected{% endif %}>Mis órdenes</option>
+                <option value="sin_asignar" {% if filtro_responsable == 'sin_asignar' %}selected{% endif %}>Sin asignar</option>
+            </select>
+        </div>
         <div>
             <button type="submit" style="padding:0.6rem 1.2rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer;">
                 Filtrar
@@ -180,6 +188,16 @@
                         <div style="font-size:0.78rem; color:var(--text);">
                             {% if om.responsable_1.get_full_name %}{{ om.responsable_1.get_full_name }}{% else %}{{ om.responsable_1.username }}{% endif %}
                         </div>
+                        {% elif es_admin_o_tecnico and om.estado != 'FINALIZADA' and om.estado != 'CANCELADA' %}
+                        <form method="post" action="{% url 'asignarme_orden_mantenimiento' om.pk %}" onclick="event.stopPropagation();">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    style="padding:0.3rem 0.7rem; background:transparent; color:var(--accent); border:1px solid var(--accent); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; cursor:pointer;"
+                                    onmouseover="this.style.background='var(--accent)'; this.style.color='#0f1117';"
+                                    onmouseout="this.style.background='transparent'; this.style.color='var(--accent)';">
+                                ✋ Asignarme
+                            </button>
+                        </form>
                         {% else %}
                         <span style="font-size:0.72rem; color:var(--text-muted);">Sin asignar</span>
                         {% endif %}

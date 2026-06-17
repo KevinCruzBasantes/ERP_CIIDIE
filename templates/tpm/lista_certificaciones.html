@@ -66,7 +66,7 @@
                     onmouseout="this.style.background='transparent'">
 
                     <td style="padding:0.75rem;">
-                        <div style="font-weight:500; color:var(--text);">{{ c.usuario.get_full_name|default:c.usuario.username }}</div>
+                        <div style="font-weight:500; color:var(--text);">{% if c.usuario %}{{ c.usuario.get_full_name|default:c.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
                         {% if c.usuario.rol %}<div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ c.usuario.rol }}</div>{% endif %}
                     </td>
 

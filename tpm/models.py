@@ -13,7 +13,8 @@ class CertificacionUsuario(models.Model):
 
     usuario = models.ForeignKey(
         Usuario,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='certificaciones'
     )
     maquina = models.ForeignKey(
@@ -50,7 +51,8 @@ class CertificacionUsuario(models.Model):
 
     def __str__(self):
         estado = "vigente" if self.vigente else "VENCIDA"
-        return f"{self.usuario.username} — {self.maquina.codigo} [{estado}]"
+        usuario_str = self.usuario.username if self.usuario else '— usuario eliminado —'
+        return f"{usuario_str} — {self.maquina.codigo} [{estado}]"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

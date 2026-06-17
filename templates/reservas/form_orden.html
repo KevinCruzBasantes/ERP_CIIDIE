@@ -31,7 +31,7 @@
         </div>
         <div>
             <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Solicitante</div>
-            <div style="color:var(--text);">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</div>
+            <div style="color:var(--text);">{% if reserva.usuario %}{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
         </div>
     </div>
 </div>

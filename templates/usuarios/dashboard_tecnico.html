@@ -2,7 +2,7 @@
 
 {% block title %}Dashboard Técnico — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Inicio{% endblock %}
-{% block nav_inicio %}active{% endblock %}
+{% block nav_inicio2 %}active{% endblock %}
 
 {% block content %}
 
@@ -31,6 +31,16 @@
         <div class="stat-label">Órdenes en proceso</div>
         <div class="stat-value">{{ ordenes_en_proceso }}</div>
         <div class="stat-sub">{{ ordenes_abiertas }} abiertas</div>
+    </div>
+    <div class="stat-card accent">
+        <div class="stat-label">Mis órdenes de mantenimiento</div>
+        <div class="stat-value">{{ om_mias_abiertas }}</div>
+        <div class="stat-sub">programadas o en proceso</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">OM sin asignar</div>
+        <div class="stat-value">{{ om_sin_asignar }}</div>
+        <div class="stat-sub">disponibles para tomar</div>
     </div>
 </div>
 
@@ -77,6 +87,18 @@
             </a>
             <a href="{% url 'lista_mantenimientos' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                 <span style="color:var(--accent)">◉</span> Mantenimientos
+            </a>
+            <a href="{% url 'lista_ordenes_mantenimiento' %}?responsable=yo" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent)">⚙</span> Mis órdenes de mantenimiento
+                {% if om_mias_abiertas > 0 %}
+                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(232,160,32,0.15); color:var(--accent); padding:0.15rem 0.5rem; border-radius:3px;">{{ om_mias_abiertas }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'lista_ordenes_mantenimiento' %}?responsable=sin_asignar" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="color:var(--warning)">✋</span> Órdenes sin asignar
+                {% if om_sin_asignar > 0 %}
+                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(234,179,8,0.15); color:var(--warning); padding:0.15rem 0.5rem; border-radius:3px;">{{ om_sin_asignar }}</span>
+                {% endif %}
             </a>
             <a href="{% url 'lista_ordenes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                 <span style="color:var(--accent)">◈</span> Órdenes de trabajo

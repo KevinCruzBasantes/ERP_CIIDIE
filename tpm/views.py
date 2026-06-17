@@ -308,7 +308,7 @@ def crear_certificacion(request):
             cert.save()
             messages.success(
                 request,
-                f'Certificación otorgada a {cert.usuario.username} para {cert.maquina.nombre}.'
+                f'Certificación otorgada a {cert.usuario.username if cert.usuario else "usuario eliminado"} para {cert.maquina.nombre}.'
             )
             return redirect('lista_certificaciones')
     else:
@@ -337,7 +337,7 @@ def editar_certificacion(request, pk):
     return render(request, 'tpm/form_certificacion.html', {
         'form':   form,
         'cert':   cert,
-        'titulo': f'Editar certificación — {cert.usuario.username}',
+        'titulo': f'Editar certificación — {cert.usuario.username if cert.usuario else "usuario eliminado"}',
         'accion': 'Guardar cambios',
     })
 
@@ -351,9 +351,10 @@ def revocar_certificacion(request, pk):
     if request.method == 'POST':
         cert.activo = False
         cert.save(update_fields=['activo'])
+        usuario_str = cert.usuario.username if cert.usuario else 'usuario eliminado'
         messages.success(
             request,
-            f'Certificación de {cert.usuario.username} para {cert.maquina.nombre} revocada.'
+            f'Certificación de {usuario_str} para {cert.maquina.nombre} revocada.'
         )
         return redirect('lista_certificaciones')
     return render(request, 'tpm/confirmar_revocar_certificacion.html', {'cert': cert})

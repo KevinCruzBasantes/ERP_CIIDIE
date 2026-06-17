@@ -266,7 +266,7 @@ def generar_reservas(request):
     for i, r in enumerate(qs, 2):
         ot = getattr(r, 'orden_trabajo', None)
         ws.cell(row=i, column=1,  value=r.pk)
-        ws.cell(row=i, column=2,  value=r.usuario.get_full_name() or r.usuario.username)
+        ws.cell(row=i, column=2,  value=(r.usuario.get_full_name() or r.usuario.username) if r.usuario else '— usuario eliminado —')
         ws.cell(row=i, column=3,  value=r.maquina.nombre)
         ws.cell(row=i, column=4,  value=r.maquina.codigo)
         ws.cell(row=i, column=5,  value=r.fecha.strftime('%d/%m/%Y'))

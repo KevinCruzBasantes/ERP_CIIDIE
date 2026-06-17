@@ -32,6 +32,20 @@ def es_admin_o_tecnico(user):
     return False
 
 
+def puede_gestionar_om(user, om):
+    """Un admin siempre puede. Si la OM aún no tiene responsable asignado, cualquier
+    técnico puede gestionarla (para poder trabajarla sin haberla reclamado antes).
+    Si ya tiene responsable(s), solo esos técnicos —o un admin— pueden modificarla;
+    otro técnico ya no debe poder tocar la orden de un compañero."""
+    if es_admin(user):
+        return True
+    if not es_admin_o_tecnico(user):
+        return False
+    if not om.responsable_1_id and not om.responsable_2_id and not om.responsable_3_id:
+        return True
+    return user.pk in (om.responsable_1_id, om.responsable_2_id, om.responsable_3_id)
+
+
 @login_required(login_url='login')
 def lista_mantenimientos(request):
     hoy = timezone.now().date()
@@ -300,10 +314,11 @@ def lista_ordenes_mantenimiento(request):
         'maquina', 'plan', 'responsable_1', 'creado_por'
     ).filter(activo=True).order_by('-fecha_programada')
 
-    estado_f    = request.GET.get('estado', '')
-    tipo_f      = request.GET.get('tipo', '')
-    maquina_f   = request.GET.get('maquina', '')
-    prioridad_f = request.GET.get('prioridad', '')
+    estado_f      = request.GET.get('estado', '')
+    tipo_f        = request.GET.get('tipo', '')
+    maquina_f     = request.GET.get('maquina', '')
+    prioridad_f   = request.GET.get('prioridad', '')
+    responsable_f = request.GET.get('responsable', '')
 
     if estado_f:
         qs = qs.filter(estado=estado_f)
@@ -313,6 +328,10 @@ def lista_ordenes_mantenimiento(request):
         qs = qs.filter(maquina__pk=maquina_f)
     if prioridad_f:
         qs = qs.filter(prioridad=prioridad_f)
+    if responsable_f == 'yo':
+        qs = qs.filter(responsable_1=request.user)
+    elif responsable_f == 'sin_asignar':
+        qs = qs.filter(responsable_1__isnull=True)
 
     from maquinas.models import Maquina as MaquinaModel
     hoy = timezone.now().date()
@@ -328,7 +347,8 @@ def lista_ordenes_mantenimiento(request):
         'filtro_tipo':     tipo_f,
         'filtro_maquina':  maquina_f,
         'filtro_prioridad': prioridad_f,
-        'hay_filtros':     any([estado_f, tipo_f, maquina_f, prioridad_f]),
+        'filtro_responsable': responsable_f,
+        'hay_filtros':     any([estado_f, tipo_f, maquina_f, prioridad_f, responsable_f]),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
         'today':           hoy,
     }
@@ -353,6 +373,7 @@ def detalle_orden_mantenimiento(request, pk):
         'form_bitacora':  form_bitacora,
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
         'es_admin':       es_admin(request.user),
+        'puede_gestionar': puede_gestionar_om(request.user, om),
     }
     return render(request, 'mantenimiento/detalle_orden_mantenimiento.html', context)
 
@@ -413,10 +434,11 @@ def crear_orden_mantenimiento(request):
 
 @login_required(login_url='login')
 def editar_orden_mantenimiento(request, pk):
-    if not es_admin_o_tecnico(request.user):
+    om = get_object_or_404(OrdenMantenimiento, pk=pk, activo=True)
+    if not puede_gestionar_om(request.user, om):
+        messages.error(request, 'Solo el responsable asignado o un administrador puede editar esta orden.')
         return redirect('detalle_orden_mantenimiento', pk=pk)
 
-    om = get_object_or_404(OrdenMantenimiento, pk=pk, activo=True)
     if om.estado == 'FINALIZADA':
         return redirect('detalle_orden_mantenimiento', pk=pk)
 
@@ -437,11 +459,38 @@ def editar_orden_mantenimiento(request, pk):
 
 
 @login_required(login_url='login')
-def cambiar_estado_om(request, pk):
+def asignarme_orden_mantenimiento(request, pk):
+    """Claim atómico: un técnico se autoasigna como responsable_1 de una OM sin
+    responsable. Usa un UPDATE condicional (WHERE responsable_1 IS NULL) en vez de
+    leer-comparar-guardar, para que dos técnicos reclamando al mismo tiempo no se
+    pisen — solo uno de los dos UPDATE afecta una fila; el otro se entera al instante."""
     if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para tomar órdenes de mantenimiento.')
         return redirect('detalle_orden_mantenimiento', pk=pk)
 
     om = get_object_or_404(OrdenMantenimiento, pk=pk, activo=True)
+
+    if request.method == 'POST':
+        if om.estado in ('FINALIZADA', 'CANCELADA'):
+            messages.error(request, 'Esta orden ya está cerrada, no se puede asignar.')
+        else:
+            actualizadas = OrdenMantenimiento.objects.filter(
+                pk=pk, responsable_1__isnull=True
+            ).update(responsable_1=request.user)
+            if actualizadas:
+                messages.success(request, f'Te asignaste la orden {om.numero()} como responsable principal.')
+            else:
+                messages.error(request, 'Esta orden ya fue tomada por otro técnico. Actualiza la página para ver quién la atiende.')
+    return redirect('detalle_orden_mantenimiento', pk=pk)
+
+
+@login_required(login_url='login')
+def cambiar_estado_om(request, pk):
+    om = get_object_or_404(OrdenMantenimiento, pk=pk, activo=True)
+    if not puede_gestionar_om(request.user, om):
+        messages.error(request, 'Solo el responsable asignado o un administrador puede cambiar el estado de esta orden.')
+        return redirect('detalle_orden_mantenimiento', pk=pk)
+
     if request.method == 'POST':
         nuevo = request.POST.get('estado')
         validos = [c[0] for c in OrdenMantenimiento.ESTADOS]
@@ -477,6 +526,10 @@ def eliminar_orden_mantenimiento(request, pk):
 @login_required(login_url='login')
 def agregar_entrada_bitacora(request, om_pk):
     om = get_object_or_404(OrdenMantenimiento, pk=om_pk, activo=True)
+    if not puede_gestionar_om(request.user, om):
+        messages.error(request, 'Solo el responsable asignado o un administrador puede registrar bitácora en esta orden.')
+        return redirect('detalle_orden_mantenimiento', pk=om_pk)
+
     if request.method == 'POST':
         form = BitacoraMantenimientoForm(request.POST, request.FILES)
         if form.is_valid():

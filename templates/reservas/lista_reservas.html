@@ -79,7 +79,7 @@
                 <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ r.pk }}</td>
 
                 <td style="padding:0.75rem;">
-                  <div style="font-weight:500; color:var(--text);">{{ r.usuario.get_full_name|default:r.usuario.username }}</div>
+                  <div style="font-weight:500; color:var(--text);">{% if r.usuario %}{{ r.usuario.get_full_name|default:r.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
                   {% if r.usuario.rol %}
                     <div style="font-size:0.68rem; color:var(--accent); font-family:'IBM Plex Mono',monospace; margin-top:0.1rem;">{{ r.usuario.rol }}</div>
                   {% endif %}

@@ -43,7 +43,7 @@
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; font-size:0.82rem;">
             <div>
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Operario</div>
-                <div style="color:var(--text);">{{ orden.reserva.usuario.get_full_name|default:orden.reserva.usuario.username }}</div>
+                <div style="color:var(--text);">{% if orden.reserva.usuario %}{{ orden.reserva.usuario.get_full_name|default:orden.reserva.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
             </div>
             <div>
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Horario</div>
