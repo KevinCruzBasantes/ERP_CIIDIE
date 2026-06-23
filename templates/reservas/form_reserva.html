@@ -56,6 +56,13 @@
                 {% endif %}
             </div>
 
+            <div id="panel-horarios-ocupados" style="grid-column:span 2; display:none; padding:0.75rem 1rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">
+                    Horarios ya reservados para esta máquina ese día
+                </div>
+                <div id="lista-horarios-ocupados" style="display:flex; flex-direction:column; gap:0.3rem;"></div>
+            </div>
+
             <div>
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
                     Propósito <span style="color:var(--danger);">*</span>
@@ -114,5 +121,55 @@
 
 </form>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const maquinaSel = document.getElementById('id_maquina');
+    const fechaInput = document.getElementById('id_fecha');
+    const panel       = document.getElementById('panel-horarios-ocupados');
+    const lista       = document.getElementById('lista-horarios-ocupados');
+    const excluirPk   = '{% if reserva %}{{ reserva.pk }}{% endif %}';
+
+    if (!maquinaSel || !fechaInput || !panel || !lista) return;
+
+    function consultarHorarios() {
+        const maquinaId = maquinaSel.value;
+        const fecha     = fechaInput.value;
+        if (!maquinaId || !fecha) {
+            panel.style.display = 'none';
+            return;
+        }
+        let url = '{% url "horarios_ocupados" %}?maquina=' + encodeURIComponent(maquinaId) + '&fecha=' + encodeURIComponent(fecha);
+        if (excluirPk) {
+            url += '&excluir=' + encodeURIComponent(excluirPk);
+        }
+        fetch(url)
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                lista.innerHTML = '';
+                if (!data.reservas || data.reservas.length === 0) {
+                    lista.innerHTML = '<div style="font-size:0.78rem; color:var(--success);">✓ Sin reservas para esta máquina ese día.</div>';
+                } else {
+                    data.reservas.forEach(function (r) {
+                        const fila = document.createElement('div');
+                        fila.style.cssText = 'font-size:0.78rem; color:var(--text); display:flex; gap:0.6rem; align-items:center;';
+                        fila.innerHTML =
+                            '<span style="font-family:\'IBM Plex Mono\',monospace; color:var(--warning);">' + r.hora_inicio + ' – ' + r.hora_fin + '</span>' +
+                            '<span style="color:var(--text-muted);">' + r.usuario + ' · ' + r.estado + '</span>';
+                        lista.appendChild(fila);
+                    });
+                }
+                panel.style.display = 'block';
+            })
+            .catch(function () { panel.style.display = 'none'; });
+    }
+
+    maquinaSel.addEventListener('change', consultarHorarios);
+    fechaInput.addEventListener('change', consultarHorarios);
+    consultarHorarios();
+});
+</script>
 {% endblock %}
 

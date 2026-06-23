@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime, date
 from usuarios.permisos import es_admin, es_admin_o_tecnico
@@ -52,6 +53,41 @@ def crear_reserva(request):
 
 
 @login_required(login_url='login')
+def horarios_ocupados(request):
+    """JSON con las reservas activas de una maquina en una fecha, para mostrar
+    en el formulario de crear/editar reserva y evitar horarios ya tomados."""
+    maquina_id = request.GET.get('maquina')
+    fecha      = request.GET.get('fecha')
+    excluir_pk = request.GET.get('excluir')
+
+    if not maquina_id or not fecha:
+        return JsonResponse({'reservas': []})
+
+    try:
+        qs = Reserva.objects.filter(
+            maquina_id=int(maquina_id),
+            fecha=fecha,
+            estado__in=('PENDIENTE', 'APROBADA', 'EN_USO'),
+        ).select_related('usuario').order_by('hora_inicio')
+        if excluir_pk:
+            qs = qs.exclude(pk=int(excluir_pk))
+        list(qs)  # forzar evaluacion aqui para que un valor invalido caiga en el except
+    except (ValueError, ValidationError):
+        return JsonResponse({'reservas': []})
+
+    reservas = [
+        {
+            'hora_inicio': r.hora_inicio.strftime('%H:%M'),
+            'hora_fin':    r.hora_fin.strftime('%H:%M'),
+            'estado':      r.get_estado_display(),
+            'usuario':     (r.usuario.get_full_name() or r.usuario.username) if r.usuario else 'Usuario eliminado',
+        }
+        for r in qs
+    ]
+    return JsonResponse({'reservas': reservas})
+
+
+@login_required(login_url='login')
 def detalle_reserva(request, pk):
     reserva = get_object_or_404(
         Reserva.objects.select_related('usuario', 'maquina', 'autorizador'), pk=pk)
@@ -71,7 +107,13 @@ def cambiar_estado_reserva(request, pk):
     if not es_admin_o_tecnico(request.user):
         messages.error(request, 'No tienes permisos para esta acción.')
         return redirect('detalle_reserva', pk=pk)
-    reserva      = get_object_or_404(Reserva, pk=pk)
+    reserva = get_object_or_404(Reserva, pk=pk)
+    if reserva.usuario_id == request.user.pk:
+        messages.error(
+            request,
+            'No puedes aprobar o rechazar tu propia reserva. Otra persona calificada debe hacerlo.'
+        )
+        return redirect('detalle_reserva', pk=pk)
     nuevo_estado = request.POST.get('estado')
     estados_validos = ['PENDIENTE', 'APROBADA', 'EN_USO', 'COMPLETADA', 'CANCELADA']
     if request.method == 'POST' and nuevo_estado in estados_validos:
