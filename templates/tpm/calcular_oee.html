@@ -103,11 +103,14 @@
             <!-- OEE PRINCIPAL -->
             <div style="text-align:center; padding:1.5rem 0 1rem;">
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">OEE Total</div>
-                <div id="oee-valor" style="font-size:3rem; font-weight:600; font-family:'IBM Plex Mono',monospace;"
-                     data-oee="{{ resultado.oee }}">
+                <div id="oee-valor" style="font-size:3rem; font-weight:600; font-family:'IBM Plex Mono',monospace;">
                     {{ resultado.oee }}%
                 </div>
-                <div id="oee-label" style="font-size:0.78rem; margin-top:0.3rem; font-family:'IBM Plex Mono',monospace;"></div>
+                <div id="oee-label" style="font-size:0.78rem; margin-top:0.3rem; font-family:'IBM Plex Mono',monospace;">
+                    {% if resultado.oee >= 85 %}<span style="color:var(--success);">● Clase mundial</span>
+                    {% elif resultado.oee >= 60 %}<span style="color:var(--warning);">● Aceptable</span>
+                    {% else %}<span style="color:var(--danger);">● Bajo</span>{% endif %}
+                </div>
                 <div style="margin-top:0.6rem; font-size:0.72rem; color:var(--text-muted);">
                     Basado en {{ resultado.ordenes_count }} orden{{ resultado.ordenes_count|pluralize:"es" }} de trabajo
                 </div>

@@ -226,10 +226,13 @@ class RegistroParada(models.Model):
     def save(self, *args, **kwargs):
         # Calcular duración automáticamente si se tienen ambas horas
         if self.hora_inicio and self.hora_fin:
-            from datetime import datetime, date
+            from datetime import datetime, date, timedelta
             inicio = datetime.combine(date.today(), self.hora_inicio)
             fin = datetime.combine(date.today(), self.hora_fin)
-            self.duracion_minutos = (fin - inicio).seconds / 60
+            if fin < inicio:
+                # La parada cruza la medianoche (p.ej. 23:30 -> 00:15)
+                fin += timedelta(days=1)
+            self.duracion_minutos = (fin - inicio).total_seconds() / 60
         super().save(*args, **kwargs)
 
     def __str__(self):

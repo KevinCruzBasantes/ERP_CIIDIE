@@ -52,8 +52,12 @@
                 <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--accent);">{{ r.rendimiento }}%</td>
                 <td style="padding:0.75rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--success);">{{ r.calidad }}%</td>
                 <td style="padding:0.75rem; text-align:center;">
-                  <span data-oee="{{ r.oee }}" style="font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:500; color:var(--text);">{{ r.oee }}%</span>
-                  <div style="font-size:0.62rem; color:var(--text-muted); margin-top:0.1rem;" data-oee-label="{{ r.oee }}"></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:500; color:var(--text);">{{ r.oee }}%</span>
+                  <div style="font-size:0.62rem; margin-top:0.1rem;">
+                    {% if r.oee >= 85 %}<span style="color:var(--success);">Clase mundial</span>
+                    {% elif r.oee >= 60 %}<span style="color:var(--warning);">Aceptable</span>
+                    {% else %}<span style="color:var(--danger);">Bajo</span>{% endif %}
+                  </div>
                 </td>
               </tr>
             {% endfor %}

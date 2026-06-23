@@ -19,6 +19,7 @@ No genera duplicados: usa get_or_create para cada alerta.
 """
 
 from django.core.management.base import BaseCommand
+from django.db import models
 from django.utils import timezone
 
 
@@ -175,7 +176,3 @@ class Command(BaseCommand):
                 creadas += 1
 
         return creadas
-
-
-# Necesario para el F() en _alertas_stock
-from django.db import models

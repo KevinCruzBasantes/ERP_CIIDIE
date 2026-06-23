@@ -1,39 +1,14 @@
-import unicodedata
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import datetime, date
+from usuarios.permisos import es_admin, es_admin_o_tecnico
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
 from .forms import (ReservaForm, OrdenTrabajoForm, CerrarOrdenForm,
                     RegistroParadaForm, BitacoraForm)
 from inventario.models import Material, ConsumoMaterial
-
-
-def _normalizar_rol(nombre_rol):
-    """Minúsculas y sin tildes, para que 'TECNICO' y 'Técnico' coincidan igual."""
-    sin_tildes = unicodedata.normalize('NFKD', nombre_rol).encode('ascii', 'ignore').decode('ascii')
-    return sin_tildes.lower()
-
-
-def es_admin(user):
-    if user.is_superuser:
-        return True
-    if user.rol:
-        rol = _normalizar_rol(user.rol.nombre)
-        return 'administrador' in rol or 'phd' in rol
-    return False
-
-
-def es_admin_o_tecnico(user):
-    if user.is_superuser:
-        return True
-    if user.rol:
-        rol = _normalizar_rol(user.rol.nombre)
-        return any(r in rol for r in ['administrador', 'phd', 'tecnico', 'ingeniero'])
-    return False
 
 
 # ── RESERVAS ─────────────────────────────────────────────────────────────────
@@ -110,6 +85,8 @@ def cambiar_estado_reserva(request, pk):
                 return redirect('crear_orden', reserva_pk=reserva.pk)
         except ValidationError as e:
             messages.error(request, f'No se pudo actualizar la reserva: {"; ".join(e.messages)}')
+    elif request.method == 'POST':
+        messages.error(request, 'Estado inválido.')
     return redirect('detalle_reserva', pk=pk)
 
 

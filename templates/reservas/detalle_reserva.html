@@ -70,7 +70,7 @@
         </a>
         {% endif %}
 
-        {% if reserva.estado not in 'COMPLETADA,CANCELADA' %}
+        {% if reserva.estado != 'COMPLETADA' and reserva.estado != 'CANCELADA' %}
         <a href="{% url 'cancelar_reserva' reserva.pk %}"
            style="padding:0.4rem 1rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none;">
             Cancelar

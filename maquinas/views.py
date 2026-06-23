@@ -1,35 +1,10 @@
-import unicodedata
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from usuarios.permisos import es_admin, es_admin_o_tecnico
 from .models import Maquina, Pieza, TransferenciaPieza, CodigoParada
 from .forms import MaquinaForm, EnsambleForm, PiezaForm, TransferenciaPiezaForm, CodigoParadaForm
-
-
-def _normalizar_rol(nombre_rol):
-    """Minúsculas y sin tildes, para que 'TECNICO' y 'Técnico' coincidan igual."""
-    sin_tildes = unicodedata.normalize('NFKD', nombre_rol).encode('ascii', 'ignore').decode('ascii')
-    return sin_tildes.lower()
-
-
-def es_admin(user):
-    if user.is_superuser:
-        return True
-    if user.rol:
-        rol = _normalizar_rol(user.rol.nombre)
-        return 'administrador' in rol or 'phd' in rol
-    return False
-
-
-def es_admin_o_tecnico(user):
-    if user.is_superuser:
-        return True
-    if user.rol:
-        rol = _normalizar_rol(user.rol.nombre)
-        return any(r in rol for r in ['administrador', 'phd', 'tecnico', 'ingeniero'])
-    return False
 
 
 # ── Máquinas ──────────────────────────────────────────────────────────────────
@@ -153,6 +128,8 @@ def cambiar_estado_maquina(request, pk):
             maquina.estado = nuevo_estado
             maquina.save()
             messages.success(request, f'Estado de "{maquina.nombre}" actualizado a {maquina.get_estado_display()}.')
+        else:
+            messages.error(request, 'Estado inválido.')
         return redirect('detalle_maquina', pk=maquina.pk)
 
     return redirect('detalle_maquina', pk=pk)
@@ -325,6 +302,7 @@ def detalle_codigo_parada(request, pk):
         'codigo':             codigo,
         'usos':               usos,
         'total_usos':         codigo.registros.count(),
+        'es_admin':           es_admin(request.user),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
     }
     return render(request, 'maquinas/detalle_codigo_parada.html', context)

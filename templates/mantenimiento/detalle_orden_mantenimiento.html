@@ -57,6 +57,15 @@
             {% endif %}
         </div>
         {% endif %}
+
+        {% if es_admin %}
+        <div style="margin-top:0.75rem;">
+            <a href="{% url 'eliminar_orden_mantenimiento' om.pk %}"
+               style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--danger)'"
+               onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">✕ Eliminar orden</a>
+        </div>
+        {% endif %}
     </div>
 
     <a href="{% url 'detalle_maquina' om.maquina.pk %}"

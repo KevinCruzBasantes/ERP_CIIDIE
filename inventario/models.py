@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from usuarios.models import Usuario
 
@@ -100,9 +101,23 @@ class ConsumoMaterial(models.Model):
     def __str__(self):
         return f"{self.material.nombre} — {self.cantidad} {self.material.unidad_medida}"
 
+    def clean(self):
+        # Solo aplica al crear: las ediciones no vuelven a tocar el stock (ver save()).
+        if not self.pk and self.material_id and self.cantidad is not None:
+            if self.cantidad > self.material.stock_actual:
+                raise ValidationError(
+                    f'Stock insuficiente de "{self.material.nombre}". '
+                    f'Disponible: {self.material.stock_actual} {self.material.unidad_medida}.'
+                )
+
     def save(self, *args, **kwargs):
         # Descontar del stock solo al crear (no en ediciones)
         if not self.pk:
+            if self.cantidad > self.material.stock_actual:
+                raise ValueError(
+                    f'Stock insuficiente de "{self.material.nombre}". '
+                    f'Disponible: {self.material.stock_actual} {self.material.unidad_medida}.'
+                )
             self.material.stock_actual -= self.cantidad
             self.material.save(update_fields=['stock_actual'])
         super().save(*args, **kwargs)
