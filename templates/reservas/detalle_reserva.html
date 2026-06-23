@@ -37,7 +37,7 @@
         </a>
         {% endif %}
 
-        {% if es_admin_o_tecnico and reserva.estado == 'PENDIENTE' %}
+        {% if es_admin_o_tecnico and reserva.estado == 'PENDIENTE' and not es_propia %}
         <form method="post" action="{% url 'cambiar_estado_reserva' reserva.pk %}" style="display:inline;">
             {% csrf_token %}
             <input type="hidden" name="estado" value="APROBADA">
