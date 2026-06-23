@@ -25,6 +25,13 @@
 <div style="max-width:720px;">
 <form method="post">
 {% csrf_token %}
+
+{% if form.non_field_errors %}
+<div style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger);">
+    {{ form.non_field_errors }}
+</div>
+{% endif %}
+
 {% if incidente_obj %}<input type="hidden" name="_incidente_pk" value="{{ incidente_obj.pk }}">{% endif %}
 <div style="display:flex; flex-direction:column; gap:1.25rem;">
 
