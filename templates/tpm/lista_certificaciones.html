@@ -108,10 +108,12 @@
                     {% if es_admin_o_tecnico %}
                     <td style="padding:0.75rem; text-align:right;">
                         <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
+                            {% if c.puede_editar %}
                             <a href="{% url 'editar_certificacion' c.pk %}"
                                style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); text-decoration:none; padding:0.25rem 0.6rem; border:1px solid rgba(232,160,32,0.3); border-radius:4px;">
                                 Editar
                             </a>
+                            {% endif %}
                             {% if c.puede_revocar %}
                             <a href="{% url 'revocar_certificacion' c.pk %}"
                                style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--danger); text-decoration:none; padding:0.25rem 0.6rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;">

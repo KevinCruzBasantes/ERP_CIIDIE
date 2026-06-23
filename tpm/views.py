@@ -266,6 +266,7 @@ def lista_certificaciones(request):
             or es_admin_actual
             or (es_admin_o_tecnico_actual and not objetivo_es_admin_o_tecnico)
         )
+        c.puede_editar = es_admin_o_tecnico_actual and not es_propia
 
     context = {
         'certificaciones':    certs,
@@ -312,6 +313,13 @@ def editar_certificacion(request, pk):
         messages.error(request, 'No tienes permisos para editar certificaciones.')
         return redirect('lista_certificaciones')
     cert = get_object_or_404(CertificacionUsuario, pk=pk)
+    if cert.usuario_id == request.user.pk:
+        messages.error(
+            request,
+            'No puedes editar tu propia certificación (incluye extender la fecha de vencimiento). '
+            'Otra persona calificada debe hacerlo.'
+        )
+        return redirect('lista_certificaciones')
     if request.method == 'POST':
         form = CertificacionForm(request.POST, instance=cert, usuario_actual=request.user)
         if form.is_valid():
