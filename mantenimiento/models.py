@@ -40,6 +40,7 @@ class OrdenMantenimiento(models.Model):
         ('HALLAZGO', 'Hallazgo de inspección autónoma'),
         ('PARADA', 'Parada no planificada'),
         ('ESTADO_MAQUINA', 'Cambio de estado de máquina'),
+        ('BITACORA', 'Bitácora de operario — requiere atención'),
     ]
 
     maquina = models.ForeignKey(
@@ -81,6 +82,13 @@ class OrdenMantenimiento(models.Model):
         null=True, blank=True,
         related_name='ordenes_generadas',
         help_text="Parada no planificada que originó esta orden"
+    )
+    bitacora_operario = models.ForeignKey(
+        'reservas.BitacoraOperario',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='ordenes_generadas',
+        help_text="Entrada de bitácora de operario marcada como 'requiere atención' que originó esta orden"
     )
     origen = models.CharField(
         max_length=20,

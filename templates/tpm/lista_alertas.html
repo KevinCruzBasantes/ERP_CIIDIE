@@ -64,6 +64,11 @@
                     <div style="font-size:0.68rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; margin-top:0.3rem;">
                         {{ a.generada_en|date:"d/m/Y H:i" }}
                     </div>
+                    {% if a.referencia_tipo == 'OrdenTrabajo' %}
+                    <a href="{% url 'detalle_orden' a.referencia_id %}" style="display:inline-block; margin-top:0.4rem; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); text-decoration:none;">
+                        Ver orden de trabajo →
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             {% if es_admin_o_tecnico %}

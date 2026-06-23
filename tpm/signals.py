@@ -9,6 +9,7 @@ Signals activos:
   - InspeccionDiaria: si aprobada=False → ALERTA CRÍTICA
   - Incidente: si requiere_mantenimiento=True → ALERTA CRÍTICA
   - RegistroParada (PNP): → ALERTA INFORMATIVA al ingeniero
+  - BitacoraOperario: si requiere_atencion=True → ALERTA ADVERTENCIA
   - CertificacionUsuario: al guardar, revisa si hay alertas previas que limpiar
 """
 
@@ -95,3 +96,34 @@ def alerta_parada_no_planificada(sender, instance, created, **kwargs):
                 f"Duración: {instance.duracion_minutos or '?'} min."
             ),
         )
+
+
+@receiver(post_save, sender='reservas.BitacoraOperario')
+def alerta_bitacora_atencion(sender, instance, created, **kwargs):
+    """
+    Cuando un operario marca "requiere atención" en la bitácora de una
+    orden de trabajo → alerta de advertencia, visible en el dashboard del
+    técnico, con link de vuelta a la orden de trabajo de origen.
+    """
+    from tpm.models import Alerta
+
+    if not created or not instance.requiere_atencion:
+        return
+
+    maquina = instance.orden_trabajo.reserva.maquina
+    operario_str = instance.operario.get_full_name() if instance.operario else 'operario eliminado'
+
+    # No hace falta get_or_create: created=True solo es verdadero una vez
+    # por entrada de bitacora nueva, no hay riesgo de alerta duplicada.
+    Alerta.objects.create(
+        tipo='BITACORA_ATENCION',
+        severidad='ADVERTENCIA',
+        maquina=maquina,
+        referencia_id=instance.orden_trabajo_id,
+        referencia_tipo='OrdenTrabajo',
+        mensaje=(
+            f"{operario_str} marcó la bitácora de OT-{instance.orden_trabajo_id:04d} "
+            f"({maquina.nombre}) como que requiere atención: "
+            f"{instance.descripcion_trabajo[:100]}"
+        ),
+    )

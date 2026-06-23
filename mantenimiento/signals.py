@@ -10,6 +10,7 @@ Disparadores automáticos:
   - HallazgoInspeccion: prioridad CRITICA o ALTA
   - RegistroParada: parada no planificada (PNP) de cualquier categoría
     excepto OPERACION/OTRO (CATEGORIAS_NO_TECNICAS) — incluye SEGURIDAD
+  - BitacoraOperario: requiere_atencion=True
 
 Incidente y PlanMantenimiento siguen siendo disparadores manuales
 (botón "Generar orden" en su detalle), ver mantenimiento/views.py.
@@ -136,6 +137,34 @@ def orden_por_parada_tecnica(sender, instance, created, **kwargs):
             'descripcion_tarea': (
                 f"{codigo.get_categoria_display()} — {codigo.subsistema}. "
                 f"Duración registrada: {instance.duracion_minutos or '?'} min."
+            ),
+            'fecha_programada': timezone.now().date(),
+        }
+    )
+
+
+@receiver(post_save, sender='reservas.BitacoraOperario')
+def orden_por_bitacora_atencion(sender, instance, created, **kwargs):
+    if not created or not instance.requiere_atencion:
+        return
+
+    from mantenimiento.models import OrdenMantenimiento
+
+    maquina = instance.orden_trabajo.reserva.maquina
+    operario_str = instance.operario.get_full_name() if instance.operario else 'operario eliminado'
+
+    OrdenMantenimiento.objects.get_or_create(
+        maquina=maquina,
+        origen='BITACORA',
+        bitacora_operario=instance,
+        defaults={
+            'tipo': 'CORRECTIVO',
+            'prioridad': 'MEDIA',
+            'titulo': f"Correctivo: bitácora requiere atención — {maquina.nombre}",
+            'descripcion_tarea': (
+                f"Reportado por {operario_str} en la bitácora de OT-{instance.orden_trabajo_id:04d}: "
+                f"{instance.descripcion_trabajo}"
+                + (f" Observaciones: {instance.observaciones}" if instance.observaciones else '')
             ),
             'fecha_programada': timezone.now().date(),
         }

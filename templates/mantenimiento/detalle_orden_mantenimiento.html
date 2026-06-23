@@ -127,6 +127,14 @@
                 </div>
                 {% endif %}
 
+                {% if om.bitacora_operario %}
+                <div style="padding:0.65rem; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:6px;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--warning); margin-bottom:0.25rem;">⚠ Generada automáticamente: bitácora de operario</div>
+                    <a href="{% url 'detalle_orden' om.bitacora_operario.orden_trabajo.pk %}" style="font-size:0.82rem; color:var(--text); text-decoration:none;">Ver orden de trabajo OT-{{ om.bitacora_operario.orden_trabajo_id|stringformat:"04d" }}</a>
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem;">{{ om.bitacora_operario.descripcion_trabajo|truncatechars:80 }}</div>
+                </div>
+                {% endif %}
+
                 {% if om.origen == 'ESTADO_MAQUINA' %}
                 <div style="padding:0.65rem; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:6px;">
                     <div style="font-size:0.78rem; color:var(--warning); font-weight:500;">⚠ Generada automáticamente</div>

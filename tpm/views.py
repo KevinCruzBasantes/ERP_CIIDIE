@@ -83,7 +83,10 @@ def agregar_hallazgo(request, inspeccion_pk):
             hallazgo.save()
             messages.success(request, 'Hallazgo registrado correctamente.')
         else:
-            messages.error(request, f'Error al registrar hallazgo: {form.errors}')
+            detalle = '; '.join(
+                '; '.join(errores) for errores in form.errors.values()
+            )
+            messages.error(request, f'Error al registrar hallazgo: {detalle}')
     return redirect('detalle_inspeccion', pk=inspeccion_pk)
 
 

@@ -118,6 +118,8 @@ def dashboard_tecnico(request):
             activo=True, responsable_1__isnull=True,
             estado__in=['PROGRAMADA', 'EN_PROCESO']
         ).count(),
+        'alertas_activas': Alerta.objects.filter(resuelta=False).count(),
+        'ultimas_alertas': Alerta.objects.filter(resuelta=False).select_related('maquina')[:5],
     }
     return render(request, 'usuarios/dashboard_tecnico.html', context)
 

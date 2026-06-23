@@ -306,7 +306,10 @@ def agregar_bitacora(request, orden_pk):
             entrada.save()
             messages.success(request, 'Entrada de bitácora registrada.')
         else:
-            messages.error(request, f'Error en bitácora: {form.errors}')
+            detalle = '; '.join(
+                '; '.join(errores) for errores in form.errors.values()
+            )
+            messages.error(request, f'Error en bitácora: {detalle}')
     return redirect('detalle_orden', pk=orden_pk)
 
 

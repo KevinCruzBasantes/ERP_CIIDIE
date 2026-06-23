@@ -362,6 +362,7 @@ class Alerta(models.Model):
         ('CERTIFICACION_VENCIDA', 'Certificación vencida'),
         ('INCIDENTE', 'Incidente / condición de riesgo'),
         ('PARADA_NO_PLANIFICADA', 'Parada no planificada registrada'),
+        ('BITACORA_ATENCION', 'Bitácora de operario requiere atención'),
     ]
 
     SEVERIDADES = [

@@ -57,6 +57,9 @@
                         <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent);">{{ alerta.maquina.codigo }}</span>
                         {% endif %}
                         <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--text-muted);">{{ alerta.generada_en|date:"d/m/Y H:i" }}</span>
+                        {% if alerta.referencia_tipo == 'OrdenTrabajo' %}
+                        <a href="{% url 'detalle_orden' alerta.referencia_id %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent); text-decoration:none;">Ver orden →</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
