@@ -29,8 +29,30 @@ class CertificacionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         from usuarios.models import Usuario
         from maquinas.models import Maquina
+        from usuarios.permisos import es_admin, es_admin_o_tecnico
         self.usuario_actual = usuario_actual
-        self.fields['usuario'].queryset    = Usuario.objects.filter(estado='ACTIVO').order_by('username')
+
+        candidatos = Usuario.objects.filter(estado='ACTIVO')
+        if usuario_actual:
+            candidatos = candidatos.exclude(pk=usuario_actual.pk)
+            if not es_admin(usuario_actual):
+                # Un tecnico (no admin) solo puede otorgar certificaciones a
+                # perfiles inferiores (no a otro tecnico ni a un administrador).
+                ids_permitidos = [u.pk for u in candidatos if not es_admin_o_tecnico(u)]
+                candidatos = candidatos.filter(pk__in=ids_permitidos)
+
+        # Al editar, conservar el usuario ya asignado entre las opciones aunque
+        # el filtro de arriba normalmente lo hubiera excluido (p.ej. un tecnico
+        # editando una certificacion que ya tenia asignada a otro tecnico).
+        if self.instance.pk and self.instance.usuario_id:
+            candidatos = candidatos | Usuario.objects.filter(pk=self.instance.usuario_id)
+
+        self.fields['usuario'].queryset = candidatos.order_by('username')
+        # Mostrar el rol junto al nombre para poder ubicar/filtrar por tipeo
+        # tanto por nombre como por rol cuando haya muchos usuarios.
+        self.fields['usuario'].label_from_instance = lambda u: (
+            f"{u.get_full_name() or u.username} — {u.rol.nombre if u.rol else 'Sin rol'}"
+        )
         self.fields['maquina'].queryset    = Maquina.objects.filter(estado='OPERATIVA').order_by('nombre')
         self.fields['observaciones'].required = False
         self.fields['fecha_otorgamiento'].input_formats = ['%Y-%m-%d']
