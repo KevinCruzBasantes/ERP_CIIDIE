@@ -112,10 +112,12 @@
                                style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); text-decoration:none; padding:0.25rem 0.6rem; border:1px solid rgba(232,160,32,0.3); border-radius:4px;">
                                 Editar
                             </a>
+                            {% if c.puede_revocar %}
                             <a href="{% url 'revocar_certificacion' c.pk %}"
                                style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--danger); text-decoration:none; padding:0.25rem 0.6rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;">
                                 Revocar
                             </a>
+                            {% endif %}
                         </div>
                     </td>
                     {% endif %}

@@ -8,6 +8,9 @@ env/
 *.mdb
 db.sqlite3
 
+# Respaldos de base de datos (dumpdata)
+backups/
+
 # Bytecode / cache de Python
 __pycache__/
 *.py[cod]

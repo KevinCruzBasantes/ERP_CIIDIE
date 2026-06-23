@@ -252,19 +252,30 @@ def eliminar_item_checklist(request, pk):
 @login_required(login_url='login')
 def lista_certificaciones(request):
     hoy   = timezone.now().date()
-    certs = CertificacionUsuario.objects.select_related(
+    certs = list(CertificacionUsuario.objects.select_related(
         'usuario', 'maquina', 'otorgado_por'
-    ).filter(activo=True).order_by('fecha_vencimiento')
+    ).filter(activo=True).order_by('fecha_vencimiento'))
+
+    es_admin_actual           = es_admin(request.user)
+    es_admin_o_tecnico_actual = es_admin_o_tecnico(request.user)
+    for c in certs:
+        es_propia = c.usuario_id == request.user.pk
+        objetivo_es_admin_o_tecnico = c.usuario is not None and es_admin_o_tecnico(c.usuario)
+        c.puede_revocar = (
+            es_propia
+            or es_admin_actual
+            or (es_admin_o_tecnico_actual and not objetivo_es_admin_o_tecnico)
+        )
+
     context = {
         'certificaciones':    certs,
-        'total':              certs.count(),
+        'total':              len(certs),
         'vigentes':           sum(1 for c in certs if c.vigente),
         'vencidas':           sum(1 for c in certs if not c.vigente),
-        'por_vencer':         certs.filter(
-            fecha_vencimiento__gte=hoy,
-            fecha_vencimiento__lte=hoy + timezone.timedelta(days=30)
-        ).count(),
-        'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+        'por_vencer':         sum(
+            1 for c in certs if hoy <= c.fecha_vencimiento <= hoy + timezone.timedelta(days=30)
+        ),
+        'es_admin_o_tecnico': es_admin_o_tecnico_actual,
     }
     return render(request, 'tpm/lista_certificaciones.html', context)
 
@@ -319,10 +330,22 @@ def editar_certificacion(request, pk):
 
 @login_required(login_url='login')
 def revocar_certificacion(request, pk):
-    if not es_admin_o_tecnico(request.user):
-        messages.error(request, 'No tienes permisos para revocar certificaciones.')
-        return redirect('lista_certificaciones')
     cert = get_object_or_404(CertificacionUsuario, pk=pk)
+
+    es_propia = cert.usuario_id == request.user.pk
+    objetivo_es_admin_o_tecnico = cert.usuario is not None and es_admin_o_tecnico(cert.usuario)
+    puede = (
+        es_propia
+        or es_admin(request.user)
+        or (es_admin_o_tecnico(request.user) and not objetivo_es_admin_o_tecnico)
+    )
+    if not puede:
+        messages.error(
+            request,
+            'Solo un administrador puede revocar la certificación de otro técnico o administrador.'
+        )
+        return redirect('lista_certificaciones')
+
     if request.method == 'POST':
         cert.activo = False
         cert.save(update_fields=['activo'])
