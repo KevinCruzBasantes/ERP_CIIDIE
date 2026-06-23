@@ -232,26 +232,30 @@ def crear_orden(request, reserva_pk):
     })
 
 
-@login_required(login_url='login')
-def detalle_orden(request, pk):
+def _contexto_detalle_orden(request, orden, parada_form=None):
     orden = get_object_or_404(
         OrdenTrabajo.objects.select_related(
             'reserva__usuario', 'reserva__maquina'
         ).prefetch_related('paradas__codigo_parada', 'entradas_bitacora__operario'),
-        pk=pk, activo=True
+        pk=orden.pk, activo=True
     )
-    context = {
+    return {
         'orden':              orden,
         'paradas':            orden.paradas.filter(activo=True),
         'bitacora':           orden.entradas_bitacora.all(),
         'consumos':           orden.consumos_material.select_related('material').all(),
-        'parada_form':        RegistroParadaForm(maquina=orden.reserva.maquina),
+        'parada_form':        parada_form or RegistroParadaForm(maquina=orden.reserva.maquina, reserva=orden.reserva),
         'bitacora_form':      BitacoraForm(),
         'materiales':         Material.objects.filter(activo=True).order_by('nombre'),
         'cerrar_form':        CerrarOrdenForm(instance=orden),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
     }
-    return render(request, 'reservas/detalle_orden.html', context)
+
+
+@login_required(login_url='login')
+def detalle_orden(request, pk):
+    orden = get_object_or_404(OrdenTrabajo, pk=pk, activo=True)
+    return render(request, 'reservas/detalle_orden.html', _contexto_detalle_orden(request, orden))
 
 
 @login_required(login_url='login')
@@ -278,14 +282,15 @@ def cerrar_orden(request, pk):
 def agregar_parada(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
     if request.method == 'POST':
-        form = RegistroParadaForm(request.POST, maquina=orden.reserva.maquina)
+        form = RegistroParadaForm(request.POST, maquina=orden.reserva.maquina, reserva=orden.reserva)
         if form.is_valid():
             parada              = form.save(commit=False)
             parada.orden_trabajo = orden
             parada.save()
             messages.success(request, 'Parada registrada.')
-        else:
-            messages.error(request, f'Error al registrar parada: {form.errors}')
+            return redirect('detalle_orden', pk=orden_pk)
+        messages.error(request, 'No se pudo registrar la parada. Revisa los campos marcados.')
+        return render(request, 'reservas/detalle_orden.html', _contexto_detalle_orden(request, orden, parada_form=form))
     return redirect('detalle_orden', pk=orden_pk)
 
 

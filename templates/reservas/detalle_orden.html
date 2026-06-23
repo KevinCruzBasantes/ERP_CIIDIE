@@ -145,14 +145,23 @@
                     <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Código de parada</label>
                     {{ parada_form.codigo_parada }}
                 </div>
+                <div style="font-size:0.7rem; color:var(--text-muted);">
+                    Horario reservado: {{ orden.reserva.hora_inicio|time:"H:i" }} – {{ orden.reserva.hora_fin|time:"H:i" }}
+                </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
                     <div>
                         <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Hora inicio</label>
                         {{ parada_form.hora_inicio }}
+                        {% if parada_form.hora_inicio.errors %}
+                            <div style="font-size:0.7rem; color:var(--danger); margin-top:0.25rem;">{{ parada_form.hora_inicio.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div>
                         <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Hora fin</label>
                         {{ parada_form.hora_fin }}
+                        {% if parada_form.hora_fin.errors %}
+                            <div style="font-size:0.7rem; color:var(--danger); margin-top:0.25rem;">{{ parada_form.hora_fin.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
                 <div>

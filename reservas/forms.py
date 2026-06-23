@@ -7,6 +7,11 @@ FIELD_STYLE    = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border
 SELECT_STYLE   = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;'
 TEXTAREA_STYLE = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.85rem; outline:none; resize:vertical;'
 
+# input type="time" muestra un selector AM/PM o 24h segun la configuracion
+# regional del sistema operativo, sin forma de forzarlo desde el HTML/CSS.
+# Se usa un campo de texto simple HH:MM (24 horas siempre, sin selector nativo).
+HORA_ATTRS = {'style': FIELD_STYLE, 'type': 'text', 'placeholder': 'HH:MM', 'pattern': r'([01][0-9]|2[0-3]):[0-5][0-9]'}
+
 
 class ReservaForm(forms.ModelForm):
     class Meta:
@@ -15,8 +20,8 @@ class ReservaForm(forms.ModelForm):
         widgets = {
             'maquina':       forms.Select(attrs={'style': SELECT_STYLE}),
             'fecha':         forms.DateInput(attrs={'style': FIELD_STYLE, 'type': 'date'}),
-            'hora_inicio':   forms.TimeInput(attrs={'style': FIELD_STYLE, 'type': 'time'}),
-            'hora_fin':      forms.TimeInput(attrs={'style': FIELD_STYLE, 'type': 'time'}),
+            'hora_inicio':   forms.TimeInput(attrs=HORA_ATTRS, format='%H:%M'),
+            'hora_fin':      forms.TimeInput(attrs=HORA_ATTRS, format='%H:%M'),
             'proposito':     forms.Select(attrs={'style': SELECT_STYLE}),
             'observaciones': forms.Textarea(attrs={'style': TEXTAREA_STYLE, 'rows': 3}),
         }
@@ -27,6 +32,8 @@ class ReservaForm(forms.ModelForm):
         self.fields['maquina'].empty_label = '— Seleccionar máquina —'
         self.fields['observaciones'].required = False
         self.fields['fecha'].widget.attrs['min'] = timezone.now().date().isoformat()
+        self.fields['hora_inicio'].input_formats = ['%H:%M']
+        self.fields['hora_fin'].input_formats    = ['%H:%M']
 
     def clean(self):
         cleaned = super().clean()
@@ -77,12 +84,12 @@ class RegistroParadaForm(forms.ModelForm):
         fields = ['codigo_parada', 'hora_inicio', 'hora_fin', 'descripcion_tecnica']
         widgets = {
             'codigo_parada':       forms.Select(attrs={'style': SELECT_STYLE}),
-            'hora_inicio':         forms.TimeInput(attrs={'style': FIELD_STYLE, 'type': 'time'}),
-            'hora_fin':            forms.TimeInput(attrs={'style': FIELD_STYLE, 'type': 'time'}),
+            'hora_inicio':         forms.TimeInput(attrs=HORA_ATTRS, format='%H:%M'),
+            'hora_fin':            forms.TimeInput(attrs=HORA_ATTRS, format='%H:%M'),
             'descripcion_tecnica': forms.Textarea(attrs={'style': TEXTAREA_STYLE, 'rows': 2}),
         }
 
-    def __init__(self, *args, maquina=None, **kwargs):
+    def __init__(self, *args, maquina=None, reserva=None, **kwargs):
         super().__init__(*args, **kwargs)
         if maquina:
             self.fields['codigo_parada'].queryset = CodigoParada.objects.filter(
@@ -92,6 +99,27 @@ class RegistroParadaForm(forms.ModelForm):
         self.fields['codigo_parada'].empty_label = '— Sin código catalogado —'
         self.fields['codigo_parada'].required    = False
         self.fields['hora_fin'].required         = False
+        self.fields['hora_inicio'].input_formats = ['%H:%M']
+        self.fields['hora_fin'].input_formats    = ['%H:%M']
+
+        self.reserva = reserva
+        if reserva:
+            rango = f'{reserva.hora_inicio.strftime("%H:%M")}–{reserva.hora_fin.strftime("%H:%M")}'
+            self.fields['hora_inicio'].help_text = f'Dentro del horario reservado ({rango}).'
+            self.fields['hora_inicio'].widget.attrs['placeholder'] = rango.split('–')[0]
+            self.fields['hora_fin'].widget.attrs['placeholder']    = rango.split('–')[1]
+
+    def clean(self):
+        cleaned = super().clean()
+        h_ini = cleaned.get('hora_inicio')
+        h_fin = cleaned.get('hora_fin')
+        if self.reserva:
+            rango = f'{self.reserva.hora_inicio.strftime("%H:%M")}–{self.reserva.hora_fin.strftime("%H:%M")}'
+            if h_ini and not (self.reserva.hora_inicio <= h_ini <= self.reserva.hora_fin):
+                self.add_error('hora_inicio', f'Debe estar dentro del horario reservado ({rango}).')
+            if h_fin and not (self.reserva.hora_inicio <= h_fin <= self.reserva.hora_fin):
+                self.add_error('hora_fin', f'Debe estar dentro del horario reservado ({rango}).')
+        return cleaned
 
 
 class BitacoraForm(forms.ModelForm):
