@@ -61,8 +61,7 @@
                         <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ r.maquina.nombre }}</div>
                         <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.fecha|date:"d/m/Y" }} · {{ r.hora_inicio|time:"H:i" }} – {{ r.hora_fin|time:"H:i" }}</div>
                     </div>
-                    <span data-estado-r="{{ r.estado }}"
-                          style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; padding:0.2rem 0.5rem; border-radius:3px; text-transform:uppercase; font-weight:500;">
+                    <span class="badge {% if r.estado == 'PENDIENTE' %}badge-warning{% elif r.estado == 'APROBADA' %}badge-success{% elif r.estado == 'EN_USO' %}badge-info{% elif r.estado == 'COMPLETADA' %}badge-accent{% else %}badge-danger{% endif %}">
                         {{ r.get_estado_display }}
                     </span>
                 </a>
