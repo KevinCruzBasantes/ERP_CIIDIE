@@ -92,7 +92,7 @@ class MantenimientoForm(forms.ModelForm):
         self.fields['plan'].empty_label     = '— Sin plan asociado (correctivo) —'
         self.fields['responsable'].queryset = Usuario.objects.filter(
             estado='ACTIVO'
-        ).order_by('first_name')
+        ).exclude(is_superuser=True).order_by('first_name')
         self.fields['responsable'].empty_label = '— Sin responsable asignado —'
 
         # Campos opcionales
@@ -163,7 +163,7 @@ class OrdenMantenimientoForm(forms.ModelForm):
         self.fields['maquina'].queryset      = Maquina.objects.all().order_by('nombre')
         self.fields['plan'].queryset         = PlanMantenimiento.objects.filter(activo=True).select_related('maquina').order_by('maquina__nombre')
         self.fields['plan'].empty_label      = '— Sin plan (correctivo) —'
-        tecnicos = Usuario.objects.filter(estado='ACTIVO').order_by('first_name', 'last_name')
+        tecnicos = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True).order_by('first_name', 'last_name')
         self.fields['responsable_1'].queryset = tecnicos
         self.fields['responsable_2'].queryset = tecnicos
         self.fields['responsable_3'].queryset = tecnicos

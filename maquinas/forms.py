@@ -51,7 +51,7 @@ class MaquinaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['responsable'].queryset = Usuario.objects.filter(estado='ACTIVO')
+        self.fields['responsable'].queryset = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True)
         self.fields['responsable'].empty_label = '— Sin responsable asignado —'
         for field in self.fields.values():
             field.required = False

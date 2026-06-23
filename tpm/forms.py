@@ -32,7 +32,7 @@ class CertificacionForm(forms.ModelForm):
         from usuarios.permisos import es_admin, es_admin_o_tecnico
         self.usuario_actual = usuario_actual
 
-        candidatos = Usuario.objects.filter(estado='ACTIVO')
+        candidatos = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True)
         if usuario_actual:
             candidatos = candidatos.exclude(pk=usuario_actual.pk)
             if not es_admin(usuario_actual):
