@@ -15,6 +15,7 @@ class CertificacionUsuario(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='certificaciones'
     )
     maquina = models.ForeignKey(
@@ -26,6 +27,7 @@ class CertificacionUsuario(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='certificaciones_otorgadas'
     )
 
@@ -123,6 +125,7 @@ class InspeccionDiaria(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='inspecciones_realizadas'
     )
 
@@ -310,6 +313,7 @@ class Incidente(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='incidentes_reportados'
     )
 

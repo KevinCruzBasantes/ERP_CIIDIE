@@ -27,6 +27,7 @@ class Reserva(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='reservas'
     )
     maquina = models.ForeignKey(
@@ -256,6 +257,7 @@ class BitacoraOperario(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='entradas_bitacora'
     )
 

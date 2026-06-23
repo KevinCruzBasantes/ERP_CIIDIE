@@ -92,6 +92,7 @@ class OrdenMantenimiento(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='ordenes_creadas'
     )
 
@@ -198,6 +199,7 @@ class BitacoraMantenimiento(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='bitacora_mantenimiento'
     )
 

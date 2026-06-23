@@ -21,6 +21,7 @@ class ReporteGenerado(models.Model):
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='reportes_generados'
     )
 
