@@ -275,7 +275,7 @@ def crear_certificacion(request):
         messages.error(request, 'No tienes permisos para otorgar certificaciones.')
         return redirect('lista_certificaciones')
     if request.method == 'POST':
-        form = CertificacionForm(request.POST)
+        form = CertificacionForm(request.POST, usuario_actual=request.user)
         if form.is_valid():
             cert = form.save(commit=False)
             cert.otorgado_por = request.user
@@ -287,7 +287,7 @@ def crear_certificacion(request):
             )
             return redirect('lista_certificaciones')
     else:
-        form = CertificacionForm()
+        form = CertificacionForm(usuario_actual=request.user)
     return render(request, 'tpm/form_certificacion.html', {
         'form':   form,
         'titulo': 'Nueva certificación',
@@ -302,13 +302,13 @@ def editar_certificacion(request, pk):
         return redirect('lista_certificaciones')
     cert = get_object_or_404(CertificacionUsuario, pk=pk)
     if request.method == 'POST':
-        form = CertificacionForm(request.POST, instance=cert)
+        form = CertificacionForm(request.POST, instance=cert, usuario_actual=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Certificación actualizada correctamente.')
             return redirect('lista_certificaciones')
     else:
-        form = CertificacionForm(instance=cert)
+        form = CertificacionForm(instance=cert, usuario_actual=request.user)
     return render(request, 'tpm/form_certificacion.html', {
         'form':   form,
         'cert':   cert,

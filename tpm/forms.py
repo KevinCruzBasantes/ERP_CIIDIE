@@ -25,10 +25,11 @@ class CertificacionForm(forms.ModelForm):
             'observaciones':      forms.Textarea(attrs={'style': TEXTAREA_STYLE, 'rows': 2}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, usuario_actual=None, **kwargs):
         super().__init__(*args, **kwargs)
         from usuarios.models import Usuario
         from maquinas.models import Maquina
+        self.usuario_actual = usuario_actual
         self.fields['usuario'].queryset    = Usuario.objects.filter(estado='ACTIVO').order_by('username')
         self.fields['maquina'].queryset    = Maquina.objects.filter(estado='OPERATIVA').order_by('nombre')
         self.fields['observaciones'].required = False
@@ -41,6 +42,11 @@ class CertificacionForm(forms.ModelForm):
         f_ven = cleaned.get('fecha_vencimiento')
         if f_oto and f_ven and f_ven <= f_oto:
             raise forms.ValidationError('La fecha de vencimiento debe ser posterior a la fecha de otorgamiento.')
+        usuario = cleaned.get('usuario')
+        if usuario and self.usuario_actual and usuario.pk == self.usuario_actual.pk:
+            raise forms.ValidationError(
+                'No puedes otorgarte una certificación a ti mismo. Otra persona calificada debe certificarte.'
+            )
         return cleaned
 
 
