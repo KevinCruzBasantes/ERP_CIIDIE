@@ -40,8 +40,8 @@ def crear_reserva(request):
                 reserva.save()
                 messages.success(request, f'Reserva solicitada para {reserva.maquina.nombre} el {reserva.fecha.strftime("%d/%m/%Y")}. Pendiente de aprobación.')
                 return redirect('detalle_reserva', pk=reserva.pk)
-            except Exception as e:
-                messages.error(request, f'No se pudo guardar la reserva: {e}')
+            except ValidationError as e:
+                messages.error(request, f'No se pudo guardar la reserva: {"; ".join(e.messages)}')
     else:
         form = ReservaForm()
     return render(request, 'reservas/form_reserva.html', {
@@ -111,8 +111,8 @@ def editar_reserva(request, pk):
                 form.save()
                 messages.success(request, f'Reserva #{reserva.pk} actualizada correctamente.')
                 return redirect('detalle_reserva', pk=reserva.pk)
-            except Exception as e:
-                messages.error(request, f'No se pudo guardar: {e}')
+            except ValidationError as e:
+                messages.error(request, f'No se pudo guardar: {"; ".join(e.messages)}')
     else:
         form = ReservaForm(instance=reserva)
         form.fields['fecha'].widget.attrs.pop('min', None)
