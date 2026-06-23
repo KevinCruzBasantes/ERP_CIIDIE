@@ -8,7 +8,8 @@ Disparadores automáticos:
   - Maquina: cambia de estado a FUERA_SERVICIO
   - InspeccionDiaria: aprobada=False
   - HallazgoInspeccion: prioridad CRITICA o ALTA
-  - RegistroParada: parada no planificada (PNP) de causa técnica
+  - RegistroParada: parada no planificada (PNP) de cualquier categoría
+    excepto OPERACION/OTRO (CATEGORIAS_NO_TECNICAS) — incluye SEGURIDAD
 
 Incidente y PlanMantenimiento siguen siendo disparadores manuales
 (botón "Generar orden" en su detalle), ver mantenimiento/views.py.
@@ -18,9 +19,7 @@ from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-CATEGORIAS_TECNICAS = (
-    'MECANICA', 'ELECTRICA', 'NEUMATICA', 'LUBRICACION', 'REFRIGERACION', 'CONTROL_CNC'
-)
+CATEGORIAS_NO_TECNICAS = ('OPERACION', 'OTRO')
 
 
 @receiver(pre_save, sender='maquinas.Maquina')
@@ -119,7 +118,7 @@ def orden_por_parada_tecnica(sender, instance, created, **kwargs):
         return
 
     codigo = instance.codigo_parada
-    if not codigo or codigo.tipo != 'NO_PLANIFICADA' or codigo.categoria not in CATEGORIAS_TECNICAS:
+    if not codigo or codigo.tipo != 'NO_PLANIFICADA' or codigo.categoria in CATEGORIAS_NO_TECNICAS:
         return
 
     from mantenimiento.models import OrdenMantenimiento
