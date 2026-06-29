@@ -79,9 +79,9 @@
             </button>
             {% if filtro_fabricante or filtro_modelo %}
             <a href="{% url 'lista_codigos_parada' %}"
-               style="padding:0.55rem 1rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none; transition:border-color 0.15s;"
-               onmouseover="this.style.borderColor='var(--text-muted)'"
-               onmouseout="this.style.borderColor='var(--border)'">
+               style="padding:0.55rem 1rem; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none; transition:border-color 0.15s, color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
                 ✕ Limpiar
             </a>
             {% endif %}

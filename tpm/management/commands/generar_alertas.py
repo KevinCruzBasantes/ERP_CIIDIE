@@ -9,14 +9,18 @@ Ejecutar diariamente vía cron en el servidor ProLiant:
               /var/www/erp_laboratorio/manage.py generar_alertas
 
 Qué revisa este comando:
-  1. Mantenimientos próximos (≤ 7 días)
-  2. Mantenimientos vencidos (fecha_programada < hoy, no finalizados)
-  3. Materiales con stock bajo o en mínimo
-  4. Certificaciones de usuario por vencer (≤ 30 días)
-  5. Certificaciones ya vencidas
+  1. Planes de mantenimiento vencidos → genera OrdenMantenimiento automáticamente
+  2. Mantenimientos próximos (≤ 7 días)
+  3. Mantenimientos vencidos (fecha_programada < hoy, no finalizados)
+  4. Materiales con stock bajo o en mínimo
+  5. Certificaciones de usuario por vencer (≤ 30 días)
+  6. Certificaciones ya vencidas
 
 No genera duplicados: usa get_or_create para cada alerta.
 """
+
+from decimal import Decimal
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.db import models
@@ -29,17 +33,76 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         hoy = timezone.now().date()
         creadas = 0
-        omitidas = 0
 
+        om_generadas = self._generar_om_planes(hoy)
         creadas += self._alertas_mantenimiento(hoy)
         creadas += self._alertas_stock()
         creadas += self._alertas_certificaciones(hoy)
 
         self.stdout.write(
             self.style.SUCCESS(
-                f'Alertas generadas: {creadas} nuevas, {omitidas} ya existían'
+                f'OM generadas por planes: {om_generadas} | Alertas nuevas: {creadas}'
             )
         )
+
+    # ──────────────────────────────────────────────────────────────────
+    def _generar_om_planes(self, hoy):
+        from mantenimiento.models import PlanMantenimiento, OrdenMantenimiento
+
+        generadas = 0
+        planes = PlanMantenimiento.objects.filter(activo=True).select_related('maquina')
+
+        for plan in planes:
+            if plan.maquina.estado == 'BAJA':
+                continue
+
+            # No generar si ya existe una OM activa para este plan
+            om_activa = OrdenMantenimiento.objects.filter(
+                plan=plan, activo=True
+            ).exclude(estado__in=['FINALIZADA', 'CANCELADA']).exists()
+            if om_activa:
+                continue
+
+            disparar = False
+
+            if plan.intervalo_dias and plan.ultima_ejecucion_fecha:
+                proxima = plan.ultima_ejecucion_fecha + timedelta(days=plan.intervalo_dias)
+                if proxima <= hoy:
+                    disparar = True
+
+            if plan.intervalo_horas:
+                horas_base = plan.ultima_ejecucion_horas or Decimal('0')
+                horas_transcurridas = plan.maquina.horas_acumuladas - horas_base
+                if horas_transcurridas >= plan.intervalo_horas:
+                    disparar = True
+
+            if not disparar:
+                continue
+
+            OrdenMantenimiento.objects.create(
+                maquina=plan.maquina,
+                plan=plan,
+                origen='PLAN',
+                tipo='PREVENTIVO',
+                estado='PROGRAMADA',
+                prioridad='MEDIA',
+                titulo=plan.nombre_tarea,
+                descripcion_tarea=plan.descripcion_detallada,
+                fecha_programada=hoy,
+                activo=True,
+            )
+
+            PlanMantenimiento.objects.filter(pk=plan.pk).update(
+                ultima_ejecucion_fecha=hoy,
+                ultima_ejecucion_horas=plan.maquina.horas_acumuladas,
+            )
+
+            generadas += 1
+            self.stdout.write(
+                f'  OM generada: {plan.maquina.codigo} — {plan.nombre_tarea}'
+            )
+
+        return generadas
 
     # ──────────────────────────────────────────────────────────────────
     def _alertas_mantenimiento(self, hoy):

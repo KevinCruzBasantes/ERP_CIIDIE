@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from usuarios.permisos import es_admin, es_admin_o_tecnico
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
 from .forms import (ReservaForm, OrdenTrabajoForm, CerrarOrdenForm,
@@ -239,6 +239,24 @@ def _contexto_detalle_orden(request, orden, parada_form=None):
         ).prefetch_related('paradas__codigo_parada', 'entradas_bitacora__operario'),
         pk=orden.pk, activo=True
     )
+
+    proxima_reserva   = None
+    minutos_restantes = None
+    if orden.estado != 'FINALIZADA':
+        reserva  = orden.reserva
+        ahora_dt = datetime.now()
+        limite_dt = datetime.combine(date.today(), reserva.hora_fin) - timedelta(minutes=15)
+        if date.today() == reserva.fecha and ahora_dt >= limite_dt:
+            proxima_reserva = Reserva.objects.filter(
+                maquina=reserva.maquina,
+                fecha=reserva.fecha,
+                hora_inicio__gte=reserva.hora_fin,
+                estado__in=('PENDIENTE', 'APROBADA', 'EN_USO'),
+            ).select_related('usuario').order_by('hora_inicio').first()
+            if proxima_reserva:
+                fin_dt = datetime.combine(date.today(), reserva.hora_fin)
+                minutos_restantes = max(0, int((fin_dt - ahora_dt).total_seconds() / 60))
+
     return {
         'orden':              orden,
         'paradas':            orden.paradas.filter(activo=True),
@@ -249,6 +267,8 @@ def _contexto_detalle_orden(request, orden, parada_form=None):
         'materiales':         Material.objects.filter(activo=True).order_by('nombre'),
         'cerrar_form':        CerrarOrdenForm(instance=orden),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+        'proxima_reserva':    proxima_reserva,
+        'minutos_restantes':  minutos_restantes,
     }
 
 
@@ -256,6 +276,37 @@ def _contexto_detalle_orden(request, orden, parada_form=None):
 def detalle_orden(request, pk):
     orden = get_object_or_404(OrdenTrabajo, pk=pk, activo=True)
     return render(request, 'reservas/detalle_orden.html', _contexto_detalle_orden(request, orden))
+
+
+def _advertir_sobretiempo(request, orden, tiempo_real_min):
+    if not tiempo_real_min:
+        return
+    reserva = orden.reserva
+    hora_fin_real = (
+        datetime.combine(reserva.fecha, reserva.hora_inicio)
+        + timedelta(minutes=float(tiempo_real_min))
+    )
+    hora_fin_reservada = datetime.combine(reserva.fecha, reserva.hora_fin)
+    if hora_fin_real <= hora_fin_reservada:
+        return
+    conflictos = Reserva.objects.filter(
+        maquina=reserva.maquina,
+        fecha=reserva.fecha,
+        hora_inicio__gte=reserva.hora_fin,
+        hora_inicio__lt=hora_fin_real.time(),
+        estado__in=('PENDIENTE', 'APROBADA', 'EN_USO'),
+    ).select_related('usuario').order_by('hora_inicio')
+    for conflicto in conflictos:
+        nombre = (
+            conflicto.usuario.get_full_name() or conflicto.usuario.username
+            if conflicto.usuario else '(usuario eliminado)'
+        )
+        messages.warning(
+            request,
+            f'Sobretiempo: el tiempo real ({tiempo_real_min} min) supera el horario de esta reserva '
+            f'({reserva.hora_fin.strftime("%H:%M")}). Afecta la reserva de {nombre}, '
+            f'que comienza a las {conflicto.hora_inicio.strftime("%H:%M")}.'
+        )
 
 
 @login_required(login_url='login')
@@ -272,7 +323,15 @@ def cerrar_orden(request, pk):
             ot.save()
             orden.reserva.estado = 'COMPLETADA'
             orden.reserva.save()
+            if ot.tiempo_real_min:
+                from django.db.models import F
+                from decimal import Decimal
+                from maquinas.models import Maquina as MaquinaModel
+                MaquinaModel.objects.filter(pk=orden.reserva.maquina_id).update(
+                    horas_acumuladas=F('horas_acumuladas') + Decimal(str(ot.tiempo_real_min)) / 60
+                )
             messages.success(request, f'OT-{orden.pk:04d} finalizada correctamente.')
+            _advertir_sobretiempo(request, orden, ot.tiempo_real_min)
         else:
             messages.error(request, 'Revisa los datos del cierre.')
     return redirect('detalle_orden', pk=pk)

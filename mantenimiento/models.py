@@ -190,6 +190,18 @@ class OrdenMantenimiento(models.Model):
 # ─────────────────────────────────────────────────────────────────────────────
 class BitacoraMantenimiento(models.Model):
 
+    TIPOS_ACTIVIDAD = [
+        ('DIAGNOSTICO', 'Diagnóstico / Inspección'),
+        ('DESMONTAJE',  'Desmontaje'),
+        ('LIMPIEZA',    'Limpieza'),
+        ('LUBRICACION', 'Lubricación'),
+        ('AJUSTE',      'Ajuste / Calibración'),
+        ('REEMPLAZO',   'Reemplazo de pieza'),
+        ('MONTAJE',     'Montaje / Ensamble'),
+        ('PRUEBA',      'Prueba / Verificación'),
+        ('OTRO',        'Otro'),
+    ]
+
     maquina = models.ForeignKey(
         Maquina,
         on_delete=models.CASCADE,
@@ -211,7 +223,15 @@ class BitacoraMantenimiento(models.Model):
         related_name='bitacora_mantenimiento'
     )
 
-    fecha_registro = models.DateTimeField(auto_now_add=True)
+    fecha_registro   = models.DateTimeField(auto_now_add=True)
+    tipo_actividad   = models.CharField(
+        max_length=20, choices=TIPOS_ACTIVIDAD, blank=True,
+        help_text="Tipo de actividad realizada en esta entrada"
+    )
+    tiempo_horas     = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text="Horas empleadas en esta actividad"
+    )
     descripcion = models.TextField(
         help_text="Qué se realizó: trabajo ejecutado, hallazgos, resultados"
     )
@@ -258,13 +278,6 @@ class PlanMantenimiento(models.Model):
         ('P7_SEGURIDAD', 'Pilar 7 — Seguridad'),
     ]
 
-    UNIDADES_INTERVALO = [
-        ('HORAS', 'Horas de operación'),
-        ('DIAS', 'Días calendario'),
-        ('SEMANAS', 'Semanas'),
-        ('MESES', 'Meses'),
-    ]
-
     maquina = models.ForeignKey(
         Maquina,
         on_delete=models.CASCADE,
@@ -286,14 +299,25 @@ class PlanMantenimiento(models.Model):
         default='P2_PREVENTIVO'
     )
 
-    # Intervalo: se usa uno de los dos (horas O días), no ambos
-    intervalo_valor = models.PositiveIntegerField(
-        help_text="Número de unidades entre cada mantenimiento (ej: 500)"
+    # Disparadores — al menos uno debe tener valor
+    intervalo_dias = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Cada X días calendario (ej: 30). Deja vacío para omitir este disparador."
     )
-    intervalo_unidad = models.CharField(
-        max_length=10,
-        choices=UNIDADES_INTERVALO,
-        default='HORAS'
+    intervalo_horas = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Cada X horas de operación (ej: 500). Deja vacío para omitir este disparador."
+    )
+
+    # Seguimiento para calcular cuándo vence cada disparador
+    ultima_ejecucion_fecha = models.DateField(
+        null=True, blank=True,
+        help_text="Punto de inicio del contador de días. Actualizado automáticamente al generar una OM."
+    )
+    ultima_ejecucion_horas = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        null=True, blank=True,
+        help_text="Horas acumuladas de la máquina en la última ejecución. Actualizado automáticamente."
     )
 
     activo = models.BooleanField(
@@ -304,12 +328,18 @@ class PlanMantenimiento(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['maquina', 'intervalo_valor']
+        ordering = ['maquina', 'nombre_tarea']
         verbose_name = 'Plan de mantenimiento'
         verbose_name_plural = 'Planes de mantenimiento'
 
     def __str__(self):
-        return f"{self.maquina.codigo} — {self.nombre_tarea} (c/{self.intervalo_valor} {self.get_intervalo_unidad_display()})"
+        partes = []
+        if self.intervalo_dias:
+            partes.append(f"c/{self.intervalo_dias}d")
+        if self.intervalo_horas:
+            partes.append(f"c/{self.intervalo_horas}h")
+        intervalo_str = ' + '.join(partes) if partes else 'sin intervalo'
+        return f"{self.maquina.codigo} — {self.nombre_tarea} ({intervalo_str})"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -4,9 +4,28 @@
 {% block nav_tpm %}active{% endblock %}
 
 {% block content %}
-<div class="page-header" style="margin-bottom:1.5rem;">
-    <h1>Alertas activas</h1>
-    <p>Notificaciones pendientes del sistema</p>
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+        <h1>{% if mostrar_resueltas %}Alertas resueltas{% else %}Alertas activas{% endif %}</h1>
+        <p>{% if mostrar_resueltas %}Historial de alertas cerradas{% else %}Notificaciones pendientes del sistema{% endif %}</p>
+    </div>
+    <div>
+        {% if mostrar_resueltas %}
+        <a href="{% url 'lista_alertas' %}"
+           style="padding:0.55rem 1rem; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none; transition:border-color 0.15s, color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
+            ← Ver activas
+        </a>
+        {% else %}
+        <a href="{% url 'lista_alertas' %}?resueltas=1"
+           style="padding:0.55rem 1rem; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none; transition:border-color 0.15s, color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
+            ≡ Ver historial resueltas
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <div class="stats-grid">
@@ -29,70 +48,154 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="card-title">Listado de alertas</div>
+        <div class="card-title">{% if mostrar_resueltas %}Historial{% else %}Alertas pendientes{% endif %}</div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ alertas.count }} alerta{{ alertas.count|pluralize:"s" }}</span>
     </div>
 
     {% if alertas %}
-    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+    <div style="display:flex; flex-direction:column; gap:0.75rem;">
         {% for a in alertas %}
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:0.85rem 1rem; border-radius:6px; border:1px solid var(--border); background:var(--surface);">
-            <div style="display:flex; align-items:flex-start; gap:0.75rem; flex:1;">
-                <div style="margin-top:0.1rem;">
-                    {% if a.severidad == 'CRITICA' %}
-                        <span style="font-size:1rem; color:var(--danger);">⚠</span>
-                    {% elif a.severidad == 'ADVERTENCIA' %}
-                        <span style="font-size:1rem; color:var(--warning);">◉</span>
-                    {% else %}
-                        <span style="font-size:1rem; color:var(--info);">◎</span>
-                    {% endif %}
-                </div>
-                <div style="flex:1;">
-                    <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.3rem; flex-wrap:wrap;">
+        <div style="border-radius:8px; border:1px solid {% if a.severidad == 'CRITICA' %}rgba(239,68,68,0.35){% elif a.severidad == 'ADVERTENCIA' %}rgba(245,158,11,0.3){% else %}var(--border){% endif %}; background:var(--surface); overflow:hidden;">
+
+            <!-- Cabecera de la alerta -->
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:0.85rem 1rem; flex-wrap:wrap;">
+                <div style="display:flex; align-items:flex-start; gap:0.75rem; flex:1; min-width:0;">
+
+                    <!-- Icono severidad -->
+                    <div style="margin-top:0.15rem; flex-shrink:0;">
                         {% if a.severidad == 'CRITICA' %}
-                            <span class="badge badge-danger">Crítica</span>
+                            <span style="font-size:1.05rem; color:var(--danger);">⚠</span>
                         {% elif a.severidad == 'ADVERTENCIA' %}
-                            <span class="badge badge-warning">Advertencia</span>
+                            <span style="font-size:1.05rem; color:var(--warning);">◉</span>
                         {% else %}
-                            <span class="badge badge-info">Informativa</span>
-                        {% endif %}
-                        <span class="badge badge-accent">{{ a.get_tipo_display }}</span>
-                        {% if a.maquina %}
-                            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent);">{{ a.maquina.codigo }}</span>
+                            <span style="font-size:1.05rem; color:var(--info);">◎</span>
                         {% endif %}
                     </div>
-                    <div style="font-size:0.82rem; color:var(--text); line-height:1.5;">{{ a.mensaje }}</div>
-                    <div style="font-size:0.68rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace; margin-top:0.3rem;">
-                        {{ a.generada_en|date:"d/m/Y H:i" }}
+
+                    <div style="flex:1; min-width:0;">
+                        <!-- Badges -->
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; flex-wrap:wrap;">
+                            {% if a.severidad == 'CRITICA' %}
+                                <span class="badge badge-danger">Crítica</span>
+                            {% elif a.severidad == 'ADVERTENCIA' %}
+                                <span class="badge badge-warning">Advertencia</span>
+                            {% else %}
+                                <span class="badge badge-info">Informativa</span>
+                            {% endif %}
+                            <span class="badge badge-accent" style="font-size:0.6rem;">{{ a.get_tipo_display }}</span>
+                            {% if a.maquina %}
+                                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent);">{{ a.maquina.codigo }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Mensaje -->
+                        <div style="font-size:0.83rem; color:var(--text); line-height:1.5;">{{ a.mensaje }}</div>
+
+                        <!-- Meta -->
+                        <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap; margin-top:0.4rem;">
+                            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ a.generada_en|date:"d/m/Y H:i" }}</span>
+                            {% if a.asignado_a %}
+                            <span style="font-size:0.72rem; color:var(--accent);">→ {{ a.asignado_a.get_full_name|default:a.asignado_a.username }}</span>
+                            {% endif %}
+                            {% if mostrar_resueltas and a.resuelta_por %}
+                            <span style="font-size:0.72rem; color:var(--success);">✓ {{ a.resuelta_por.get_full_name|default:a.resuelta_por.username }} — {{ a.resuelta_en|date:"d/m/Y H:i" }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if mostrar_resueltas and a.nota_resolucion %}
+                        <div style="margin-top:0.5rem; padding:0.5rem 0.75rem; background:rgba(34,197,94,0.06); border-left:2px solid var(--success); border-radius:4px; font-size:0.78rem; color:var(--text-muted); font-style:italic;">
+                            {{ a.nota_resolucion }}
+                        </div>
+                        {% endif %}
+
+                        {% if a.referencia_tipo == 'OrdenTrabajo' %}
+                        <a href="{% url 'detalle_orden' a.referencia_id %}" style="display:inline-block; margin-top:0.4rem; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); text-decoration:none;">Ver orden →</a>
+                        {% endif %}
                     </div>
-                    {% if a.referencia_tipo == 'OrdenTrabajo' %}
-                    <a href="{% url 'detalle_orden' a.referencia_id %}" style="display:inline-block; margin-top:0.4rem; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent); text-decoration:none;">
-                        Ver orden de trabajo →
-                    </a>
-                    {% endif %}
                 </div>
+
+                <!-- Botón Crear OM (única acción en cabecera) -->
+                {% if es_admin_o_tecnico and not mostrar_resueltas and a.puede_generar_om and a.maquina %}
+                <div style="flex-shrink:0;">
+                    <form method="post" action="{% url 'crear_om_desde_alerta' a.pk %}"
+                          onsubmit="return confirm('¿Crear una orden de mantenimiento correctiva desde esta alerta?')">
+                        {% csrf_token %}
+                        <button type="submit"
+                                style="padding:0.35rem 0.85rem; background:rgba(99,179,237,0.12); color:var(--info); border:1px solid rgba(99,179,237,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; cursor:pointer; white-space:nowrap;">
+                            + Crear OM
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
-            {% if es_admin_o_tecnico %}
-            <div style="flex-shrink:0;">
-                <form method="post" action="{% url 'resolver_alerta' a.pk %}">
-                    {% csrf_token %}
-                    <button type="submit"
-                            style="padding:0.35rem 0.85rem; background:rgba(34,197,94,0.15); color:var(--success); border:1px solid rgba(34,197,94,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; cursor:pointer; font-weight:500; white-space:nowrap;">
-                        ✓ Resolver
-                    </button>
-                </form>
+
+            <!-- Acciones expandibles en pie de tarjeta -->
+            {% if es_admin_o_tecnico and not mostrar_resueltas %}
+            <div style="border-top:1px solid var(--border); display:flex; gap:0;">
+
+                <!-- Asignar: solo administradores -->
+                {% if es_admin %}
+                <details style="flex:1; border-right:1px solid var(--border);">
+                    <summary style="padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--warning); cursor:pointer; list-style:none; background:rgba(245,158,11,0.04);">
+                        {% if a.asignado_a %}⇄ Reasignar{% else %}→ Asignar responsable{% endif %}
+                    </summary>
+                    <div style="padding:0.75rem 1rem; background:rgba(245,158,11,0.04); border-top:1px solid rgba(245,158,11,0.15);">
+                        <form method="post" action="{% url 'asignar_alerta' a.pk %}" style="display:flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
+                            {% csrf_token %}
+                            <div style="flex:1; min-width:180px;">
+                                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Técnico responsable</label>
+                                <select name="asignado_a" style="width:100%; padding:0.55rem 0.75rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.82rem;">
+                                    <option value="">— Seleccionar técnico —</option>
+                                    {% for t in tecnicos %}
+                                    <option value="{{ t.pk }}" {% if a.asignado_a_id == t.pk %}selected{% endif %}>
+                                        {{ t.get_full_name|default:t.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" style="padding:0.55rem 1rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; font-weight:500; cursor:pointer; white-space:nowrap;">
+                                Guardar
+                            </button>
+                        </form>
+                    </div>
+                </details>
+                {% endif %}
+
+                <!-- Resolver -->
+                <details style="flex:1;">
+                    <summary style="padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--success); cursor:pointer; list-style:none; background:rgba(34,197,94,0.04);">
+                        ✓ Resolver esta alerta
+                    </summary>
+                    <div style="padding:0.75rem 1rem; background:rgba(34,197,94,0.04); border-top:1px solid rgba(34,197,94,0.15);">
+                        <form method="post" action="{% url 'resolver_alerta' a.pk %}">
+                            {% csrf_token %}
+                            <div style="margin-bottom:0.5rem;">
+                                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Acción tomada</label>
+                                <textarea name="nota_resolucion" rows="2"
+                                          placeholder="Ej: Se programó cambio de aceite. Se reordenó el material..."
+                                          style="width:100%; padding:0.6rem 0.8rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.83rem; resize:vertical; box-sizing:border-box;"></textarea>
+                            </div>
+                            <button type="submit"
+                                    style="padding:0.45rem 1.25rem; background:var(--success); color:#fff; border:none; border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer;">
+                                ✓ Confirmar resolución
+                            </button>
+                        </form>
+                    </div>
+                </details>
+
             </div>
             {% endif %}
+
         </div>
         {% endfor %}
     </div>
     {% else %}
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--text-muted); text-align:center; gap:0.75rem;">
         <span style="font-size:2.5rem; opacity:0.2;">✓</span>
-        <div style="font-size:0.85rem;">No hay alertas activas.</div>
-        <div style="font-size:0.75rem; opacity:0.6;">El sistema está operando sin incidencias.</div>
+        <div style="font-size:0.85rem;">{% if mostrar_resueltas %}No hay alertas resueltas.{% else %}No hay alertas activas.{% endif %}</div>
+        <div style="font-size:0.75rem; opacity:0.6;">{% if not mostrar_resueltas %}El sistema está operando sin incidencias.{% endif %}</div>
     </div>
     {% endif %}
 </div>
 
 {% endblock %}
-

@@ -2,7 +2,7 @@
 
 {% block title %}Mantenimiento — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Mantenimiento{% endblock %}
-{% block nav_mantenimiento %}active{% endblock %}
+{% block nav_hist_mant %}active{% endblock %}
 
 {% block content %}
 
@@ -12,12 +12,6 @@
         <p>Registro de mantenimientos preventivos y correctivos</p>
     </div>
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-        <a href="{% url 'lista_planes' %}"
-           style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:border-color 0.15s;"
-           onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
-           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-muted)'">
-            ◈ Planes TPM
-        </a>
         {% if es_admin_o_tecnico %}
         <a href="{% url 'crear_mantenimiento' %}"
            style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:background 0.15s;"

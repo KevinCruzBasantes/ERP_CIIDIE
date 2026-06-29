@@ -26,7 +26,7 @@
         {% elif maquina.estado == 'MANTENIMIENTO' %}
           <span class="badge badge-warning">En mantenimiento</span>
         {% else %}
-          <span class="badge badge-danger">Fuera de servicio</span>
+          <span class="badge badge-danger">Dada de baja</span>
         {% endif %}
         {% if maquina.fabricante %}
           <span style="font-size:0.75rem; color:var(--text-muted);">
@@ -41,16 +41,21 @@
 
   {% if es_admin %}
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem; margin-bottom:1.5rem;">
+      {% if maquina.estado != 'BAJA' %}
       <a href="{% url 'editar_maquina' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">Editar</a>
-      <form method="post" action="{% url 'cambiar_estado_maquina' maquina.pk %}" style="display:inline;">
-        {% csrf_token %}
-        {% if maquina.estado == 'OPERATIVA' %}
-          <button type="submit" name="estado" value="MANTENIMIENTO" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--warning); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Pasar a mantenimiento</button>
-        {% elif maquina.estado == 'MANTENIMIENTO' %}
-          <button type="submit" name="estado" value="OPERATIVA" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--success); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Marcar operativa</button>
-        {% endif %}
-      </form>
-      <a href="{% url 'eliminar_maquina' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">Desactivar</a>
+      {% endif %}
+      {% if maquina.estado == 'MANTENIMIENTO' %}
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px;">
+          Vuelve a Operativa al cerrar todas las órdenes activas
+        </span>
+      {% elif maquina.estado == 'BAJA' %}
+        <form method="post" action="{% url 'cambiar_estado_maquina' maquina.pk %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" name="estado" value="OPERATIVA" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--success); border:none; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Rehabilitar máquina</button>
+        </form>
+      {% else %}
+        <a href="{% url 'eliminar_maquina' maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--danger); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid rgba(239,68,68,0.3); border-radius:4px;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='rgba(239,68,68,0.3)'">Dar de baja</a>
+      {% endif %}
     </div>
   {% endif %}
 
@@ -271,7 +276,7 @@
                     <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
                       <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_posicion|default:'—' }}</td>
                       <td style="padding:0.6rem 1rem;">
-                        <div style="font-weight:500; color:var(--text);">{{ pieza.nombre }}</div>
+                        <a href="{% url 'detalle_pieza' pieza.pk %}" style="font-weight:500; color:var(--text); text-decoration:none;">{{ pieza.nombre }}</a>
                         {% if pieza.nombre_original %}
                           <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
                         {% endif %}
@@ -289,6 +294,7 @@
                       <td style="padding:0.6rem 1rem; text-align:right; white-space:nowrap;">
                         {% if es_admin_o_tecnico %}
                           <a href="{% url 'editar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none; margin-right:0.75rem;">Editar</a>
+                          <a href="{% url 'reasignar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none; margin-right:0.75rem;">Reasignar</a>
                           <a href="{% url 'crear_transferencia' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none; margin-right:0.75rem;">Transferir</a>
                         {% endif %}
                         {% if es_admin %}
@@ -335,7 +341,7 @@
                 <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
                   <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_posicion|default:'—' }}</td>
                   <td style="padding:0.6rem 1rem;">
-                    <div style="font-weight:500; color:var(--text);">{{ pieza.nombre }}</div>
+                    <a href="{% url 'detalle_pieza' pieza.pk %}" style="font-weight:500; color:var(--text); text-decoration:none;">{{ pieza.nombre }}</a>
                     {% if pieza.nombre_original %}
                       <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
                     {% endif %}
@@ -353,6 +359,7 @@
                   <td style="padding:0.6rem 1rem; text-align:right; white-space:nowrap;">
                     {% if es_admin_o_tecnico %}
                       <a href="{% url 'editar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none; margin-right:0.75rem;">Editar</a>
+                      <a href="{% url 'reasignar_pieza' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none; margin-right:0.75rem;">Reasignar</a>
                       <a href="{% url 'crear_transferencia' pieza.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-decoration:none; margin-right:0.75rem;">Transferir</a>
                     {% endif %}
                     {% if es_admin %}
@@ -392,10 +399,11 @@
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
             <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Dir.</th>
             <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pieza</th>
-            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Destino</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Contraparte</th>
             <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Motivo</th>
-            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Autorizado por</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Realizado por</th>
           </tr>
         </thead>
         <tbody>
@@ -403,14 +411,26 @@
             <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
               <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">{{ t.fecha|date:'d/m/Y H:i' }}</td>
               <td style="padding:0.6rem 1rem;">
+                {% if t.maquina_origen == maquina %}
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; padding:0.2rem 0.5rem; border-radius:4px; background:rgba(239,68,68,0.12); color:#f87171; letter-spacing:0.05em;">&#8593; SALIDA</span>
+                {% else %}
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; padding:0.2rem 0.5rem; border-radius:4px; background:rgba(34,197,94,0.12); color:#4ade80; letter-spacing:0.05em;">&#8595; ENTRADA</span>
+                {% endif %}
+              </td>
+              <td style="padding:0.6rem 1rem;">
                 <div style="font-weight:500; color:var(--text);">{{ t.pieza.nombre }}</div>
                 {% if t.pieza.numero_parte %}
                   <div style="font-size:0.68rem; color:var(--text-muted);">{{ t.pieza.numero_parte }}</div>
                 {% endif %}
               </td>
               <td style="padding:0.6rem 1rem;">
-                <a href="{% url 'detalle_maquina' t.maquina_destino.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent); text-decoration:none;">{{ t.maquina_destino.codigo }}</a>
-                <div style="font-size:0.68rem; color:var(--text-muted);">{{ t.maquina_destino.nombre }}</div>
+                {% if t.maquina_origen == maquina %}
+                  <a href="{% url 'detalle_maquina' t.maquina_destino.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent); text-decoration:none;">{{ t.maquina_destino.codigo }}</a>
+                  <div style="font-size:0.68rem; color:var(--text-muted);">{{ t.maquina_destino.nombre }}</div>
+                {% else %}
+                  <a href="{% url 'detalle_maquina' t.maquina_origen.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--accent); text-decoration:none;">{{ t.maquina_origen.codigo }}</a>
+                  <div style="font-size:0.68rem; color:var(--text-muted);">{{ t.maquina_origen.nombre }}</div>
+                {% endif %}
               </td>
               <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted); max-width:200px;">{{ t.motivo|truncatechars:60 }}</td>
               <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text);">
@@ -428,6 +448,51 @@
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
         <span style="font-size:1.5rem; opacity:0.2;">⇄</span>
         <div style="font-size:0.82rem;">Sin transferencias registradas para esta maquina.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- HISTORIAL DE REASIGNACIONES -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+      <div class="card-title">Reasignaciones de ensamble</div>
+      <span class="badge badge-accent">Últimas 20</span>
+    </div>
+    {% if reasignaciones %}
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Fecha</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Pieza</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Ensamble anterior</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Ensamble actual</th>
+            <th style="text-align:left; padding:0.5rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Realizado por</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reasignaciones %}
+            <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">{{ r.fecha|date:'d/m/Y H:i' }}</td>
+              <td style="padding:0.6rem 1rem;">
+                <a href="{% url 'detalle_pieza' r.pieza.pk %}" style="font-weight:500; color:var(--text); text-decoration:none;">{{ r.pieza.nombre }}</a>
+              </td>
+              <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted);">
+                {% if r.ensamble_anterior %}{{ r.ensamble_anterior.nombre }}{% else %}<span style="font-style:italic;">Pieza suelta</span>{% endif %}
+              </td>
+              <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text);">
+                {% if r.ensamble_nuevo %}{{ r.ensamble_nuevo.nombre }}{% else %}<span style="font-style:italic;">Pieza suelta</span>{% endif %}
+              </td>
+              <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text);">
+                {% if r.realizado_por %}{{ r.realizado_por.get_full_name|default:r.realizado_por.username }}{% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:1.5rem; opacity:0.2;">&#8644;</span>
+        <div style="font-size:0.82rem;">Sin reasignaciones registradas para esta máquina.</div>
       </div>
     {% endif %}
   </div>

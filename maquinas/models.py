@@ -9,7 +9,7 @@ class Maquina(models.Model):
     ESTADOS = [
         ('OPERATIVA', 'Operativa'),
         ('MANTENIMIENTO', 'Mantenimiento'),
-        ('FUERA_SERVICIO', 'Fuera de servicio'),
+        ('BAJA', 'Dada de baja'),
     ]
 
     # ── Identificación ────────────────────────────────────────────────
@@ -88,7 +88,11 @@ class Maquina(models.Model):
 
     fecha_adquisicion = models.DateField(null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    
+
+    horas_acumuladas = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Horas de operación acumuladas desde registros de OT cerradas"
+    )
 
     class Meta:
         ordering = ['nombre']
@@ -348,3 +352,46 @@ class TransferenciaPieza(models.Model):
             f"{self.maquina_origen.codigo} → {self.maquina_destino.codigo} "
             f"({self.fecha.strftime('%d/%m/%Y')})"
         )
+
+
+class ReasignacionPieza(models.Model):
+
+    pieza = models.ForeignKey(
+        Pieza,
+        on_delete=models.CASCADE,
+        related_name='reasignaciones'
+    )
+    ensamble_anterior = models.ForeignKey(
+        Pieza,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reasignaciones_salida',
+        help_text="Ensamble del que salió la pieza (None = era pieza suelta)"
+    )
+    ensamble_nuevo = models.ForeignKey(
+        Pieza,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reasignaciones_entrada',
+        help_text="Ensamble al que se asignó (None = quedó suelta)"
+    )
+    realizado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reasignaciones_realizadas'
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = 'Reasignación de pieza'
+        verbose_name_plural = 'Reasignaciones de piezas'
+
+    def __str__(self):
+        ant = self.ensamble_anterior.nombre if self.ensamble_anterior else 'suelta'
+        nvo = self.ensamble_nuevo.nombre if self.ensamble_nuevo else 'suelta'
+        return f"{self.pieza.nombre}: {ant} → {nvo} ({self.fecha.strftime('%d/%m/%Y')})"

@@ -1,0 +1,233 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Ejecutando {{ om.numero }} — ERP CIDIIE{% endblock %}
+{% block breadcrumb %}Mantenimiento / Órdenes / {{ om.numero }} / Ejecución{% endblock %}
+{% block nav_mantenimiento %}active{% endblock %}
+
+{% block content %}
+
+<!-- BARRA SUPERIOR DE ESTADO -->
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; padding:1rem 1.25rem; background:var(--surface); border:1px solid var(--border); border-radius:8px; border-left:4px solid var(--info);">
+    <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">En ejecución</div>
+            <div style="font-size:1.1rem; font-weight:600; color:var(--text); margin-top:0.15rem;">{{ om.titulo }}</div>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <span class="badge badge-info">En proceso</span>
+            {% if om.tipo == 'PREVENTIVO' %}<span class="badge badge-accent">Preventivo</span>
+            {% else %}<span class="badge badge-warning">Correctivo</span>{% endif %}
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent);">{{ om.maquina.codigo }}</span>
+        </div>
+    </div>
+
+    <!-- Indicador horas reales vs estimadas -->
+    <div style="display:flex; align-items:center; gap:1.25rem; padding:0.5rem 0.85rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
+        <div style="text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted);">Horas reales</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:1.1rem; font-weight:600;
+                color:{% if om.tiempo_estimado_horas and horas_reales > om.tiempo_estimado_horas %}var(--danger){% else %}var(--success){% endif %};">
+                {{ horas_reales }}h
+            </div>
+        </div>
+        {% if om.tiempo_estimado_horas %}
+        <div style="color:var(--border); font-size:1.2rem;">/</div>
+        <div style="text-align:center;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted);">Estimadas</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:1.1rem; color:var(--text-muted);">{{ om.tiempo_estimado_horas }}h</div>
+        </div>
+        {% endif %}
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <a href="{% url 'detalle_orden_mantenimiento' om.pk %}"
+           style="padding:0.55rem 1rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+            ← Ver detalle
+        </a>
+        <form method="post" action="{% url 'cambiar_estado_om' om.pk %}" style="margin:0;"
+              onsubmit="return confirm('¿Confirmas que el trabajo está completado y deseas finalizar la orden?')">
+            {% csrf_token %}
+            <input type="hidden" name="estado" value="FINALIZADA">
+            <button type="submit"
+                    style="padding:0.55rem 1.25rem; background:var(--success); color:#fff; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.06em; transition:opacity 0.15s;"
+                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                ✓ Finalizar orden
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="grid-2">
+
+    <!-- COLUMNA IZQUIERDA: Referencia de trabajo -->
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+        <!-- Datos clave -->
+        <div class="card">
+            <div class="card-header"><div class="card-title">Datos de la orden</div></div>
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Máquina</div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--accent);">{{ om.maquina.codigo }}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">{{ om.maquina.nombre }}</div>
+                    </div>
+                    <div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Fecha programada</div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--text);">{{ om.fecha_programada|date:"d/m/Y" }}</div>
+                    </div>
+                    {% if om.fecha_inicio %}
+                    <div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Inicio</div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--success);">{{ om.fecha_inicio|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    {% endif %}
+                    {% if om.tiempo_estimado_horas %}
+                    <div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem;">Tiempo estimado</div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--text);">{{ om.tiempo_estimado_horas }} h</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if om.responsable_1 or om.responsable_2 or om.responsable_3 %}
+                <div style="padding-top:0.65rem; border-top:1px solid var(--border);">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.4rem;">Responsables</div>
+                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                        {% if om.responsable_1 %}<div style="font-size:0.8rem; color:var(--text);">{{ om.responsable_1.get_full_name|default:om.responsable_1.username }}</div>{% endif %}
+                        {% if om.responsable_2 %}<div style="font-size:0.8rem; color:var(--text-muted);">{{ om.responsable_2.get_full_name|default:om.responsable_2.username }}</div>{% endif %}
+                        {% if om.responsable_3 %}<div style="font-size:0.8rem; color:var(--text-muted);">{{ om.responsable_3.get_full_name|default:om.responsable_3.username }}</div>{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Procedimiento / descripción -->
+        {% if om.descripcion_tarea %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Procedimiento a seguir</div>
+                {% if om.plan %}<span class="badge badge-accent" style="font-size:0.58rem;">Según plan fabricante</span>{% endif %}
+            </div>
+            <div style="font-size:0.83rem; color:var(--text); line-height:1.8; white-space:pre-wrap;">{{ om.descripcion_tarea }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Repuestos necesarios -->
+        {% if om.repuestos_necesarios %}
+        <div class="card">
+            <div class="card-header"><div class="card-title">Repuestos y materiales</div></div>
+            <div style="font-size:0.83rem; color:var(--text-muted); line-height:1.7; white-space:pre-wrap;">{{ om.repuestos_necesarios }}</div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- COLUMNA DERECHA: Bitácora activa -->
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+        <!-- Formulario de registro -->
+        <div class="card" style="border-color:rgba(59,130,246,0.3);">
+            <div class="card-header">
+                <div class="card-title">Registrar en bitácora</div>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ entradas.count }} entrada{{ entradas.count|pluralize:"s" }}</span>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="display:flex; flex-direction:column; gap:0.85rem;">
+
+                    {% if form.non_field_errors %}
+                    <div style="padding:0.6rem 0.85rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; font-size:0.78rem; color:var(--danger);">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+                        <div>
+                            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Tipo de actividad</label>
+                            {{ form.tipo_actividad }}
+                        </div>
+                        <div>
+                            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Horas empleadas</label>
+                            {{ form.tiempo_horas }}
+                            {% if form.tiempo_horas.errors %}<div style="font-size:0.7rem; color:var(--danger); margin-top:0.25rem;">{{ form.tiempo_horas.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.35rem;">¿Qué se hizo? <span style="color:var(--danger);">*</span></label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}<div style="font-size:0.7rem; color:var(--danger); margin-top:0.25rem;">{{ form.descripcion.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div>
+                        <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Repuestos utilizados</label>
+                        {{ form.repuestos_utilizados }}
+                    </div>
+
+                    <div>
+                        <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Observaciones</label>
+                        {{ form.observaciones }}
+                    </div>
+
+                    <div>
+                        <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Foto (opcional)</label>
+                        {{ form.foto }}
+                    </div>
+
+                    <button type="submit"
+                            style="padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; cursor:pointer; text-transform:uppercase; letter-spacing:0.06em; transition:background 0.15s;"
+                            onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">
+                        + Agregar entrada
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Entradas registradas en esta sesión -->
+        {% if entradas %}
+        <div class="card">
+            <div class="card-header"><div class="card-title">Bitácora de esta orden</div></div>
+            <div style="display:flex; flex-direction:column; gap:0.85rem;">
+                {% for entrada in entradas %}
+                <div style="padding:0.75rem; background:var(--surface2); border-radius:6px; border-left:3px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:0.78rem; color:var(--text); font-weight:500;">{{ entrada.tecnico.get_full_name|default:entrada.tecnico.username }}</div>
+                            <div style="display:flex; gap:0.4rem; align-items:center; margin-top:0.2rem; flex-wrap:wrap;">
+                                {% if entrada.tipo_actividad %}
+                                <span class="badge badge-accent" style="font-size:0.58rem;">{{ entrada.get_tipo_actividad_display }}</span>
+                                {% endif %}
+                                {% if entrada.tiempo_horas %}
+                                <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--success);">⏱ {{ entrada.tiempo_horas }}h</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); flex-shrink:0;">{{ entrada.fecha_registro|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    <div style="font-size:0.83rem; color:var(--text); line-height:1.6; white-space:pre-wrap;">{{ entrada.descripcion }}</div>
+                    {% if entrada.repuestos_utilizados %}
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem;">
+                        <span style="color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase;">Repuestos:</span> {{ entrada.repuestos_utilizados }}
+                    </div>
+                    {% endif %}
+                    {% if entrada.observaciones %}
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem; font-style:italic;">{{ entrada.observaciones }}</div>
+                    {% endif %}
+                    {% if entrada.foto %}
+                    <div style="margin-top:0.5rem;">
+                        <a href="{{ entrada.foto.url }}" target="_blank">
+                            <img src="{{ entrada.foto.url }}" alt="foto" style="max-width:100%; max-height:140px; border-radius:4px; object-fit:cover;">
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

@@ -53,7 +53,7 @@ def dashboard_admin(request):
         'total_maquinas': Maquina.objects.count(),
         'maquinas_operativas': Maquina.objects.filter(estado='OPERATIVA').count(),
         'maquinas_mantenimiento': Maquina.objects.filter(estado='MANTENIMIENTO').count(),
-        'maquinas_fuera': Maquina.objects.filter(estado='FUERA_SERVICIO').count(),
+        'maquinas_fuera': Maquina.objects.filter(estado='BAJA').count(),
         'mant_programados': Mantenimiento.objects.filter(estado='PROGRAMADO').count(),
         'mant_vencidos': Mantenimiento.objects.filter(
             estado__in=['PROGRAMADO', 'EN_PROCESO'],
@@ -70,6 +70,21 @@ def dashboard_admin(request):
         ).count(),
         'reservas_pendientes': Reserva.objects.filter(estado='PENDIENTE').count(),
         'ordenes_en_proceso': OrdenTrabajo.objects.filter(estado='EN_PROCESO').count(),
+        'om_abiertas': OrdenMantenimiento.objects.filter(
+            activo=True, estado__in=['PROGRAMADA', 'EN_PROCESO']
+        ).count(),
+        'om_recientes': OrdenMantenimiento.objects.filter(
+            activo=True, estado__in=['PROGRAMADA', 'EN_PROCESO']
+        ).select_related('maquina').order_by('-fecha_creacion')[:5],
+        'reservas_pendientes_lista': Reserva.objects.filter(
+            estado='PENDIENTE'
+        ).select_related('usuario', 'maquina').order_by('-fecha')[:5],
+        'maquinas_en_mantenimiento': Maquina.objects.filter(
+            estado='MANTENIMIENTO'
+        ).select_related('responsable')[:6],
+        'stock_bajo_lista': Material.objects.filter(
+            activo=True, stock_actual__lte=F('stock_minimo')
+        ).order_by('stock_actual')[:5],
         'alertas_activas': Alerta.objects.filter(resuelta=False).count(),
         'alertas_criticas': Alerta.objects.filter(resuelta=False, severidad='CRITICA').count(),
         'ultimas_alertas': Alerta.objects.filter(resuelta=False).select_related('maquina')[:5],
@@ -80,46 +95,42 @@ def dashboard_admin(request):
 @login_required(login_url='login')
 def dashboard_tecnico(request):
     hoy = timezone.now().date()
+
+    om_mias_en_proceso = OrdenMantenimiento.objects.filter(
+        activo=True, estado='EN_PROCESO', responsable_1=request.user,
+    ).select_related('maquina').order_by('-fecha_inicio')
+
+    om_mias_programadas = OrdenMantenimiento.objects.filter(
+        activo=True, estado='PROGRAMADA', responsable_1=request.user,
+    ).select_related('maquina').order_by('fecha_programada')[:6]
+
+    om_sin_asignar_lista = OrdenMantenimiento.objects.filter(
+        activo=True, responsable_1__isnull=True,
+        estado__in=['PROGRAMADA', 'EN_PROCESO'],
+    ).select_related('maquina').order_by('fecha_programada')[:6]
+
     context = {
-        'mant_programados': Mantenimiento.objects.filter(estado='PROGRAMADO').count(),
-        'mant_en_proceso': Mantenimiento.objects.filter(estado='EN_PROCESO').count(),
-        'mant_vencidos': Mantenimiento.objects.filter(
-            estado__in=['PROGRAMADO', 'EN_PROCESO'],
-            fecha_programada__lt=hoy
-        ).count(),
-        'mant_proximos': Mantenimiento.objects.filter(
-            estado='PROGRAMADO',
-            fecha_programada__gte=hoy,
-            fecha_programada__lte=hoy + timezone.timedelta(days=7)
-        ).order_by('fecha_programada')[:5],
-        'inspecciones_hoy': InspeccionDiaria.objects.filter(fecha=hoy).count(),
-        'inspecciones_fallidas_hoy': InspeccionDiaria.objects.filter(
-            fecha=hoy, aprobada=False
-        ).count(),
-        'maquinas_pendientes_inspeccion': Maquina.objects.filter(
-            estado='OPERATIVA'
-        ).exclude(inspecciones_diarias__fecha=hoy).count(),
-        'ordenes_abiertas': OrdenTrabajo.objects.filter(estado='ABIERTA').count(),
-        'ordenes_en_proceso': OrdenTrabajo.objects.filter(estado='EN_PROCESO').count(),
-        'materiales_stock_bajo': Material.objects.filter(
-            activo=True,
-            stock_actual__lte=F('stock_minimo')
-        ).count(),
-        'mant_proximos_lista': Mantenimiento.objects.filter(
-            estado='PROGRAMADO',
-            fecha_programada__gte=hoy,
-            fecha_programada__lte=hoy + timezone.timedelta(days=7)
-        ).order_by('fecha_programada')[:5],
-        'om_mias_abiertas': OrdenMantenimiento.objects.filter(
-            activo=True, responsable_1=request.user,
-            estado__in=['PROGRAMADA', 'EN_PROCESO']
-        ).count(),
-        'om_sin_asignar': OrdenMantenimiento.objects.filter(
-            activo=True, responsable_1__isnull=True,
-            estado__in=['PROGRAMADA', 'EN_PROCESO']
-        ).count(),
-        'alertas_activas': Alerta.objects.filter(resuelta=False).count(),
-        'ultimas_alertas': Alerta.objects.filter(resuelta=False).select_related('maquina')[:5],
+        'om_en_proceso_count':     om_mias_en_proceso.count(),
+        'om_mias_abiertas':        OrdenMantenimiento.objects.filter(
+                                       activo=True, responsable_1=request.user,
+                                       estado__in=['PROGRAMADA', 'EN_PROCESO']
+                                   ).count(),
+        'om_sin_asignar':          OrdenMantenimiento.objects.filter(
+                                       activo=True, responsable_1__isnull=True,
+                                       estado__in=['PROGRAMADA', 'EN_PROCESO']
+                                   ).count(),
+        'alertas_activas':         Alerta.objects.filter(resuelta=False).count(),
+        'om_mias_en_proceso':      om_mias_en_proceso,
+        'om_mias_programadas':     om_mias_programadas,
+        'om_sin_asignar_lista':    om_sin_asignar_lista,
+        'alertas_lista':           Alerta.objects.filter(
+                                       resuelta=False
+                                   ).select_related('maquina').order_by('-generada_en')[:6],
+        'inspecciones_hoy':        InspeccionDiaria.objects.filter(fecha=hoy).count(),
+        'maquinas_sin_inspeccion': Maquina.objects.filter(
+                                       estado='OPERATIVA'
+                                   ).exclude(inspecciones_diarias__fecha=hoy).count(),
+        'hoy': hoy,
     }
     return render(request, 'usuarios/dashboard_tecnico.html', context)
 

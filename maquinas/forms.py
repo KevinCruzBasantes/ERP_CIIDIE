@@ -181,7 +181,7 @@ class TransferenciaPiezaForm(forms.ModelForm):
     def __init__(self, *args, pieza=None, **kwargs):
         super().__init__(*args, **kwargs)
         # Excluir la máquina origen del selector de destino
-        qs = Maquina.objects.exclude(estado='FUERA_SERVICIO')
+        qs = Maquina.objects.exclude(estado='BAJA')
         if pieza:
             qs = qs.exclude(pk=pieza.maquina.pk)
         self.fields['maquina_destino'].queryset = qs
@@ -209,3 +209,21 @@ class TransferenciaPiezaForm(forms.ModelForm):
                 'El ensamble seleccionado no pertenece a la máquina destino elegida.'
             )
         return cleaned
+
+
+class ReasignarPiezaForm(forms.Form):
+    ensamble_nuevo = forms.ModelChoiceField(
+        queryset=Pieza.objects.none(),
+        required=False,
+        empty_label='— Sin ensamble (pieza suelta) —',
+    )
+
+    def __init__(self, *args, pieza=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if pieza:
+            excluir = [pieza.pk]
+            if pieza.ensamble_id:
+                excluir.append(pieza.ensamble_id)
+            self.fields['ensamble_nuevo'].queryset = Pieza.objects.filter(
+                maquina=pieza.maquina, es_ensamble=True, activo=True
+            ).exclude(pk__in=excluir).order_by('nombre')

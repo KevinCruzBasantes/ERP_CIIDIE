@@ -14,30 +14,54 @@ class PlanMantenimientoForm(forms.ModelForm):
         model  = PlanMantenimiento
         fields = [
             'maquina', 'nombre_tarea', 'descripcion_detallada',
-            'tipo_tpm', 'intervalo_valor', 'intervalo_unidad', 'activo',
+            'tipo_tpm',
+            'intervalo_dias', 'ultima_ejecucion_fecha',
+            'intervalo_horas', 'ultima_ejecucion_horas',
+            'activo',
         ]
         widgets = {
-            'maquina':               forms.Select(attrs={'style': SELECT_STYLE}),
-            'nombre_tarea':          forms.TextInput(attrs={
+            'maquina':                forms.Select(attrs={'style': SELECT_STYLE}),
+            'nombre_tarea':           forms.TextInput(attrs={
                 'style': FIELD_STYLE,
                 'placeholder': 'Ej: Lubricación guías lineales',
             }),
-            'descripcion_detallada': forms.Textarea(attrs={
+            'descripcion_detallada':  forms.Textarea(attrs={
                 'style': TEXTAREA_STYLE, 'rows': 4,
                 'placeholder': 'Procedimiento paso a paso según el manual del fabricante',
             }),
-            'tipo_tpm':         forms.Select(attrs={'style': SELECT_STYLE}),
-            'intervalo_valor':  forms.NumberInput(attrs={
+            'tipo_tpm':               forms.Select(attrs={'style': SELECT_STYLE}),
+            'intervalo_dias':         forms.NumberInput(attrs={
+                'style': FIELD_STYLE, 'min': '1', 'placeholder': 'Ej: 30',
+            }),
+            'ultima_ejecucion_fecha': forms.DateInput(attrs={
+                'style': FIELD_STYLE, 'type': 'date',
+            }),
+            'intervalo_horas':        forms.NumberInput(attrs={
                 'style': FIELD_STYLE, 'min': '1', 'placeholder': 'Ej: 500',
             }),
-            'intervalo_unidad': forms.Select(attrs={'style': SELECT_STYLE}),
-            'activo':           forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
+            'ultima_ejecucion_horas': forms.NumberInput(attrs={
+                'style': FIELD_STYLE, 'min': '0', 'step': '0.01',
+                'placeholder': 'Ej: 0 (si es la primera vez)',
+            }),
+            'activo': forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['maquina'].queryset = Maquina.objects.all().order_by('nombre')
         self.fields['descripcion_detallada'].required = False
+        self.fields['intervalo_dias'].required = False
+        self.fields['intervalo_horas'].required = False
+        self.fields['ultima_ejecucion_fecha'].required = False
+        self.fields['ultima_ejecucion_horas'].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get('intervalo_dias') and not cleaned.get('intervalo_horas'):
+            raise forms.ValidationError(
+                'Debes definir al menos un disparador: intervalo en días o en horas de operación.'
+            )
+        return cleaned
 
 
 class MantenimientoForm(forms.ModelForm):
@@ -185,19 +209,28 @@ class BitacoraMantenimientoForm(forms.ModelForm):
 
     class Meta:
         model  = BitacoraMantenimiento
-        fields = ['descripcion', 'observaciones', 'repuestos_utilizados', 'requiere_atencion', 'foto']
+        fields = [
+            'tipo_actividad', 'tiempo_horas',
+            'descripcion', 'repuestos_utilizados', 'observaciones',
+            'requiere_atencion', 'foto',
+        ]
         widgets = {
+            'tipo_actividad':      forms.Select(attrs={'style': SELECT_STYLE}),
+            'tiempo_horas':        forms.NumberInput(attrs={
+                'style': FIELD_STYLE, 'step': '0.25', 'min': '0',
+                'placeholder': 'Ej: 1.5',
+            }),
             'descripcion':         forms.Textarea(attrs={
                 'style': TEXTAREA_STYLE, 'rows': 4,
                 'placeholder': 'Qué se hizo, resultados, hallazgos...',
             }),
             'observaciones':       forms.Textarea(attrs={
                 'style': TEXTAREA_STYLE, 'rows': 2,
-                'placeholder': 'Notas adicionales para el ingeniero',
+                'placeholder': 'Notas adicionales',
             }),
             'repuestos_utilizados': forms.Textarea(attrs={
                 'style': TEXTAREA_STYLE, 'rows': 2,
-                'placeholder': 'Repuestos y materiales que se utilizaron efectivamente',
+                'placeholder': 'Repuestos y materiales utilizados efectivamente',
             }),
             'requiere_atencion':   forms.CheckboxInput(attrs={'style': 'width:1rem; height:1rem; cursor:pointer;'}),
             'foto':                forms.FileInput(attrs={'style': 'color:#d4d8e8; font-size:0.82rem;'}),
@@ -205,6 +238,9 @@ class BitacoraMantenimientoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['tipo_actividad'].required      = False
+        self.fields['tiempo_horas'].required        = False
         self.fields['observaciones'].required       = False
         self.fields['repuestos_utilizados'].required = False
         self.fields['foto'].required                = False
+        self.fields['tipo_actividad'].empty_label   = '— Tipo de actividad —'

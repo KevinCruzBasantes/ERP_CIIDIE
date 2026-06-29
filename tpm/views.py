@@ -617,13 +617,29 @@ def calcular_oee(request):
 
 @login_required(login_url='login')
 def lista_alertas(request):
-    alertas = Alerta.objects.select_related('maquina').filter(resuelta=False)
+    mostrar_resueltas = request.GET.get('resueltas') == '1'
+    alertas = Alerta.objects.select_related(
+        'maquina', 'asignado_a', 'resuelta_por'
+    ).filter(resuelta=mostrar_resueltas)
+
+    from usuarios.models import Usuario as UsuarioModel
+    from django.db.models import Q
+    tecnicos = UsuarioModel.objects.filter(estado='ACTIVO').exclude(
+        is_superuser=True
+    ).exclude(
+        Q(rol__nombre__icontains='administrador') | Q(rol__nombre__icontains='phd')
+    ).order_by('first_name', 'last_name')
+
+    activas = Alerta.objects.filter(resuelta=False)
     context = {
         'alertas':            alertas,
-        'total':              alertas.count(),
-        'criticas':           alertas.filter(severidad='CRITICA').count(),
-        'advertencias':       alertas.filter(severidad='ADVERTENCIA').count(),
+        'total':              activas.count(),
+        'criticas':           activas.filter(severidad='CRITICA').count(),
+        'advertencias':       activas.filter(severidad='ADVERTENCIA').count(),
+        'tecnicos':           tecnicos,
+        'mostrar_resueltas':  mostrar_resueltas,
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+        'es_admin':           es_admin(request.user),
     }
     return render(request, 'tpm/lista_alertas.html', context)
 
@@ -635,7 +651,63 @@ def resolver_alerta(request, pk):
         return redirect('lista_alertas')
     alerta = get_object_or_404(Alerta, pk=pk)
     if request.method == 'POST':
-        alerta.resolver(request.user)
-        messages.success(request, 'Alerta resuelta correctamente.')
+        nota = request.POST.get('nota_resolucion', '').strip()
+        alerta.resolver(request.user, nota=nota)
+        messages.success(request, 'Alerta resuelta y acción registrada.')
+    return redirect('lista_alertas')
+
+
+@login_required(login_url='login')
+def asignar_alerta(request, pk):
+    if not es_admin(request.user):
+        messages.error(request, 'Solo un administrador puede asignar alertas a responsables.')
         return redirect('lista_alertas')
+    alerta = get_object_or_404(Alerta, pk=pk)
+    if request.method == 'POST':
+        from usuarios.models import Usuario as UsuarioModel
+        from django.db.models import Q
+        from django.utils import timezone as tz
+        usuario_id = request.POST.get('asignado_a')
+        if usuario_id:
+            try:
+                # Verificar que el destino sea efectivamente un técnico/ingeniero, no admin
+                usuario = UsuarioModel.objects.exclude(
+                    Q(rol__nombre__icontains='administrador') | Q(rol__nombre__icontains='phd')
+                ).get(pk=usuario_id)
+                alerta.asignado_a  = usuario
+                alerta.asignado_en = tz.now()
+                alerta.save(update_fields=['asignado_a', 'asignado_en'])
+                messages.success(request, f'Alerta asignada a {usuario.get_full_name() or usuario.username}.')
+            except UsuarioModel.DoesNotExist:
+                messages.error(request, 'Usuario no válido para asignación.')
+    return redirect('lista_alertas')
+
+
+@login_required(login_url='login')
+def crear_om_desde_alerta(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para crear órdenes de mantenimiento.')
+        return redirect('lista_alertas')
+    alerta = get_object_or_404(Alerta, pk=pk)
+    if not alerta.puede_generar_om or not alerta.maquina:
+        messages.error(request, 'Esta alerta no permite generar una orden de mantenimiento.')
+        return redirect('lista_alertas')
+    if request.method == 'POST':
+        from django.utils import timezone as tz
+        from mantenimiento.models import OrdenMantenimiento
+        prioridad = 'ALTA' if alerta.severidad == 'CRITICA' else 'MEDIA'
+        om = OrdenMantenimiento.objects.create(
+            maquina=alerta.maquina,
+            origen='MANUAL',
+            tipo='CORRECTIVO',
+            estado='PROGRAMADA',
+            prioridad=prioridad,
+            titulo=alerta.titulo_om_sugerido,
+            descripcion_tarea=alerta.mensaje,
+            fecha_programada=tz.now().date(),
+            creado_por=request.user,
+            activo=True,
+        )
+        messages.success(request, f'Orden {om.numero()} creada desde la alerta.')
+        return redirect('detalle_orden_mantenimiento', pk=om.pk)
     return redirect('lista_alertas')

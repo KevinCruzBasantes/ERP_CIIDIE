@@ -65,9 +65,9 @@
         {% endif %}
     </div>
     <a href="{% url 'detalle_maquina' incidente.maquina.pk %}"
-       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
-       onmouseover="this.style.borderColor='var(--accent)'"
-       onmouseout="this.style.borderColor='var(--border)'">
+       style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text); background:var(--surface2); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s, color 0.15s;"
+       onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
+       onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
         ⚙ Ver máquina
     </a>
 </div>

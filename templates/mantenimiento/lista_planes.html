@@ -2,7 +2,7 @@
 
 {% block title %}Planes de mantenimiento — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Mantenimiento / Planes{% endblock %}
-{% block nav_mantenimiento %}active{% endblock %}
+{% block nav_planes %}active{% endblock %}
 
 {% block content %}
 
@@ -105,7 +105,9 @@
                     </td>
 
                     <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text);">
-                        c/ {{ p.intervalo_valor }} {{ p.get_intervalo_unidad_display }}
+                        {% if p.intervalo_dias %}c/{{ p.intervalo_dias }}d{% endif %}
+                        {% if p.intervalo_dias and p.intervalo_horas %} + {% endif %}
+                        {% if p.intervalo_horas %}c/{{ p.intervalo_horas }}h{% endif %}
                     </td>
 
                     <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">
@@ -177,7 +179,9 @@
                         {% else %}<span class="badge badge-danger" style="opacity:0.5;">P7</span>{% endif %}
                     </td>
                     <td style="padding:0.65rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--text-muted);">
-                        c/ {{ p.intervalo_valor }} {{ p.get_intervalo_unidad_display }}
+                        {% if p.intervalo_dias %}c/{{ p.intervalo_dias }}d{% endif %}
+                        {% if p.intervalo_dias and p.intervalo_horas %} + {% endif %}
+                        {% if p.intervalo_horas %}c/{{ p.intervalo_horas }}h{% endif %}
                     </td>
                     <td style="padding:0.65rem 0.75rem; text-align:right;">
                         <div style="display:flex; gap:0.4rem; justify-content:flex-end;">

@@ -2,7 +2,7 @@
 
 {% block title %}{{ titulo }} — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Mantenimiento / Planes / {{ titulo }}{% endblock %}
-{% block nav_mantenimiento %}active{% endblock %}
+{% block nav_planes %}active{% endblock %}
 
 {% block content %}
 
@@ -69,37 +69,81 @@
 
     <div class="card" style="margin-bottom:1.5rem;">
         <div class="card-header">
-            <div class="card-title">Frecuencia</div>
+            <div class="card-title">Disparadores de mantenimiento</div>
+            <span class="badge badge-info" style="font-size:0.65rem;">Al menos uno requerido</span>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
 
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Intervalo <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.intervalo_valor }}
-                {% if form.intervalo_valor.errors %}
-                <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.intervalo_valor.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Unidad <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.intervalo_unidad }}
-            </div>
-
-            {% if plan %}
-            <div style="grid-column:span 2; display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
-                {{ form.activo }}
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); cursor:pointer;">
-                    Plan activo (desmarcar para desactivar sin eliminar)
-                </label>
-            </div>
-            {% endif %}
-
+        <div style="margin-bottom:1rem; padding:0.75rem; background:rgba(99,179,237,0.07); border:1px solid rgba(99,179,237,0.2); border-radius:6px; font-size:0.78rem; color:var(--text-muted); line-height:1.6;">
+            Puedes activar uno o ambos disparadores. Si ambos están activos, el que venza primero generará la orden automáticamente.
         </div>
+
+        <!-- DISPARADOR POR DÍAS -->
+        <div style="padding:1rem; border:1px solid var(--border); border-radius:6px; margin-bottom:1rem;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-bottom:0.85rem;">
+                Disparador por días calendario
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                        Cada X días
+                    </label>
+                    {{ form.intervalo_dias }}
+                    {% if form.intervalo_dias.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.intervalo_dias.errors.0 }}</div>
+                    {% endif %}
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">Ej: 30 = una vez al mes. Vacío = desactivado.</div>
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                        Última ejecución (fecha)
+                    </label>
+                    {{ form.ultima_ejecucion_fecha }}
+                    {% if form.ultima_ejecucion_fecha.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.ultima_ejecucion_fecha.errors.0 }}</div>
+                    {% endif %}
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">¿Cuándo se hizo por última vez? El contador corre desde esa fecha.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DISPARADOR POR HORAS -->
+        <div style="padding:1rem; border:1px solid var(--border); border-radius:6px; margin-bottom:1rem;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-bottom:0.85rem;">
+                Disparador por horas de operación
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                        Cada X horas
+                    </label>
+                    {{ form.intervalo_horas }}
+                    {% if form.intervalo_horas.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.intervalo_horas.errors.0 }}</div>
+                    {% endif %}
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">Ej: 500 = cada 500h de uso real. Vacío = desactivado.</div>
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                        Horas acumuladas en la última ejecución
+                    </label>
+                    {{ form.ultima_ejecucion_horas }}
+                    {% if form.ultima_ejecucion_horas.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.ultima_ejecucion_horas.errors.0 }}</div>
+                    {% endif %}
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">0 si es la primera vez. El sistema acumula horas desde las OTs cerradas.</div>
+                </div>
+            </div>
+        </div>
+
+        {% if plan %}
+        <div style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
+            {{ form.activo }}
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); cursor:pointer;">
+                Plan activo (desmarcar para desactivar sin eliminar)
+            </label>
+        </div>
+        {% endif %}
+
     </div>
 
     <div style="display:flex; gap:0.75rem; justify-content:flex-end;">

@@ -2,7 +2,7 @@
 
 {% block title %}Plan: {{ plan.nombre_tarea }} — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Mantenimiento / Planes / {{ plan.pk }}{% endblock %}
-{% block nav_mantenimiento %}active{% endblock %}
+{% block nav_planes %}active{% endblock %}
 
 {% block content %}
 <!-- ENCABEZADO -->
@@ -25,9 +25,16 @@
             {% else %}
                 <span class="badge badge-danger">P7 — Seguridad</span>
             {% endif %}
+            {% if plan.intervalo_dias %}
             <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
-                c/ {{ plan.intervalo_valor }} {{ plan.get_intervalo_unidad_display }}
+                c/{{ plan.intervalo_dias }}d
             </span>
+            {% endif %}
+            {% if plan.intervalo_horas %}
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">
+                c/{{ plan.intervalo_horas }}h
+            </span>
+            {% endif %}
         </div>
 
         {% if es_admin_o_tecnico %}
@@ -46,9 +53,9 @@
 
     <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
         <a href="{% url 'detalle_maquina' plan.maquina.pk %}"
-           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
-           onmouseover="this.style.borderColor='var(--accent)'"
-           onmouseout="this.style.borderColor='var(--border)'">⚙ Ver máquina</a>
+           style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text); background:var(--surface2); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s, color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">⚙ Ver máquina</a>
         {% if es_admin_o_tecnico %}
         <a href="{% url 'crear_orden_mantenimiento' %}?plan={{ plan.pk }}&maquina={{ plan.maquina.pk }}"
            style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#0f1117; background:var(--accent); text-decoration:none; padding:0.4rem 0.9rem; border-radius:4px; transition:background 0.15s;"
@@ -78,10 +85,22 @@
                     <div style="font-size:0.85rem; color:var(--text);">{{ plan.get_tipo_tpm_display }}</div>
                 </div>
                 <div>
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Intervalo</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Disparador días</div>
                     <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
-                        cada {{ plan.intervalo_valor }} {{ plan.get_intervalo_unidad_display }}
+                        {% if plan.intervalo_dias %}cada {{ plan.intervalo_dias }} días{% else %}<span style="opacity:0.4;">—</span>{% endif %}
                     </div>
+                    {% if plan.intervalo_dias and plan.ultima_ejecucion_fecha %}
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.2rem;">Última: {{ plan.ultima_ejecucion_fecha|date:'d/m/Y' }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Disparador horas</div>
+                    <div style="font-size:0.85rem; color:var(--text); font-family:'IBM Plex Mono',monospace;">
+                        {% if plan.intervalo_horas %}cada {{ plan.intervalo_horas }} h{% else %}<span style="opacity:0.4;">—</span>{% endif %}
+                    </div>
+                    {% if plan.intervalo_horas %}
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.2rem;">Base: {{ plan.ultima_ejecucion_horas|default:"0" }} h</div>
+                    {% endif %}
                 </div>
                 <div>
                     <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.3rem;">Total ejecuciones</div>

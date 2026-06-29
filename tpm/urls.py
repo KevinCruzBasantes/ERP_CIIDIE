@@ -33,4 +33,6 @@ urlpatterns = [
     # Alertas
     path('alertas/',                          views.lista_alertas,          name='lista_alertas'),
     path('alertas/<int:pk>/resolver/',        views.resolver_alerta,        name='resolver_alerta'),
+    path('alertas/<int:pk>/asignar/',         views.asignar_alerta,         name='asignar_alerta'),
+    path('alertas/<int:pk>/crear-om/',        views.crear_om_desde_alerta,  name='crear_om_desde_alerta'),
 ]

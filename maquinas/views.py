@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from usuarios.permisos import es_admin, es_admin_o_tecnico
-from .models import Maquina, Pieza, TransferenciaPieza, CodigoParada
-from .forms import MaquinaForm, EnsambleForm, PiezaForm, TransferenciaPiezaForm, CodigoParadaForm
+from .models import Maquina, Pieza, TransferenciaPieza, CodigoParada, ReasignacionPieza
+from .forms import MaquinaForm, EnsambleForm, PiezaForm, TransferenciaPiezaForm, CodigoParadaForm, ReasignarPiezaForm
 
 
 # ── Máquinas ──────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ def lista_maquinas(request):
         'total': maquinas.count(),
         'operativas': maquinas.filter(estado='OPERATIVA').count(),
         'en_mantenimiento': maquinas.filter(estado='MANTENIMIENTO').count(),
-        'fuera_servicio': maquinas.filter(estado='FUERA_SERVICIO').count(),
+        'de_baja': maquinas.filter(estado='BAJA').count(),
         'es_admin': es_admin(request.user),
     }
     return render(request, 'maquinas/lista_maquinas.html', context)
@@ -36,14 +36,18 @@ def detalle_maquina(request, pk):
     )
     total_piezas = maquina.piezas.filter(activo=True).count()
     transferencias = TransferenciaPieza.objects.filter(
-        maquina_origen=maquina
-    ).select_related('pieza', 'maquina_destino', 'autorizado_por').order_by('-fecha')[:20]
+        Q(maquina_origen=maquina) | Q(maquina_destino=maquina)
+    ).select_related('pieza', 'maquina_origen', 'maquina_destino', 'autorizado_por').order_by('-fecha')[:20]
+    reasignaciones = ReasignacionPieza.objects.filter(
+        pieza__maquina=maquina, pieza__activo=True
+    ).select_related('pieza', 'ensamble_anterior', 'ensamble_nuevo', 'realizado_por').order_by('-fecha')[:20]
     context = {
         'maquina': maquina,
         'ensambles': ensambles,
         'piezas_sin_ensamble': piezas_sin_ensamble,
         'total_piezas': total_piezas,
         'transferencias': transferencias,
+        'reasignaciones': reasignaciones,
         'es_admin': es_admin(request.user),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
     }
@@ -106,7 +110,7 @@ def eliminar_maquina(request, pk):
     maquina = get_object_or_404(Maquina, pk=pk)
 
     if request.method == 'POST':
-        maquina.estado = 'FUERA_SERVICIO'
+        maquina.estado = 'BAJA'
         maquina.save()
         messages.success(request, f'Máquina "{maquina.nombre}" desactivada del sistema.')
         return redirect('lista_maquinas')
@@ -124,7 +128,7 @@ def cambiar_estado_maquina(request, pk):
 
     if request.method == 'POST':
         nuevo_estado = request.POST.get('estado')
-        if nuevo_estado in ['OPERATIVA', 'MANTENIMIENTO', 'FUERA_SERVICIO']:
+        if nuevo_estado in ['OPERATIVA', 'MANTENIMIENTO', 'BAJA']:
             maquina.estado = nuevo_estado
             maquina.save()
             messages.success(request, f'Estado de "{maquina.nombre}" actualizado a {maquina.get_estado_display()}.')
@@ -246,9 +250,14 @@ def eliminar_pieza(request, pk):
     maquina = pieza.maquina
 
     if request.method == 'POST':
+        n_hijas = 0
+        if pieza.es_ensamble:
+            n_hijas = pieza.piezas_hijas.filter(activo=True).count()
+            pieza.piezas_hijas.filter(activo=True).update(activo=False)
         pieza.activo = False
         pieza.save()
-        messages.success(request, f'Pieza "{pieza.nombre}" eliminada correctamente.')
+        sufijo = f' junto con sus {n_hijas} pieza{"s" if n_hijas != 1 else ""} hija{"s" if n_hijas != 1 else ""}' if n_hijas else ''
+        messages.success(request, f'"{pieza.nombre}"{sufijo} eliminada correctamente.')
         return redirect('detalle_maquina', pk=maquina.pk)
 
     return render(request, 'maquinas/confirmar_eliminar_pieza.html', {
@@ -411,7 +420,7 @@ def lista_transferencias(request):
         qs.values('maquina_destino').distinct().count()
     )
 
-    maquinas = Maquina.objects.exclude(estado='FUERA_SERVICIO').order_by('nombre')
+    maquinas = Maquina.objects.exclude(estado='BAJA').order_by('nombre')
     piezas   = Pieza.objects.filter(activo=True).order_by('nombre')
 
     return render(request, 'maquinas/lista_transferencias.html', {
@@ -465,3 +474,61 @@ def crear_transferencia(request, pieza_pk):
         'pieza': pieza,
         'maquina_origen': pieza.maquina,
     })
+
+
+@login_required(login_url='login')
+def reasignar_pieza(request, pk):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('lista_maquinas')
+
+    pieza = get_object_or_404(Pieza, pk=pk, activo=True, es_ensamble=False)
+    maquina = pieza.maquina
+
+    if request.method == 'POST':
+        form = ReasignarPiezaForm(request.POST, pieza=pieza)
+        if form.is_valid():
+            ensamble_anterior = pieza.ensamble
+            ensamble_nuevo = form.cleaned_data.get('ensamble_nuevo')
+            pieza.ensamble = ensamble_nuevo
+            pieza.save()
+            ReasignacionPieza.objects.create(
+                pieza=pieza,
+                ensamble_anterior=ensamble_anterior,
+                ensamble_nuevo=ensamble_nuevo,
+                realizado_por=request.user,
+            )
+            if ensamble_nuevo:
+                messages.success(request, f'"{pieza.nombre}" asignada al ensamble "{ensamble_nuevo.nombre}".')
+            else:
+                messages.success(request, f'"{pieza.nombre}" desvinculada — queda como pieza suelta.')
+            return redirect('detalle_maquina', pk=maquina.pk)
+    else:
+        form = ReasignarPiezaForm(pieza=pieza, initial={'ensamble_nuevo': pieza.ensamble})
+
+    return render(request, 'maquinas/reasignar_pieza.html', {
+        'form': form,
+        'pieza': pieza,
+        'maquina': maquina,
+    })
+
+
+@login_required(login_url='login')
+def detalle_pieza(request, pk):
+    pieza = get_object_or_404(Pieza, pk=pk, activo=True)
+    maquina = pieza.maquina
+    transferencias = TransferenciaPieza.objects.filter(
+        pieza=pieza
+    ).select_related('maquina_origen', 'maquina_destino', 'autorizado_por').order_by('-fecha')
+    reasignaciones = ReasignacionPieza.objects.filter(
+        pieza=pieza
+    ).select_related('ensamble_anterior', 'ensamble_nuevo', 'realizado_por').order_by('-fecha')
+    context = {
+        'pieza': pieza,
+        'maquina': maquina,
+        'transferencias': transferencias,
+        'reasignaciones': reasignaciones,
+        'es_admin': es_admin(request.user),
+        'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+    }
+    return render(request, 'maquinas/detalle_pieza.html', context)

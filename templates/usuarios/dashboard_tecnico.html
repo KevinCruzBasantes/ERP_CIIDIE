@@ -1,159 +1,226 @@
 {% extends 'usuarios/base.html' %}
-
 {% block title %}Dashboard Técnico — ERP CIDIIE{% endblock %}
 {% block breadcrumb %}Inicio{% endblock %}
 {% block nav_inicio2 %}active{% endblock %}
 
 {% block content %}
 
-<div class="page-header">
+<div class="page-header" style="margin-bottom:1.5rem;">
     <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
-    <p>{{ user.rol|default:"Técnico" }} — Laboratorio CIDIIE · Universidad Central del Ecuador</p>
+    <p>{{ user.rol|default:"Técnico" }} — {{ hoy|date:"l d \d\e F \d\e Y" }}</p>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card warning">
-        <div class="stat-label">Mantenimientos vencidos</div>
-        <div class="stat-value">{{ mant_vencidos }}</div>
-        <div class="stat-sub">{{ mant_programados }} programados</div>
-    </div>
-    <div class="stat-card danger">
-        <div class="stat-label">Inspecciones fallidas hoy</div>
-        <div class="stat-value">{{ inspecciones_fallidas_hoy }}</div>
-        <div class="stat-sub">{{ inspecciones_hoy }} realizadas hoy</div>
-    </div>
-    <div class="stat-card accent">
-        <div class="stat-label">Máquinas sin inspección</div>
-        <div class="stat-value">{{ maquinas_pendientes_inspeccion }}</div>
-        <div class="stat-sub">pendientes hoy</div>
-    </div>
+<!-- KPIs -->
+<div class="stats-grid" style="margin-bottom:1.5rem;">
     <div class="stat-card info">
-        <div class="stat-label">Órdenes en proceso</div>
-        <div class="stat-value">{{ ordenes_en_proceso }}</div>
-        <div class="stat-sub">{{ ordenes_abiertas }} abiertas</div>
+        <div class="stat-label">Mis OMs en ejecución</div>
+        <div class="stat-value">{{ om_en_proceso_count }}</div>
+        <div class="stat-sub">actualmente en proceso</div>
     </div>
     <div class="stat-card accent">
-        <div class="stat-label">Mis órdenes de mantenimiento</div>
+        <div class="stat-label">Mis OMs asignadas</div>
         <div class="stat-value">{{ om_mias_abiertas }}</div>
-        <div class="stat-sub">programadas o en proceso</div>
+        <div class="stat-sub">programadas + en proceso</div>
     </div>
     <div class="stat-card warning">
-        <div class="stat-label">OM sin asignar</div>
+        <div class="stat-label">OMs disponibles</div>
         <div class="stat-value">{{ om_sin_asignar }}</div>
-        <div class="stat-sub">disponibles para tomar</div>
+        <div class="stat-sub">sin responsable asignado</div>
     </div>
     <div class="stat-card danger">
         <div class="stat-label">Alertas activas</div>
         <div class="stat-value">{{ alertas_activas }}</div>
-        <div class="stat-sub">sin resolver</div>
+        <div class="stat-sub">sin resolver en el sistema</div>
     </div>
 </div>
 
-<div class="card" style="margin-bottom:1.5rem;">
+<!-- FILA 1: OMs en ejecución (prioridad máxima) -->
+{% if om_mias_en_proceso %}
+<div class="card" style="margin-bottom:1.5rem; border-color:rgba(59,130,246,0.35);">
     <div class="card-header">
-        <div class="card-title">Alertas activas</div>
-        <a href="{% url 'lista_alertas' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
+        <div class="card-title">Mis órdenes en ejecución</div>
+        <span class="badge badge-info">{{ om_en_proceso_count }} activa{{ om_en_proceso_count|pluralize:"s" }}</span>
     </div>
-    {% if ultimas_alertas %}
-    <div style="display:flex; flex-direction:column; gap:0.4rem;">
-        {% for alerta in ultimas_alertas %}
-        <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.65rem; background:var(--surface2); border-radius:6px; border-left:3px solid {% if alerta.severidad == 'CRITICA' %}var(--danger){% elif alerta.severidad == 'ADVERTENCIA' %}var(--warning){% else %}var(--info){% endif %};">
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        {% for om in om_mias_en_proceso %}
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.75rem 1rem; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:8px; flex-wrap:wrap;">
             <div style="flex:1; min-width:0;">
-                <div style="font-size:0.78rem; color:var(--text); margin-bottom:0.2rem;">{{ alerta.mensaje|truncatechars:80 }}</div>
-                <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                    <span class="badge {% if alerta.severidad == 'CRITICA' %}badge-danger{% elif alerta.severidad == 'ADVERTENCIA' %}badge-warning{% else %}badge-info{% endif %}">
-                        {{ alerta.get_severidad_display }}
-                    </span>
-                    {% if alerta.maquina %}
-                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent);">{{ alerta.maquina.codigo }}</span>
-                    {% endif %}
-                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--text-muted);">{{ alerta.generada_en|date:"d/m/Y H:i" }}</span>
-                    {% if alerta.referencia_tipo == 'OrdenTrabajo' %}
-                    <a href="{% url 'detalle_orden' alerta.referencia_id %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent); text-decoration:none;">Ver orden →</a>
-                    {% endif %}
+                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.25rem;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--info);">{{ om.numero }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--accent);">{{ om.maquina.codigo }}</span>
+                    {% if om.prioridad == 'CRITICA' %}<span class="badge badge-danger" style="font-size:0.58rem;">Crítica</span>
+                    {% elif om.prioridad == 'ALTA' %}<span class="badge badge-warning" style="font-size:0.58rem;">Alta</span>{% endif %}
                 </div>
+                <div style="font-size:0.85rem; color:var(--text); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ om.titulo }}</div>
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.15rem;">{{ om.maquina.nombre }}</div>
             </div>
+            <a href="{% url 'ejecutar_om' om.pk %}"
+               style="flex-shrink:0; padding:0.5rem 1.1rem; background:var(--info); color:#fff; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; text-decoration:none; white-space:nowrap;"
+               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                ▶ Continuar trabajo
+            </a>
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
-        <span style="font-size:1.8rem; opacity:0.3;">◎</span>
-        <div style="font-size:0.82rem;">Sin alertas activas.</div>
-    </div>
-    {% endif %}
 </div>
+{% endif %}
 
-<div class="grid-2">
+<!-- FILA 2: Programadas + Sin asignar -->
+<div class="grid-2" style="margin-bottom:1.5rem;">
 
+    <!-- Mis OMs programadas -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Mantenimientos próximos</div>
-            <a href="{% url 'lista_mantenimientos' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todos →</a>
+            <div class="card-title">Mis OMs programadas</div>
+            <a href="{% url 'lista_ordenes_mantenimiento' %}?responsable=yo" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
         </div>
-        {% if mant_proximos_lista %}
+        {% if om_mias_programadas %}
         <div style="display:flex; flex-direction:column; gap:0.4rem;">
-            {% for m in mant_proximos_lista %}
-            <a href="{% url 'detalle_mantenimiento' m.pk %}"
-               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
-               onmouseover="this.style.borderColor='var(--accent)'"
-               onmouseout="this.style.borderColor='var(--border)'">
-                <div>
-                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ m.maquina.nombre }}</div>
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ m.descripcion|truncatechars:45 }}</div>
+            {% for om in om_mias_programadas %}
+            <a href="{% url 'detalle_orden_mantenimiento' om.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem 0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="min-width:0; flex:1;">
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.2rem;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent);">{{ om.maquina.codigo }}</span>
+                        {% if om.prioridad == 'CRITICA' %}<span class="badge badge-danger" style="font-size:0.55rem;">Crítica</span>
+                        {% elif om.prioridad == 'ALTA' %}<span class="badge badge-warning" style="font-size:0.55rem;">Alta</span>{% endif %}
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">{{ om.titulo }}</div>
                 </div>
-                <div style="text-align:right; flex-shrink:0; margin-left:1rem;">
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--warning);">{{ m.fecha_programada|date:"d/m/Y" }}</div>
-                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">en {{ m.dias_para_vencer }} día{{ m.dias_para_vencer|pluralize:"s" }}</div>
+                <div style="text-align:right; flex-shrink:0; margin-left:0.75rem;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.68rem;
+                        color:{% if om.fecha_programada < hoy %}var(--danger){% else %}var(--text-muted){% endif %};">
+                        {{ om.fecha_programada|date:"d/m/Y" }}
+                    </div>
+                    {% if om.fecha_programada < hoy %}
+                    <div style="font-size:0.6rem; color:var(--danger);">vencida</div>
+                    {% endif %}
                 </div>
             </a>
             {% endfor %}
         </div>
         {% else %}
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
-            <span style="font-size:2rem; opacity:0.3;">◉</span>
-            <div style="font-size:0.82rem;">Sin mantenimientos en los próximos 7 días.</div>
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">◉</div>
+            <div style="font-size:0.82rem;">No tienes órdenes programadas.</div>
         </div>
         {% endif %}
     </div>
 
+    <!-- OMs sin asignar — disponibles para tomar -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Accesos rápidos</div>
+            <div class="card-title">OMs disponibles para tomar</div>
+            <a href="{% url 'lista_ordenes_mantenimiento' %}?responsable=sin_asignar" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
         </div>
-        <div style="display:flex; flex-direction:column; gap:0.5rem;">
-            <a href="{% url 'inspeccion_diaria' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">✓</span> Inspección diaria TPM
+        {% if om_sin_asignar_lista %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for om in om_sin_asignar_lista %}
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.65rem 0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
+                <div style="min-width:0; flex:1;">
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.2rem;">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent);">{{ om.maquina.codigo }}</span>
+                        {% if om.tipo == 'PREVENTIVO' %}<span class="badge badge-accent" style="font-size:0.55rem;">Prev.</span>
+                        {% else %}<span class="badge badge-warning" style="font-size:0.55rem;">Corr.</span>{% endif %}
+                        {% if om.prioridad == 'CRITICA' %}<span class="badge badge-danger" style="font-size:0.55rem;">Crítica</span>{% endif %}
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;">{{ om.titulo }}</div>
+                </div>
+                <form method="post" action="{% url 'asignarme_orden_mantenimiento' om.pk %}" style="flex-shrink:0;">
+                    {% csrf_token %}
+                    <button type="submit"
+                            style="padding:0.35rem 0.75rem; background:rgba(232,160,32,0.12); color:var(--accent); border:1px solid rgba(232,160,32,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; cursor:pointer; white-space:nowrap;"
+                            onmouseover="this.style.background='rgba(232,160,32,0.22)'" onmouseout="this.style.background='rgba(232,160,32,0.12)'">
+                        ✋ Tomar
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">✓</div>
+            <div style="font-size:0.82rem;">No hay órdenes sin asignar.</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- FILA 3: Alertas + Inspección del día -->
+<div class="grid-2">
+
+    <!-- Alertas -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Alertas activas</div>
+            <a href="{% url 'lista_alertas' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Gestionar →</a>
+        </div>
+        {% if alertas_lista %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for a in alertas_lista %}
+            <div style="padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px; border-left:3px solid
+                {% if a.severidad == 'CRITICA' %}var(--danger){% elif a.severidad == 'ADVERTENCIA' %}var(--warning){% else %}var(--info){% endif %};">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.78rem; color:var(--text); line-height:1.4; margin-bottom:0.2rem;">{{ a.mensaje|truncatechars:75 }}</div>
+                        <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                            <span class="badge {% if a.severidad == 'CRITICA' %}badge-danger{% elif a.severidad == 'ADVERTENCIA' %}badge-warning{% else %}badge-info{% endif %}" style="font-size:0.55rem;">{{ a.get_severidad_display }}</span>
+                            {% if a.maquina %}<span style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:var(--accent);">{{ a.maquina.codigo }}</span>{% endif %}
+                            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:var(--text-muted);">{{ a.generada_en|date:"d/m H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">◎</div>
+            <div style="font-size:0.82rem;">Sin alertas activas.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Inspección del día -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Inspección diaria TPM</div>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ hoy|date:"d/m/Y" }}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.85rem;">
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                <div style="padding:0.85rem; background:var(--surface2); border-radius:6px; text-align:center; border:1px solid var(--border);">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Realizadas hoy</div>
+                    <div style="font-size:1.6rem; font-weight:700; color:{% if inspecciones_hoy > 0 %}var(--success){% else %}var(--text-muted){% endif %};">{{ inspecciones_hoy }}</div>
+                </div>
+                <div style="padding:0.85rem; background:var(--surface2); border-radius:6px; text-align:center; border:1px solid {% if maquinas_sin_inspeccion > 0 %}rgba(245,158,11,0.3){% else %}var(--border){% endif %};">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.58rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Máquinas pendientes</div>
+                    <div style="font-size:1.6rem; font-weight:700; color:{% if maquinas_sin_inspeccion > 0 %}var(--warning){% else %}var(--success){% endif %};">{{ maquinas_sin_inspeccion }}</div>
+                </div>
+            </div>
+
+            {% if maquinas_sin_inspeccion > 0 %}
+            <div style="padding:0.65rem 0.85rem; background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2); border-radius:6px; font-size:0.78rem; color:var(--warning);">
+                ⚠ Hay {{ maquinas_sin_inspeccion }} máquina{{ maquinas_sin_inspeccion|pluralize:"s" }} sin inspeccionar hoy.
+            </div>
+            {% else %}
+            <div style="padding:0.65rem 0.85rem; background:rgba(34,197,94,0.07); border:1px solid rgba(34,197,94,0.2); border-radius:6px; font-size:0.78rem; color:var(--success);">
+                ✓ Todas las máquinas inspeccionadas hoy.
+            </div>
+            {% endif %}
+
+            <a href="{% url 'inspeccion_diaria' %}"
+               style="display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.7rem; background:var(--accent); color:#0f1117; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; text-decoration:none; text-transform:uppercase; letter-spacing:0.06em; transition:background 0.15s;"
+               onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">
+                ✓ Ir a inspección diaria
             </a>
-            <a href="{% url 'lista_mantenimientos' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">◉</span> Mantenimientos
-            </a>
-            <a href="{% url 'lista_ordenes_mantenimiento' %}?responsable=yo" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">⚙</span> Mis órdenes de mantenimiento
-                {% if om_mias_abiertas > 0 %}
-                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(232,160,32,0.15); color:var(--accent); padding:0.15rem 0.5rem; border-radius:3px;">{{ om_mias_abiertas }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'lista_ordenes_mantenimiento' %}?responsable=sin_asignar" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--warning)">✋</span> Órdenes sin asignar
-                {% if om_sin_asignar > 0 %}
-                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(234,179,8,0.15); color:var(--warning); padding:0.15rem 0.5rem; border-radius:3px;">{{ om_sin_asignar }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'lista_ordenes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">◈</span> Órdenes de trabajo
-            </a>
-            <a href="{% url 'lista_materiales' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">▦</span> Inventario
-                {% if materiales_stock_bajo > 0 %}
-                <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(239,68,68,0.15); color:var(--danger); padding:0.15rem 0.5rem; border-radius:3px;">{{ materiales_stock_bajo }} bajo</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'lista_inspecciones' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">▲</span> Historial inspecciones
-            </a>
-            <a href="{% url 'lista_reportes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="color:var(--accent)">▤</span> Reportes
+            <a href="{% url 'lista_inspecciones' %}"
+               style="display:flex; align-items:center; justify-content:center; padding:0.55rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--text-muted)'" onmouseout="this.style.borderColor='var(--border)'">
+                Ver historial de inspecciones
             </a>
         </div>
     </div>

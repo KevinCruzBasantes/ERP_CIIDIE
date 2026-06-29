@@ -398,8 +398,30 @@ class Alerta(models.Model):
         help_text="Descripción legible de la alerta para mostrar al usuario"
     )
 
+    TIPOS_REQUIEREN_OM = {
+        'MANTENIMIENTO_VENCIDO', 'INSPECCION_FALLIDA',
+        'INCIDENTE', 'PARADA_NO_PLANIFICADA', 'BITACORA_ATENCION',
+    }
+
+    TITULOS_OM_SUGERIDOS = {
+        'MANTENIMIENTO_VENCIDO':  'Mantenimiento vencido — atención requerida',
+        'INSPECCION_FALLIDA':     'Corrección post-inspección fallida',
+        'INCIDENTE':              'Atención por incidente registrado',
+        'PARADA_NO_PLANIFICADA':  'Revisión por parada no planificada',
+        'BITACORA_ATENCION':      'Atención solicitada por operario',
+    }
+
     # Ciclo de vida
     generada_en = models.DateTimeField(auto_now_add=True)
+
+    asignado_a = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='alertas_asignadas',
+        verbose_name='Asignado a'
+    )
+    asignado_en = models.DateTimeField(null=True, blank=True)
 
     vista_por = models.ForeignKey(
         Usuario,
@@ -419,11 +441,23 @@ class Alerta(models.Model):
         blank=True,
         related_name='alertas_resueltas'
     )
+    nota_resolucion = models.TextField(
+        blank=True,
+        help_text="Acción tomada para resolver esta alerta"
+    )
 
     class Meta:
         ordering = ['-generada_en']
         verbose_name = 'Alerta'
         verbose_name_plural = 'Alertas'
+
+    @property
+    def puede_generar_om(self):
+        return self.tipo in self.TIPOS_REQUIEREN_OM
+
+    @property
+    def titulo_om_sugerido(self):
+        return self.TITULOS_OM_SUGERIDOS.get(self.tipo, 'Intervención correctiva')
 
     def marcar_vista(self, usuario):
         if not self.vista_en:
@@ -431,11 +465,12 @@ class Alerta(models.Model):
             self.vista_en = timezone.now()
             self.save(update_fields=['vista_por', 'vista_en'])
 
-    def resolver(self, usuario):
+    def resolver(self, usuario, nota=''):
         self.resuelta = True
         self.resuelta_en = timezone.now()
         self.resuelta_por = usuario
-        self.save(update_fields=['resuelta', 'resuelta_en', 'resuelta_por'])
+        self.nota_resolucion = nota
+        self.save(update_fields=['resuelta', 'resuelta_en', 'resuelta_por', 'nota_resolucion'])
 
     def __str__(self):
         maquina_str = f" — {self.maquina.codigo}" if self.maquina else ""

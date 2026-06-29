@@ -11,11 +11,12 @@
     <p>{{ user.rol|default:"Administrador" }} — Laboratorio CIDIIE · Universidad Central del Ecuador</p>
 </div>
 
+<!-- FILA 1: KPIs -->
 <div class="stats-grid">
     <div class="stat-card accent">
-        <div class="stat-label">Máquinas registradas</div>
+        <div class="stat-label">Máquinas</div>
         <div class="stat-value">{{ total_maquinas }}</div>
-        <div class="stat-sub">{{ maquinas_operativas }} operativas</div>
+        <div class="stat-sub">{{ maquinas_operativas }} operativas · {{ maquinas_mantenimiento }} en mant.</div>
     </div>
     <div class="stat-card danger">
         <div class="stat-label">Alertas activas</div>
@@ -23,9 +24,9 @@
         <div class="stat-sub">{{ alertas_criticas }} crítica{{ alertas_criticas|pluralize:"s" }}</div>
     </div>
     <div class="stat-card warning">
-        <div class="stat-label">Mantenimientos vencidos</div>
-        <div class="stat-value">{{ mant_vencidos }}</div>
-        <div class="stat-sub">{{ mant_programados }} programados</div>
+        <div class="stat-label">Órdenes de mant.</div>
+        <div class="stat-value">{{ om_abiertas }}</div>
+        <div class="stat-sub">programadas o en proceso</div>
     </div>
     <div class="stat-card info">
         <div class="stat-label">Reservas pendientes</div>
@@ -34,109 +35,162 @@
     </div>
 </div>
 
-<div class="grid-2">
+<!-- FILA 2: Alertas · OMs abiertas · Reservas pendientes -->
+<div class="grid-3" style="margin-bottom:1.5rem;">
 
+    <!-- Alertas -->
     <div class="card">
         <div class="card-header">
             <div class="card-title">Alertas activas</div>
-            <span class="badge {% if alertas_criticas %}badge-danger{% else %}badge-warning{% endif %}">
-                {{ alertas_activas }} activa{{ alertas_activas|pluralize:"s" }}
-            </span>
+            <a href="{% url 'lista_alertas' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
         </div>
         {% if ultimas_alertas %}
         <div style="display:flex; flex-direction:column; gap:0.4rem;">
             {% for alerta in ultimas_alertas %}
-            <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.65rem; background:var(--surface2); border-radius:6px; border-left:3px solid {% if alerta.severidad == 'CRITICA' %}var(--danger){% elif alerta.severidad == 'ADVERTENCIA' %}var(--warning){% else %}var(--info){% endif %};">
-                <div style="flex:1; min-width:0;">
-                    <div style="font-size:0.78rem; color:var(--text); margin-bottom:0.2rem;">{{ alerta.mensaje|truncatechars:80 }}</div>
-                    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                        <span class="badge {% if alerta.severidad == 'CRITICA' %}badge-danger{% elif alerta.severidad == 'ADVERTENCIA' %}badge-warning{% else %}badge-info{% endif %}">
-                            {{ alerta.get_severidad_display }}
-                        </span>
-                        {% if alerta.maquina %}
-                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent);">{{ alerta.maquina.codigo }}</span>
-                        {% endif %}
-                        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--text-muted);">{{ alerta.generada_en|date:"d/m/Y H:i" }}</span>
-                        {% if alerta.referencia_tipo == 'OrdenTrabajo' %}
-                        <a href="{% url 'detalle_orden' alerta.referencia_id %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--accent); text-decoration:none;">Ver orden →</a>
-                        {% endif %}
-                    </div>
+            <div style="padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px; border-left:3px solid {% if alerta.severidad == 'CRITICA' %}var(--danger){% elif alerta.severidad == 'ADVERTENCIA' %}var(--warning){% else %}var(--info){% endif %};">
+                <div style="font-size:0.78rem; color:var(--text); margin-bottom:0.2rem; line-height:1.4;">{{ alerta.mensaje|truncatechars:70 }}</div>
+                <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <span class="badge {% if alerta.severidad == 'CRITICA' %}badge-danger{% elif alerta.severidad == 'ADVERTENCIA' %}badge-warning{% else %}badge-info{% endif %}" style="font-size:0.58rem;">{{ alerta.get_severidad_display }}</span>
+                    {% if alerta.maquina %}<span style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:var(--accent);">{{ alerta.maquina.codigo }}</span>{% endif %}
+                    {% if alerta.referencia_tipo == 'OrdenTrabajo' %}<a href="{% url 'detalle_orden' alerta.referencia_id %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:var(--accent); text-decoration:none;">Ver →</a>{% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
-            <span style="font-size:2rem; opacity:0.3;">◎</span>
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">◎</div>
             <div style="font-size:0.82rem;">Sin alertas activas.</div>
         </div>
         {% endif %}
     </div>
 
+    <!-- OMs abiertas -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Mantenimientos próximos</div>
-            <a href="{% url 'lista_mantenimientos' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todos →</a>
+            <div class="card-title">Órdenes de mantenimiento</div>
+            <a href="{% url 'lista_ordenes_mantenimiento' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
         </div>
-        {% if mant_proximos %}
-        <div style="display:flex; flex-direction:column; gap:0.4rem;">
-            {% for m in mant_proximos %}
-            <a href="{% url 'detalle_mantenimiento' m.pk %}"
-               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
-               onmouseover="this.style.borderColor='var(--accent)'"
-               onmouseout="this.style.borderColor='var(--border)'">
-                <div>
-                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ m.maquina.nombre }}</div>
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.1rem;">{{ m.descripcion|truncatechars:45 }}</div>
+        {% if om_recientes %}
+        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+            {% for om in om_recientes %}
+            <a href="{% url 'detalle_orden_mantenimiento' om.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="min-width:0;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent);">{{ om.numero }} · {{ om.maquina.codigo }}</div>
+                    <div style="font-size:0.78rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;">{{ om.titulo }}</div>
                 </div>
-                <div style="text-align:right; flex-shrink:0; margin-left:1rem;">
-                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--warning);">{{ m.fecha_programada|date:"d/m/Y" }}</div>
-                    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">en {{ m.dias_para_vencer }} día{{ m.dias_para_vencer|pluralize:"s" }}</div>
+                <div style="flex-shrink:0; margin-left:0.5rem;">
+                    {% if om.estado == 'PROGRAMADA' %}<span class="badge badge-warning" style="font-size:0.58rem;">Prog.</span>
+                    {% else %}<span class="badge badge-info" style="font-size:0.58rem;">En proceso</span>{% endif %}
                 </div>
             </a>
             {% endfor %}
         </div>
         {% else %}
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
-            <span style="font-size:2rem; opacity:0.3;">◉</span>
-            <div style="font-size:0.82rem;">Sin mantenimientos en los próximos 7 días.</div>
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">◉</div>
+            <div style="font-size:0.82rem;">Sin órdenes abiertas.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Reservas pendientes -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Reservas pendientes</div>
+            <a href="{% url 'lista_reservas' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
+        </div>
+        {% if reservas_pendientes_lista %}
+        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+            {% for r in reservas_pendientes_lista %}
+            <a href="{% url 'detalle_reserva' r.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="min-width:0;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent);">{{ r.maquina.codigo }}</div>
+                    <div style="font-size:0.78rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;">{{ r.usuario.get_full_name|default:r.usuario.username }}</div>
+                </div>
+                <div style="flex-shrink:0; margin-left:0.5rem; text-align:right;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted);">{{ r.fecha|date:"d/m" }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--text-muted);">{{ r.hora_inicio|time:"H:i" }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">◷</div>
+            <div style="font-size:0.82rem;">Sin reservas pendientes.</div>
         </div>
         {% endif %}
     </div>
 
 </div>
 
-<div class="card" style="margin-top:1.5rem;">
-    <div class="card-header">
-        <div class="card-title">Accesos rápidos</div>
+<!-- FILA 3: Máquinas en mantenimiento · Stock bajo -->
+<div class="grid-2">
+
+    <!-- Máquinas en mantenimiento -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Máquinas en mantenimiento</div>
+            <a href="{% url 'lista_maquinas' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todas →</a>
+        </div>
+        {% if maquinas_en_mantenimiento %}
+        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+            {% for m in maquinas_en_mantenimiento %}
+            <a href="{% url 'detalle_maquina' m.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--warning)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--accent);">{{ m.codigo }}</div>
+                    <div style="font-size:0.78rem; color:var(--text);">{{ m.nombre }}</div>
+                </div>
+                <span class="badge badge-warning" style="font-size:0.58rem;">En mant.</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">⚙</div>
+            <div style="font-size:0.82rem;">Todas las máquinas operativas.</div>
+        </div>
+        {% endif %}
     </div>
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:0.75rem;">
-        <a href="{% url 'lista_maquinas' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="color:var(--accent); font-size:1.1rem;">⚙</span>
-            <div><div style="font-size:0.82rem; font-weight:500; color:var(--text);">Máquinas</div><div style="font-size:0.68rem; color:var(--text-muted);">{{ total_maquinas }} registradas</div></div>
-        </a>
-        <a href="{% url 'lista_mantenimientos' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="color:var(--warning); font-size:1.1rem;">◉</span>
-            <div><div style="font-size:0.82rem; font-weight:500; color:var(--text);">Mantenimiento</div><div style="font-size:0.68rem; color:var(--text-muted);">{{ mant_vencidos }} vencidos</div></div>
-        </a>
-        <a href="{% url 'lista_materiales' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="color:var(--info); font-size:1.1rem;">▦</span>
-            <div><div style="font-size:0.82rem; font-weight:500; color:var(--text);">Inventario</div><div style="font-size:0.68rem; color:var(--text-muted);">{{ materiales_stock_bajo }} con stock bajo</div></div>
-        </a>
-        <a href="{% url 'lista_reservas' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="color:var(--success); font-size:1.1rem;">◷</span>
-            <div><div style="font-size:0.82rem; font-weight:500; color:var(--text);">Reservas</div><div style="font-size:0.68rem; color:var(--text-muted);">{{ reservas_pendientes }} pendientes</div></div>
-        </a>
-        <a href="{% url 'dashboard_tpm' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="color:var(--accent); font-size:1.1rem;">▲</span>
-            <div><div style="font-size:0.82rem; font-weight:500; color:var(--text);">TPM / OEE</div><div style="font-size:0.68rem; color:var(--text-muted);">{{ alertas_activas }} alertas</div></div>
-        </a>
-        <a href="{% url 'lista_reportes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.9rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="color:var(--text-muted); font-size:1.1rem;">▤</span>
-            <div><div style="font-size:0.82rem; font-weight:500; color:var(--text);">Reportes</div><div style="font-size:0.68rem; color:var(--text-muted);">Exportar Excel</div></div>
-        </a>
+
+    <!-- Stock bajo -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Materiales con stock bajo</div>
+            <a href="{% url 'lista_materiales' %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); text-decoration:none;">Ver todos →</a>
+        </div>
+        {% if stock_bajo_lista %}
+        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+            {% for mat in stock_bajo_lista %}
+            <a href="{% url 'detalle_material' mat.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ mat.nombre }}</div>
+                    <div style="font-size:0.68rem; color:var(--text-muted);">{{ mat.categoria|default:"—" }}</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0; margin-left:0.75rem;">
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--danger);">{{ mat.stock_actual }} {{ mat.unidad_medida }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:var(--text-muted);">mín: {{ mat.stock_minimo }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+            <div style="font-size:1.8rem; opacity:0.2; margin-bottom:0.5rem;">▦</div>
+            <div style="font-size:0.82rem;">Todos los materiales con stock suficiente.</div>
+        </div>
+        {% endif %}
     </div>
+
 </div>
 
 {% endblock %}
-

@@ -319,7 +319,7 @@ def lista_ordenes_mantenimiento(request):
         'en_proceso':      qs.filter(estado='EN_PROCESO').count(),
         'finalizadas':     qs.filter(estado='FINALIZADA').count(),
         'vencidas':        qs.filter(estado='PROGRAMADA', fecha_programada__lt=hoy).count(),
-        'maquinas':        MaquinaModel.objects.exclude(estado='FUERA_SERVICIO').order_by('nombre'),
+        'maquinas':        MaquinaModel.objects.exclude(estado='BAJA').order_by('nombre'),
         'filtro_estado':   estado_f,
         'filtro_tipo':     tipo_f,
         'filtro_maquina':  maquina_f,
@@ -342,12 +342,13 @@ def detalle_orden_mantenimiento(request, pk):
         ),
         pk=pk, activo=True
     )
+    from django.db.models import Sum
     entradas = om.entradas_bitacora.select_related('tecnico').order_by('-fecha_registro')
-    form_bitacora = BitacoraMantenimientoForm()
+    horas_reales = entradas.aggregate(total=Sum('tiempo_horas'))['total'] or 0
     context = {
         'om':             om,
         'entradas':       entradas,
-        'form_bitacora':  form_bitacora,
+        'horas_reales':   horas_reales,
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
         'es_admin':       es_admin(request.user),
         'puede_gestionar': puede_gestionar_om(request.user, om),
@@ -462,6 +463,48 @@ def asignarme_orden_mantenimiento(request, pk):
 
 
 @login_required(login_url='login')
+def ejecutar_om(request, pk):
+    om = get_object_or_404(
+        OrdenMantenimiento.objects.select_related(
+            'maquina', 'plan', 'responsable_1', 'responsable_2', 'responsable_3'
+        ),
+        pk=pk, activo=True
+    )
+    if om.estado != 'EN_PROCESO':
+        return redirect('detalle_orden_mantenimiento', pk=pk)
+    if not puede_gestionar_om(request.user, om):
+        messages.error(request, 'Solo el responsable asignado o un administrador puede gestionar esta orden.')
+        return redirect('detalle_orden_mantenimiento', pk=pk)
+
+    if request.method == 'POST':
+        form = BitacoraMantenimientoForm(request.POST, request.FILES)
+        if form.is_valid():
+            entrada = form.save(commit=False)
+            entrada.maquina = om.maquina
+            entrada.orden   = om
+            entrada.tecnico = request.user
+            entrada.save()
+            messages.success(request, 'Entrada registrada en bitácora.')
+        else:
+            messages.error(request, 'Revisa los datos de la bitácora.')
+        return redirect('ejecutar_om', pk=pk)
+
+    from django.db.models import Sum
+    form = BitacoraMantenimientoForm()
+    entradas = om.entradas_bitacora.select_related('tecnico').order_by('fecha_registro')
+    horas_reales = entradas.aggregate(total=Sum('tiempo_horas'))['total'] or 0
+    context = {
+        'om':             om,
+        'form':           form,
+        'entradas':       entradas,
+        'horas_reales':   horas_reales,
+        'es_admin':       es_admin(request.user),
+        'puede_gestionar': True,
+    }
+    return render(request, 'mantenimiento/ejecutar_orden_mantenimiento.html', context)
+
+
+@login_required(login_url='login')
 def cambiar_estado_om(request, pk):
     om = get_object_or_404(OrdenMantenimiento, pk=pk, activo=True)
     if not puede_gestionar_om(request.user, om):
@@ -478,10 +521,12 @@ def cambiar_estado_om(request, pk):
             if nuevo == 'FINALIZADA' and not om.fecha_fin:
                 om.fecha_fin = timezone.now()
                 if es_admin(request.user) and not om.autorizado_por:
-                    om.autorizado_por    = request.user
+                    om.autorizado_por     = request.user
                     om.fecha_autorizacion = timezone.now()
             om.save()
             messages.success(request, f'Orden {om.numero()} actualizada a {om.get_estado_display()}.')
+            if nuevo == 'EN_PROCESO':
+                return redirect('ejecutar_om', pk=pk)
         else:
             messages.error(request, 'Estado inválido.')
     return redirect('detalle_orden_mantenimiento', pk=pk)

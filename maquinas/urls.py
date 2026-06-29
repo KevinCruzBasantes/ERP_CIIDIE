@@ -10,11 +10,13 @@ urlpatterns = [
     path('codigos-parada/<int:pk>/editar/',          views.editar_codigo_parada,    name='editar_codigo_parada'),
     path('codigos-parada/<int:pk>/eliminar/',        views.eliminar_codigo_parada,  name='eliminar_codigo_parada'),
 
-    # Piezas y transferencias 
+    # Piezas y transferencias
     path('transferencias/',                        views.lista_transferencias,  name='lista_transferencias'),
-    path('piezas/<int:pk>/editar/',               views.editar_pieza,          name='editar_pieza'),
-    path('piezas/<int:pk>/eliminar/',             views.eliminar_pieza,        name='eliminar_pieza'),
-    path('piezas/<int:pieza_pk>/transferir/',     views.crear_transferencia,   name='crear_transferencia'),
+    path('piezas/<int:pk>/',                       views.detalle_pieza,         name='detalle_pieza'),
+    path('piezas/<int:pk>/editar/',                views.editar_pieza,          name='editar_pieza'),
+    path('piezas/<int:pk>/eliminar/',              views.eliminar_pieza,        name='eliminar_pieza'),
+    path('piezas/<int:pk>/reasignar/',             views.reasignar_pieza,       name='reasignar_pieza'),
+    path('piezas/<int:pieza_pk>/transferir/',      views.crear_transferencia,   name='crear_transferencia'),
 
     # Máquinas
     path('',                                      views.lista_maquinas,        name='lista_maquinas'),

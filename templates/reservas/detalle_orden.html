@@ -23,7 +23,8 @@
     </div>
     <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
         <a href="{% url 'detalle_reserva' orden.reserva.pk %}"
-           style="padding:0.4rem 0.9rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none;">
+           style="padding:0.4rem 0.9rem; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none; transition:border-color 0.15s, color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
             ◷ Ver reserva
         </a>
         {% if orden.estado != 'FINALIZADA' and es_admin_o_tecnico %}
@@ -34,6 +35,22 @@
         {% endif %}
     </div>
 </div>
+
+{% if proxima_reserva %}
+<div style="background:rgba(234,179,8,0.12); border:1px solid rgba(234,179,8,0.35); border-radius:8px; padding:0.85rem 1.1rem; margin-bottom:1.25rem; display:flex; align-items:flex-start; gap:0.75rem;">
+    <span style="color:var(--warning); font-size:1rem; flex-shrink:0; margin-top:0.05rem;">⚠</span>
+    <div style="font-size:0.82rem; line-height:1.6; color:var(--text);">
+        <strong style="color:var(--warning);">
+            {% if minutos_restantes == 0 %}Fin de reserva ahora{% else %}Faltan {{ minutos_restantes }} min para el fin de esta reserva ({{ orden.reserva.hora_fin|time:"H:i" }}){% endif %}
+        </strong>
+        — hay otra reserva a continuación:
+        <span style="font-family:'IBM Plex Mono',monospace;">
+            {% if proxima_reserva.usuario %}{{ proxima_reserva.usuario.get_full_name|default:proxima_reserva.usuario.username }}{% else %}(usuario eliminado){% endif %}
+            a las {{ proxima_reserva.hora_inicio|time:"H:i" }}
+        </span>
+    </div>
+</div>
+{% endif %}
 
 <!-- Fila superior: info + consumos -->
 <div class="grid-2" style="margin-bottom:1.5rem;">

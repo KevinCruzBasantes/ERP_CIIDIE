@@ -490,12 +490,24 @@
         </a>
 
         {% if nav_es_admin_o_tecnico %}
-          <div class="nav-section-label">Operación</div>
+          <div class="nav-section-label">Mantenimiento</div>
           <a href="{% url 'lista_ordenes_mantenimiento' %}"
             class="nav-item {% block nav_mantenimiento %}
             {% endblock %}">
-            <span class="nav-icon">◉</span> Mantenimiento
+            <span class="nav-icon">◉</span> Órdenes
           </a>
+          <a href="{% url 'lista_planes' %}"
+            class="nav-item {% block nav_planes %}
+            {% endblock %}">
+            <span class="nav-icon">↻</span> Planes TPM
+          </a>
+          <a href="{% url 'lista_mantenimientos' %}"
+            class="nav-item {% block nav_hist_mant %}
+            {% endblock %}">
+            <span class="nav-icon">≡</span> Historial
+          </a>
+
+          <div class="nav-section-label">Análisis</div>
           <a href="{% url 'dashboard_tpm' %}"
             class="nav-item {% block nav_tpm %}
             {% endblock %}">

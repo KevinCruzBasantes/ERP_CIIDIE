@@ -6,9 +6,7 @@
 {% block breadcrumb %}
   Mantenimiento / #{{ m.pk }}
 {% endblock %}
-{% block nav_mantenimiento %}
-  active
-{% endblock %}
+{% block nav_hist_mant %}active{% endblock %}
 
 {% block content %}
   {% if es_admin_o_tecnico %}
@@ -83,7 +81,7 @@
     </div>
 
     <div>
-      <a href="{% url 'detalle_maquina' m.maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">⚙ Ver máquina</a>
+      <a href="{% url 'detalle_maquina' m.maquina.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text); background:var(--surface2); text-decoration:none; padding:0.4rem 0.9rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s, color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">⚙ Ver máquina</a>
     </div>
   </div>
 

@@ -5,7 +5,9 @@ Genera OrdenMantenimiento automáticamente ante disparadores críticos
 detectados en otras apps, sin necesidad de que un humano la confirme.
 
 Disparadores automáticos:
-  - Maquina: cambia de estado a FUERA_SERVICIO
+  - OrdenMantenimiento: creada o cambia a FINALIZADA/CANCELADA
+    → sincroniza el estado de la máquina (OPERATIVA ↔ MANTENIMIENTO)
+    El estado BAJA (dada de baja) nunca se toca automáticamente.
   - InspeccionDiaria: aprobada=False
   - HallazgoInspeccion: prioridad CRITICA o ALTA
   - RegistroParada: parada no planificada (PNP) de cualquier categoría
@@ -16,53 +18,29 @@ Incidente y PlanMantenimiento siguen siendo disparadores manuales
 (botón "Generar orden" en su detalle), ver mantenimiento/views.py.
 """
 
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 CATEGORIAS_NO_TECNICAS = ('OPERACION', 'OTRO')
 
 
-@receiver(pre_save, sender='maquinas.Maquina')
-def _guardar_estado_anterior(sender, instance, **kwargs):
-    if instance.pk:
-        from maquinas.models import Maquina
-        instance._estado_anterior = (
-            Maquina.objects.filter(pk=instance.pk).values_list('estado', flat=True).first()
-        )
-    else:
-        instance._estado_anterior = None
-
-
-@receiver(post_save, sender='maquinas.Maquina')
-def orden_por_falla_maquina(sender, instance, created, **kwargs):
-    if created:
-        return
-    estado_anterior = getattr(instance, '_estado_anterior', None)
-    if instance.estado != 'FUERA_SERVICIO' or estado_anterior == 'FUERA_SERVICIO':
+@receiver(post_save, sender='mantenimiento.OrdenMantenimiento')
+def sincronizar_estado_maquina(sender, instance, **kwargs):
+    """Mantiene el estado de la máquina sincronizado con sus OMs activas."""
+    from maquinas.models import Maquina
+    maquina = instance.maquina
+    if not maquina or maquina.estado == 'BAJA':
         return
 
-    from mantenimiento.models import OrdenMantenimiento
-
-    ya_existe = OrdenMantenimiento.objects.filter(
-        maquina=instance, origen='ESTADO_MAQUINA', activo=True
+    tiene_om_activa = sender.objects.filter(
+        maquina=maquina, activo=True
     ).exclude(estado__in=['FINALIZADA', 'CANCELADA']).exists()
-    if ya_existe:
-        return
 
-    OrdenMantenimiento.objects.create(
-        maquina=instance,
-        origen='ESTADO_MAQUINA',
-        tipo='CORRECTIVO',
-        prioridad='CRITICA',
-        titulo=f"Correctivo: {instance.nombre} pasó a Fuera de servicio",
-        descripcion_tarea=(
-            "Orden generada automáticamente al marcar la máquina como "
-            "Fuera de servicio. Diagnosticar y reparar antes de reanudar uso."
-        ),
-        fecha_programada=timezone.now().date(),
-        para_produccion=True,
-    )
+    if tiene_om_activa and maquina.estado == 'OPERATIVA':
+        Maquina.objects.filter(pk=maquina.pk).update(estado='MANTENIMIENTO')
+    elif not tiene_om_activa and maquina.estado == 'MANTENIMIENTO':
+        Maquina.objects.filter(pk=maquina.pk).update(estado='OPERATIVA')
 
 
 @receiver(post_save, sender='tpm.InspeccionDiaria')

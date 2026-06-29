@@ -13,15 +13,15 @@
     </div>
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
         <a href="{% url 'lista_transferencias' %}"
-           style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:border-color 0.15s;"
+           style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:border-color 0.15s, color 0.15s;"
            onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
-           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-muted)'">
+           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
             ⇄ Transferencias
         </a>
         <a href="{% url 'lista_codigos_parada' %}"
-           style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:transparent; color:var(--text-muted); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:border-color 0.15s;"
+           style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.65rem 1.25rem; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; transition:border-color 0.15s, color 0.15s;"
            onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'"
-           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-muted)'">
+           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
             ◈ Códigos de parada
         </a>
         {% if es_admin %}
@@ -53,9 +53,9 @@
         <div class="stat-sub">no disponibles</div>
     </div>
     <div class="stat-card danger">
-        <div class="stat-label">Fuera de servicio</div>
-        <div class="stat-value">{{ fuera_servicio }}</div>
-        <div class="stat-sub">requieren atención</div>
+        <div class="stat-label">Dadas de baja</div>
+        <div class="stat-value">{{ de_baja }}</div>
+        <div class="stat-sub">retiradas del servicio</div>
     </div>
 </div>
 
@@ -114,7 +114,7 @@
                         {% elif m.estado == 'MANTENIMIENTO' %}
                             <span class="badge badge-warning">● Mantenimiento</span>
                         {% else %}
-                            <span class="badge badge-danger">● Fuera de servicio</span>
+                            <span class="badge badge-danger">● Dada de baja</span>
                         {% endif %}
                     </td>
 

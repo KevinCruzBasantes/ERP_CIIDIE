@@ -60,7 +60,7 @@
     {% if pieza.es_ensamble and pieza.piezas_hijas.count > 0 %}
     <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:6px; padding:0.85rem; margin-bottom:1.25rem;">
         <div style="font-size:0.8rem; color:var(--warning); line-height:1.6;">
-            <strong>Atención:</strong> Este ensamble tiene {{ pieza.piezas_hijas.count }} pieza{{ pieza.piezas_hijas.count|pluralize:"s" }} hija{{ pieza.piezas_hijas.count|pluralize:"s" }} asociada{{ pieza.piezas_hijas.count|pluralize:"s" }}. Al eliminar el ensamble, las piezas hijas quedarán sin ensamble padre pero no serán eliminadas.
+            <strong>Atención:</strong> Este ensamble tiene {{ pieza.piezas_hijas.count }} pieza{{ pieza.piezas_hijas.count|pluralize:"s" }} hija{{ pieza.piezas_hijas.count|pluralize:"s" }}. Al confirmar, también se desactivarán junto con el ensamble.
         </div>
     </div>
     {% endif %}
