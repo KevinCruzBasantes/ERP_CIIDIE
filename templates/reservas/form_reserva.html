@@ -46,6 +46,15 @@
                 {% endif %}
             </div>
 
+            {% if form.operador %}
+            <div id="panel-disponibilidad-operadores" style="grid-column:span 2; display:none; padding:0.75rem 1rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:0.5rem;">
+                    Disponibilidad de operadores para esta máquina — elige un día con cobertura
+                </div>
+                <div id="lista-disponibilidad-operadores" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+            </div>
+            {% endif %}
+
             <div>
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
                     Fecha <span style="color:var(--danger);">*</span>
@@ -62,6 +71,24 @@
                 </div>
                 <div id="lista-horarios-ocupados" style="display:flex; flex-direction:column; gap:0.3rem;"></div>
             </div>
+
+            {% if form.operador %}
+            <div style="grid-column:span 2;">
+                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                    Operador <span style="color:var(--danger);">*</span>
+                </label>
+                {{ form.operador }}
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.3rem;">
+                    Elige primero la máquina: solo aparecen los operadores certificados, activos y disponibles ese día/horario.
+                </div>
+                <div id="aviso-sin-operadores" style="display:none; margin-top:0.5rem; padding:0.6rem 0.9rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; font-size:0.78rem; color:var(--danger);">
+                    ⚠ No hay ningún operador certificado y disponible para esta máquina en ese día. Prueba otra fecha u horario, o contacta a un técnico/administrador.
+                </div>
+                {% if form.operador.errors %}
+                    <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.operador.errors.0 }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <div>
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
@@ -169,6 +196,92 @@ document.addEventListener('DOMContentLoaded', function () {
     maquinaSel.addEventListener('change', consultarHorarios);
     fechaInput.addEventListener('change', consultarHorarios);
     consultarHorarios();
+
+    const operadorSel = document.getElementById('id_operador');
+    const operadorActualId = '{% if reserva %}{{ reserva.operador_id|default:"" }}{% endif %}';
+    if (operadorSel) {
+        const horaInicioInput = document.getElementById('id_hora_inicio');
+        const horaFinInput    = document.getElementById('id_hora_fin');
+        const avisoSinOperadores = document.getElementById('aviso-sin-operadores');
+
+        function consultarOperadores() {
+            const maquinaId = maquinaSel.value;
+            operadorSel.innerHTML = '<option value="">— Seleccionar operador —</option>';
+            if (avisoSinOperadores) avisoSinOperadores.style.display = 'none';
+            if (!maquinaId) return;
+            let url = '{% url "operadores_certificados" %}?maquina=' + encodeURIComponent(maquinaId);
+            if (fechaInput.value) url += '&fecha=' + encodeURIComponent(fechaInput.value);
+            if (horaInicioInput && horaInicioInput.value) url += '&hora_inicio=' + encodeURIComponent(horaInicioInput.value);
+            if (horaFinInput && horaFinInput.value) url += '&hora_fin=' + encodeURIComponent(horaFinInput.value);
+            fetch(url)
+                .then(function (resp) { return resp.json(); })
+                .then(function (data) {
+                    (data.operadores || []).forEach(function (o) {
+                        const opt = document.createElement('option');
+                        opt.value = o.id;
+                        opt.textContent = o.nombre;
+                        if (String(o.id) === operadorActualId) opt.selected = true;
+                        operadorSel.appendChild(opt);
+                    });
+                    if (avisoSinOperadores && fechaInput.value && (!data.operadores || data.operadores.length === 0)) {
+                        avisoSinOperadores.style.display = 'block';
+                    }
+                });
+        }
+        maquinaSel.addEventListener('change', consultarOperadores);
+        fechaInput.addEventListener('change', consultarOperadores);
+        if (horaInicioInput) horaInicioInput.addEventListener('change', consultarOperadores);
+        if (horaFinInput) horaFinInput.addEventListener('change', consultarOperadores);
+        consultarOperadores();
+
+        const panelDisp = document.getElementById('panel-disponibilidad-operadores');
+        const listaDisp = document.getElementById('lista-disponibilidad-operadores');
+        const NOMBRES_DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+        function consultarDisponibilidadSemanal() {
+            const maquinaId = maquinaSel.value;
+            if (!panelDisp || !listaDisp) return;
+            if (!maquinaId) {
+                panelDisp.style.display = 'none';
+                return;
+            }
+            fetch('{% url "disponibilidad_operadores_maquina" %}?maquina=' + encodeURIComponent(maquinaId))
+                .then(function (resp) { return resp.json(); })
+                .then(function (data) {
+                    listaDisp.innerHTML = '';
+                    const siempre = data.siempre_disponibles || [];
+                    const porDia   = data.por_dia || {};
+
+                    if (siempre.length > 0) {
+                        const fila = document.createElement('div');
+                        fila.style.cssText = 'font-size:0.78rem; color:var(--success);';
+                        fila.textContent = '✓ Disponibles cualquier día: ' + siempre.join(', ');
+                        listaDisp.appendChild(fila);
+                    }
+
+                    let hayBloques = false;
+                    for (let d = 0; d < 7; d++) {
+                        const bloques = porDia[String(d)] || [];
+                        if (bloques.length === 0) continue;
+                        hayBloques = true;
+                        const fila = document.createElement('div');
+                        fila.style.cssText = 'font-size:0.78rem; color:var(--text); display:flex; gap:0.5rem; flex-wrap:wrap; align-items:baseline;';
+                        const detalle = bloques.map(function (b) {
+                            return b.hora_inicio + '–' + b.hora_fin + ' (' + b.operador + ')';
+                        }).join(', ');
+                        fila.innerHTML = '<span style="font-family:\'IBM Plex Mono\',monospace; color:var(--accent); min-width:80px;">' + NOMBRES_DIAS[d] + '</span><span style="color:var(--text-muted);">' + detalle + '</span>';
+                        listaDisp.appendChild(fila);
+                    }
+
+                    if (siempre.length === 0 && !hayBloques) {
+                        listaDisp.innerHTML = '<div style="font-size:0.78rem; color:var(--danger);">⚠ Ningún operador certificado tiene horario para esta máquina todavía.</div>';
+                    }
+                    panelDisp.style.display = 'block';
+                });
+        }
+        maquinaSel.addEventListener('change', consultarDisponibilidadSemanal);
+        consultarDisponibilidadSemanal();
+    }
 });
 </script>
 {% endblock %}

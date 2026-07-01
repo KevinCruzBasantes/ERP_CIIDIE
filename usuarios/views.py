@@ -9,17 +9,37 @@ from mantenimiento.models import Mantenimiento, OrdenMantenimiento
 from inventario.models import Material
 from reservas.models import Reserva, OrdenTrabajo
 from tpm.models import Alerta, InspeccionDiaria, ItemChecklistInspeccion, RespuestaChecklistInspeccion
-from usuarios.permisos import es_admin, es_admin_o_tecnico
-from .models import Usuario, Rol
-from .forms import UsuarioCrearForm, UsuarioEditarForm
+from usuarios.permisos import es_admin, es_admin_o_tecnico, es_operador
+from .models import Usuario, Rol, DisponibilidadOperador
+from .forms import UsuarioCrearForm, UsuarioEditarForm, RegistroEstudianteForm, DisponibilidadOperadorForm
+
+
+ROLES_LANDING = {
+    'admin':      {'etiqueta': 'Administrador', 'campo_label': 'Usuario', 'placeholder': 'nombre de usuario'},
+    'tecnico':    {'etiqueta': 'Técnico',        'campo_label': 'Usuario', 'placeholder': 'nombre de usuario'},
+    'estudiante': {'etiqueta': 'Estudiante',     'campo_label': 'Cédula',  'placeholder': 'tu número de cédula'},
+    'operador':   {'etiqueta': 'Operador',       'campo_label': 'Usuario', 'placeholder': 'nombre de usuario'},
+}
+
+
+def landing_view(request):
+    if request.user.is_authenticated:
+        return redirigir_por_rol(request.user)
+    return render(request, 'usuarios/landing.html')
 
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirigir_por_rol(request.user)
+    rol = request.POST.get('rol') or request.GET.get('rol') or ''
     if request.method == 'POST':
-        username = request.POST.get('username')
+        identificador = request.POST.get('username', '').strip()
         password = request.POST.get('password')
+        # Admin/técnico/operador ingresan con su username; el estudiante con su cédula.
+        # Si el identificador coincide con una cédula registrada, se resuelve
+        # al username real antes de autenticar.
+        usuario_por_cedula = Usuario.objects.filter(cedula=identificador).first()
+        username = usuario_por_cedula.username if usuario_por_cedula else identificador
         user = authenticate(request, username=username, password=password)
         if user is not None:
             if user.estado == 'ACTIVO':
@@ -28,8 +48,26 @@ def login_view(request):
             else:
                 messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
         else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
-    return render(request, 'usuarios/login.html')
+            messages.error(request, 'Usuario/cédula o contraseña incorrectos.')
+    return render(request, 'usuarios/login.html', {
+        'rol':      rol,
+        'rol_info': ROLES_LANDING.get(rol),
+    })
+
+
+def registro_estudiante(request):
+    if request.user.is_authenticated:
+        return redirigir_por_rol(request.user)
+    if request.method == 'POST':
+        form = RegistroEstudianteForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f'Cuenta creada. Bienvenido, {user.get_full_name() or user.username}.')
+            return redirect('dashboard_general')
+    else:
+        form = RegistroEstudianteForm()
+    return render(request, 'usuarios/registro_estudiante.html', {'form': form})
 
 
 def redirigir_por_rol(user):
@@ -37,6 +75,8 @@ def redirigir_por_rol(user):
         return redirect('dashboard_admin')
     elif es_admin_o_tecnico(user):
         return redirect('dashboard_tecnico')
+    elif es_operador(user):
+        return redirect('dashboard_operador')
     else:
         return redirect('dashboard_general')
 
@@ -136,17 +176,58 @@ def dashboard_tecnico(request):
 
 
 @login_required(login_url='login')
-def dashboard_general(request):
+def dashboard_operador(request):
     hoy = timezone.now().date()
+    en_una_semana = hoy + timezone.timedelta(days=7)
+    reservas = Reserva.objects.filter(operador=request.user).select_related('usuario', 'maquina')
+    context = {
+        'reservas_hoy':      reservas.filter(fecha=hoy, estado__in=('APROBADA', 'EN_USO')).order_by('hora_inicio'),
+        'proximas_reservas': reservas.filter(
+            fecha__gt=hoy, fecha__lte=en_una_semana, estado__in=('PENDIENTE', 'APROBADA', 'EN_USO')
+        ).order_by('fecha', 'hora_inicio'),
+        'historial':         reservas.filter(estado='COMPLETADA').order_by('-fecha')[:10],
+        'incidencias':       reservas.filter(estado='CANCELADA').order_by('-fecha')[:10],
+    }
+    return render(request, 'usuarios/dashboard_operador.html', context)
+
+
+@login_required(login_url='login')
+def mi_horario(request):
+    if not es_operador(request.user):
+        messages.error(request, 'Esta sección es solo para operadores.')
+        return redirect('dashboard_general')
+    if request.method == 'POST':
+        form = DisponibilidadOperadorForm(request.POST)
+        if form.is_valid():
+            bloque = form.save(commit=False)
+            bloque.operador = request.user
+            bloque.save()
+            messages.success(request, 'Horario agregado.')
+            return redirect('mi_horario')
+        else:
+            messages.error(request, 'Revisa los datos del horario.')
+    else:
+        form = DisponibilidadOperadorForm()
+    bloques = DisponibilidadOperador.objects.filter(operador=request.user)
+    return render(request, 'usuarios/mi_horario.html', {'form': form, 'bloques': bloques})
+
+
+@login_required(login_url='login')
+def eliminar_disponibilidad(request, pk):
+    bloque = get_object_or_404(DisponibilidadOperador, pk=pk, operador=request.user)
+    if request.method == 'POST':
+        bloque.delete()
+        messages.success(request, 'Horario eliminado.')
+    return redirect('mi_horario')
+
+
+@login_required(login_url='login')
+def dashboard_general(request):
     context = {
         'maquinas_operativas': Maquina.objects.filter(estado='OPERATIVA'),
         'mis_reservas': Reserva.objects.filter(
             usuario=request.user
         ).order_by('-fecha')[:5],
-        'inspeccion_hoy': InspeccionDiaria.objects.filter(
-            inspector=request.user,
-            fecha=hoy
-        ).first(),
     }
     return render(request, 'usuarios/dashboard_general.html', context)
 

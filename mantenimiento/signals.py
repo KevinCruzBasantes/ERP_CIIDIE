@@ -8,6 +8,9 @@ Disparadores automáticos:
   - OrdenMantenimiento: creada o cambia a FINALIZADA/CANCELADA
     → sincroniza el estado de la máquina (OPERATIVA ↔ MANTENIMIENTO)
     El estado BAJA (dada de baja) nunca se toca automáticamente.
+    → al entrar en MANTENIMIENTO, genera una Alerta por cada Reserva ya
+      APROBADA/EN_USO de esa máquina (hoy o a futuro); al volver a OPERATIVA,
+      esas alertas se resuelven automáticamente.
   - InspeccionDiaria: aprobada=False
   - HallazgoInspeccion: prioridad CRITICA o ALTA
   - RegistroParada: parada no planificada (PNP) de cualquier categoría
@@ -39,8 +42,60 @@ def sincronizar_estado_maquina(sender, instance, **kwargs):
 
     if tiene_om_activa and maquina.estado == 'OPERATIVA':
         Maquina.objects.filter(pk=maquina.pk).update(estado='MANTENIMIENTO')
+        _alertar_reservas_por_mantenimiento(maquina)
     elif not tiene_om_activa and maquina.estado == 'MANTENIMIENTO':
         Maquina.objects.filter(pk=maquina.pk).update(estado='OPERATIVA')
+        _resolver_alertas_reservas_por_mantenimiento(maquina)
+
+
+def _alertar_reservas_por_mantenimiento(maquina):
+    """Genera una Alerta por cada reserva ya aprobada/en uso (hoy o a futuro)
+    de una máquina que acaba de entrar en MANTENIMIENTO."""
+    from reservas.models import Reserva
+    from tpm.models import Alerta
+
+    reservas_afectadas = Reserva.objects.filter(
+        maquina=maquina,
+        estado__in=('APROBADA', 'EN_USO'),
+        fecha__gte=timezone.now().date(),
+    ).select_related('usuario')
+
+    for reserva in reservas_afectadas:
+        nombre = (
+            reserva.usuario.get_full_name() or reserva.usuario.username
+            if reserva.usuario else 'usuario eliminado'
+        )
+        Alerta.objects.get_or_create(
+            tipo='RESERVA_AFECTADA_MANTENIMIENTO',
+            maquina=maquina,
+            referencia_id=reserva.pk,
+            referencia_tipo='Reserva',
+            resuelta=False,
+            defaults={
+                'severidad': 'ADVERTENCIA',
+                'mensaje': (
+                    f"{maquina.nombre} entró en mantenimiento y tiene una reserva "
+                    f"{reserva.get_estado_display().lower()} de {nombre} el "
+                    f"{reserva.fecha.strftime('%d/%m/%Y')} de {reserva.hora_inicio.strftime('%H:%M')} "
+                    f"a {reserva.hora_fin.strftime('%H:%M')} que podría no poder cumplirse."
+                ),
+            }
+        )
+
+
+def _resolver_alertas_reservas_por_mantenimiento(maquina):
+    """Al volver la máquina a OPERATIVA, resuelve las alertas de reserva que ya no aplican."""
+    from tpm.models import Alerta
+
+    Alerta.objects.filter(
+        tipo='RESERVA_AFECTADA_MANTENIMIENTO',
+        maquina=maquina,
+        resuelta=False,
+    ).update(
+        resuelta=True,
+        resuelta_en=timezone.now(),
+        nota_resolucion='Resuelta automáticamente: la máquina volvió a estado operativo.',
+    )
 
 
 @receiver(post_save, sender='tpm.InspeccionDiaria')

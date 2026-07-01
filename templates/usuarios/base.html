@@ -452,6 +452,12 @@
             {% endblock %}">
             <span class="nav-icon">⊞</span> Inicio
           </a>
+        {% elif nav_es_operador %}
+          <a href="{% url 'dashboard_operador' %}"
+            class="nav-item {% block nav_inicio4 %}
+            {% endblock %}">
+            <span class="nav-icon">⊞</span> Inicio
+          </a>
         {% else %}
           <a href="{% url 'dashboard_general' %}"
             class="nav-item {% block nav_inicio3 %}
@@ -460,12 +466,14 @@
           </a>
         {% endif %}
 
+        {% if nav_es_admin_o_tecnico %}
         <div class="nav-section-label">Máquinas</div>
         <a href="{% url 'lista_maquinas' %}"
           class="nav-item {% block nav_maquinas %}
           {% endblock %}">
           <span class="nav-icon">⚙</span> Máquinas
         </a>
+        {% endif %}
         <a href="{% url 'lista_reservas' %}"
           class="nav-item {% block nav_reservas %}
           {% endblock %}">
@@ -476,7 +484,15 @@
           {% endblock %}">
           <span class="nav-icon">◈</span> Órdenes de trabajo
         </a>
+        {% if nav_es_operador %}
+        <a href="{% url 'mi_horario' %}"
+          class="nav-item {% block nav_horario %}
+          {% endblock %}">
+          <span class="nav-icon">◷</span> Mi horario
+        </a>
+        {% endif %}
 
+        {% if nav_es_admin_o_tecnico %}
         <div class="nav-section-label">Operación</div>
         <a href="{% url 'inspeccion_diaria' %}"
           class="nav-item {% block nav_inspeccion %}
@@ -488,6 +504,7 @@
           {% endblock %}">
           <span class="nav-icon">▦</span> Inventario
         </a>
+        {% endif %}
 
         {% if nav_es_admin_o_tecnico %}
           <div class="nav-section-label">Mantenimiento</div>

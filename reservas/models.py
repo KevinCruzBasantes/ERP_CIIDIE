@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from maquinas.models import Maquina, CodigoParada
 from usuarios.models import Usuario
+from usuarios.permisos import es_estudiante
 
 
 class Reserva(models.Model):
@@ -41,6 +42,15 @@ class Reserva(models.Model):
         null=True,
         blank=True,
         related_name='reservas_autorizadas'
+    )
+    operador = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reservas_operadas',
+        help_text="Operador certificado que maneja la máquina (obligatorio si el "
+                   "solicitante es estudiante; admin/técnico operan sus propias reservas)."
     )
 
     fecha = models.DateField()
@@ -95,20 +105,47 @@ class Reserva(models.Model):
             raise ValidationError(
                 "La máquina ya tiene una reserva en ese horario."
             )
-        # Verificar certificación vigente (Pilar 4 TPM — Formación)
+        # Verificar certificación vigente (Pilar 4 TPM — Formación).
+        # El estudiante no opera la máquina directamente: un operador certificado
+        # lo hace por él, así que la certificación se exige al operador asignado,
+        # no al estudiante. Admin/técnico siguen siendo sus propios operadores.
         if self.usuario_id and self.maquina_id:
             from tpm.models import CertificacionUsuario
+            if es_estudiante(self.usuario):
+                if not self.operador_id:
+                    raise ValidationError(
+                        "Como estudiante debes elegir un operador certificado para esta máquina."
+                    )
+                sujeto_certificacion = self.operador
+            else:
+                sujeto_certificacion = self.usuario
             tiene_certificacion = CertificacionUsuario.objects.filter(
-                usuario_id=self.usuario_id,
+                usuario_id=sujeto_certificacion.pk,
                 maquina_id=self.maquina_id,
                 activo=True,
                 fecha_vencimiento__gte=timezone.now().date(),
             ).exists()
             if not tiene_certificacion:
                 raise ValidationError(
-                    f"{self.usuario} no tiene una certificación vigente para operar "
+                    f"{sujeto_certificacion} no tiene una certificación vigente para operar "
                     f"'{self.maquina.nombre}'. Solicita la certificación antes de reservar esta máquina."
                 )
+            # Disponibilidad horaria del operador — solo se exige si el operador
+            # declaró al menos un bloque de horario; si no declaró ninguno se
+            # asume disponible en cualquier día/hora (comportamiento por defecto).
+            if es_estudiante(self.usuario) and self.operador_id:
+                from usuarios.models import DisponibilidadOperador
+                bloques = self.operador.disponibilidad.filter(activo=True)
+                if bloques.exists() and not bloques.filter(
+                    dia_semana=self.fecha.weekday(),
+                    hora_inicio__lte=self.hora_inicio,
+                    hora_fin__gte=self.hora_fin,
+                ).exists():
+                    nombre_dia = dict(DisponibilidadOperador.DIAS_SEMANA).get(self.fecha.weekday(), '')
+                    raise ValidationError(
+                        f"{self.operador} no tiene horario declarado para {nombre_dia} "
+                        f"de {self.hora_inicio.strftime('%H:%M')} a {self.hora_fin.strftime('%H:%M')}."
+                    )
 
     def save(self, *args, **kwargs):
         self.full_clean()

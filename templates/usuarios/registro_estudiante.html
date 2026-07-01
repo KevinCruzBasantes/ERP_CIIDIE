@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERP Laboratorio CIDIIE — Ingreso</title>
+    <title>Registro de estudiante — ERP CIDIIE</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
@@ -31,10 +31,10 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding: 2rem 0;
         }
 
-        /* Fondo con grid sutil */
         body::before {
             content: '';
             position: fixed;
@@ -47,7 +47,6 @@
             pointer-events: none;
         }
 
-        /* Brillo de acento en la esquina */
         body::after {
             content: '';
             position: fixed;
@@ -63,7 +62,7 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 400px;
+            max-width: 460px;
             padding: 1.5rem;
             animation: fadeUp 0.4s ease both;
         }
@@ -73,12 +72,7 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Cabecera */
-        .login-header {
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
+        .login-header { margin-bottom: 2rem; text-align: center; }
         .login-header .lab-tag {
             font-family: 'IBM Plex Mono', monospace;
             font-size: 0.62rem;
@@ -87,20 +81,9 @@
             color: var(--accent);
             margin-bottom: 0.6rem;
         }
+        .login-header h1 { font-size: 1.1rem; font-weight: 500; color: var(--text); margin-bottom: 0.25rem; }
+        .login-header p { font-size: 0.75rem; color: var(--text-muted); }
 
-        .login-header h1 {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: var(--text);
-            margin-bottom: 0.25rem;
-        }
-
-        .login-header p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        /* Tarjeta principal */
         .login-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -109,7 +92,6 @@
             position: relative;
         }
 
-        /* Línea de acento en la parte superior */
         .login-card::before {
             content: '';
             position: absolute;
@@ -119,8 +101,7 @@
             border-radius: 2px;
         }
 
-        /* Alerta de error */
-        .alert-error {
+        .alert-error, .alert-list {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.25);
             border-radius: 6px;
@@ -128,21 +109,10 @@
             margin-bottom: 1.25rem;
             font-size: 0.78rem;
             color: var(--danger);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
-        .alert-error::before {
-            content: '⚠';
-            font-size: 0.85rem;
-            flex-shrink: 0;
-        }
-
-        /* Campos del formulario */
-        .form-group {
-            margin-bottom: 1.1rem;
-        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+        .form-group { margin-bottom: 1.1rem; }
 
         .form-label {
             display: block;
@@ -167,17 +137,10 @@
             outline: none;
         }
 
-        .form-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(232, 160, 32, 0.1);
-        }
+        .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232, 160, 32, 0.1); }
+        .form-input::placeholder { color: var(--text-muted); opacity: 0.5; }
+        .field-error { font-size: 0.72rem; color: var(--danger); margin-top: 0.3rem; }
 
-        .form-input::placeholder {
-            color: var(--text-muted);
-            opacity: 0.5;
-        }
-
-        /* Botón */
         .btn-login {
             width: 100%;
             margin-top: 0.5rem;
@@ -197,43 +160,6 @@
 
         .btn-login:hover  { background: var(--accent2); }
         .btn-login:active { transform: scale(0.99); }
-
-        /* Footer de la card */
-        .login-footer {
-            margin-top: 1.5rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .login-footer .version {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.62rem;
-            color: var(--text-muted);
-        }
-
-        .status-dot {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.62rem;
-            color: var(--text-muted);
-        }
-
-        .dot {
-            width: 5px; height: 5px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.3; }
-        }
     </style>
 </head>
 <body>
@@ -242,8 +168,8 @@
 
     <div class="login-header">
         <div class="lab-tag">Lab. CIDIIE — UCE</div>
-        <h1>{% if rol_info %}Acceso — {{ rol_info.etiqueta }}{% else %}Sistema ERP{% endif %}</h1>
-        <p>{% if rol_info %}<a href="{% url 'landing' %}" style="color:var(--text-muted); text-decoration:none;">← Elegir otro perfil</a>{% else %}Gestión de máquinas y mantenimiento TPM{% endif %}</p>
+        <h1>Registro de estudiante</h1>
+        <p>Crea tu cuenta para reservar máquinas del laboratorio</p>
     </div>
 
     <div class="login-card">
@@ -251,50 +177,68 @@
         {% for message in messages %}
             <div class="alert-error">{{ message }}</div>
         {% endfor %}
+        {% if form.non_field_errors %}
+            <div class="alert-list">{{ form.non_field_errors }}</div>
+        {% endif %}
 
         <form method="post" autocomplete="off">
             {% csrf_token %}
-            <input type="hidden" name="rol" value="{{ rol }}">
 
-            <div class="form-group">
-                <label class="form-label" for="id_username">{% if rol_info %}{{ rol_info.campo_label }}{% else %}Usuario o cédula{% endif %}</label>
-                <input
-                    class="form-input"
-                    type="text"
-                    id="id_username"
-                    name="username"
-                    placeholder="{% if rol_info %}{{ rol_info.placeholder }}{% else %}admin/técnico: usuario · estudiante: cédula{% endif %}"
-                    autofocus
-                    required
-                >
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.first_name.id_for_label }}">Nombres</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.last_name.id_for_label }}">Apellidos</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+                </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="id_password">Contraseña</label>
-                <input
-                    class="form-input"
-                    type="password"
-                    id="id_password"
-                    name="password"
-                    placeholder="••••••••"
-                    required
-                >
+                <label class="form-label" for="{{ form.cedula.id_for_label }}">Cédula</label>
+                {{ form.cedula }}
+                {% if form.cedula.errors %}<div class="field-error">{{ form.cedula.errors.0 }}</div>{% endif %}
             </div>
 
-            <button type="submit" class="btn-login">Ingresar al sistema</button>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.username.id_for_label }}">Nombre de usuario</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="field-error">{{ form.username.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Correo</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="field-error">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.telefono.id_for_label }}">Teléfono</label>
+                {{ form.telefono }}
+                {% if form.telefono.errors %}<div class="field-error">{{ form.telefono.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.password1.id_for_label }}">Contraseña</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}<div class="field-error">{{ form.password1.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.password2.id_for_label }}">Confirmar contraseña</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}<div class="field-error">{{ form.password2.errors.0 }}</div>{% endif %}
+            </div>
+
+            <button type="submit" class="btn-login">Crear cuenta</button>
         </form>
-
-        <div class="login-footer">
-            <span class="version">v1.0.0-dev</span>
-            <span class="status-dot">
-                <span class="dot"></span> Sistema activo
-            </span>
-        </div>
-
     </div>
 
     <div style="text-align:center; margin-top:1.25rem; font-size:0.78rem; color:var(--text-muted);">
-        ¿Eres estudiante? <a href="{% url 'registro_estudiante' %}" style="color:var(--accent); text-decoration:none;">Regístrate aquí</a>
+        ¿Ya tienes cuenta? <a href="{% url 'login' %}" style="color:var(--accent); text-decoration:none;">Inicia sesión</a>
     </div>
 
 </div>

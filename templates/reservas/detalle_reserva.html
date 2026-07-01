@@ -56,14 +56,14 @@
         </form>
         {% endif %}
 
-        {% if reserva.estado == 'APROBADA' and not orden %}
+        {% if es_propia and reserva.estado == 'APROBADA' and not orden %}
         <a href="{% url 'crear_orden' reserva.pk %}"
            style="padding:0.4rem 1rem; background:rgba(232,160,32,0.15); color:var(--accent); border:1px solid rgba(232,160,32,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none; font-weight:500;">
             ◈ Crear OT
         </a>
         {% endif %}
 
-        {% if orden %}
+        {% if es_propia and orden %}
         <a href="{% url 'detalle_orden' orden.pk %}"
            style="padding:0.4rem 1rem; background:rgba(59,130,246,0.1); color:var(--info); border:1px solid rgba(59,130,246,0.25); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none;">
             ◈ OT-{{ orden.pk|stringformat:"04d" }}
@@ -78,6 +78,20 @@
         {% endif %}
     </div>
 </div>
+
+{% if reserva.maquina.estado == 'MANTENIMIENTO' and reserva.estado == 'APROBADA' or reserva.maquina.estado == 'MANTENIMIENTO' and reserva.estado == 'EN_USO' %}
+<div class="card" style="border-color:var(--warning); background:rgba(232,160,32,0.08); margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; gap:0.75rem;">
+        <span style="font-size:1.3rem;">⚠</span>
+        <div style="font-size:0.85rem; color:var(--text);">
+            <strong>Esta máquina entró en mantenimiento.</strong>
+            Puede que no esté disponible en la fecha/horario de esta reserva
+            ({{ reserva.fecha|date:"d/m/Y" }}, {{ reserva.hora_inicio|time:"H:i" }}–{{ reserva.hora_fin|time:"H:i" }}).
+            Consulta con un técnico o administrador antes de presentarte al laboratorio.
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div class="grid-2">
 
@@ -95,6 +109,12 @@
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Autorizador</div>
                 <div style="font-size:0.85rem; color:var(--text);">{{ reserva.autorizador.get_full_name|default:"—" }}</div>
             </div>
+            {% if reserva.operador %}
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Operador asignado</div>
+                <div style="font-size:0.85rem; color:var(--text);">{{ reserva.operador.get_full_name|default:reserva.operador.username }}</div>
+            </div>
+            {% endif %}
             <div>
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Máquina</div>
                 <div style="font-size:0.85rem; color:var(--accent); font-family:'IBM Plex Mono',monospace;">{{ reserva.maquina.codigo }}</div>
@@ -125,6 +145,7 @@
         {% endif %}
     </div>
 
+    {% if es_propia %}
     <div class="card">
         <div class="card-header">
             <div class="card-title">Orden de trabajo</div>
@@ -172,6 +193,7 @@
         </div>
         {% endif %}
     </div>
+    {% endif %}
 
 </div>
 

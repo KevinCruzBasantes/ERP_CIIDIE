@@ -1,0 +1,83 @@
+{% extends 'usuarios/base.html' %}
+{% block title %}Mi horario — ERP CIDIIE{% endblock %}
+{% block breadcrumb %}Mi horario{% endblock %}
+{% block nav_horario %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:1.5rem;">
+    <h1>Mi horario</h1>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.25rem;">
+        Marca los días y horas en que puedes trabajar. Solo esos bloques te muestran como operador disponible al reservar.
+    </p>
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Agregar bloque de disponibilidad</div>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div style="padding:0.75rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:0.82rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger);">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Día</label>
+                    {{ form.dia_semana }}
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Hora inicio</label>
+                    {{ form.hora_inicio }}
+                    {% if form.hora_inicio.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.hora_inicio.errors.0 }}</div>{% endif %}
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">Hora fin</label>
+                    {{ form.hora_fin }}
+                    {% if form.hora_fin.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.hora_fin.errors.0 }}</div>{% endif %}
+                </div>
+                <button type="submit"
+                        style="padding:0.7rem 1.5rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;">
+                    + Agregar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Mis bloques actuales</div>
+        </div>
+        {% if bloques %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for b in bloques %}
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ b.get_dia_semana_display }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); margin-top:0.1rem;">{{ b.hora_inicio|time:"H:i" }} – {{ b.hora_fin|time:"H:i" }}</div>
+                </div>
+                <form method="post" action="{% url 'eliminar_disponibilidad' b.pk %}" onsubmit="return confirm('¿Eliminar este bloque de horario?');">
+                    {% csrf_token %}
+                    <button type="submit" style="padding:0.35rem 0.8rem; background:transparent; color:var(--danger); border:1px solid rgba(239,68,68,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; cursor:pointer;">
+                        ✕ Quitar
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:2rem; opacity:0.2;">◷</span>
+            <div style="font-size:0.82rem;">Sin bloques de horario definidos todavía.</div>
+            <div style="font-size:0.72rem; opacity:0.7;">Sin bloques, apareces disponible en cualquier día/hora.</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}

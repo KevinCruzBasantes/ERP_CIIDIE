@@ -71,3 +71,46 @@ class Usuario(AbstractUser):
     @property
     def esta_activo(self):
         return self.estado == 'ACTIVO'
+
+
+class DisponibilidadOperador(models.Model):
+    """Horario semanal recurrente que un operador declara para su propio
+    trabajo. Se usa para filtrar qué operadores aparecen seleccionables al
+    reservar según el día/hora de la reserva."""
+
+    DIAS_SEMANA = [
+        (0, 'Lunes'),
+        (1, 'Martes'),
+        (2, 'Miércoles'),
+        (3, 'Jueves'),
+        (4, 'Viernes'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+
+    operador = models.ForeignKey(
+        Usuario,
+        on_delete=models.CASCADE,
+        related_name='disponibilidad'
+    )
+    dia_semana = models.IntegerField(choices=DIAS_SEMANA)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['dia_semana', 'hora_inicio']
+        verbose_name = 'Disponibilidad de operador'
+        verbose_name_plural = 'Disponibilidad de operadores'
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.hora_fin <= self.hora_inicio:
+            raise ValidationError("La hora de fin debe ser mayor que la hora de inicio.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.operador} — {self.get_dia_semana_display()} {self.hora_inicio.strftime('%H:%M')}–{self.hora_fin.strftime('%H:%M')}"

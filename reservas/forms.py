@@ -2,6 +2,7 @@ from django import forms
 from django.utils import timezone
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
 from maquinas.models import Maquina, CodigoParada
+from usuarios.models import Usuario
 
 FIELD_STYLE    = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none;'
 SELECT_STYLE   = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none; cursor:pointer;'
@@ -16,7 +17,7 @@ HORA_ATTRS = {'style': FIELD_STYLE, 'type': 'text', 'placeholder': 'HH:MM', 'pat
 class ReservaForm(forms.ModelForm):
     class Meta:
         model  = Reserva
-        fields = ['maquina', 'fecha', 'hora_inicio', 'hora_fin', 'proposito', 'observaciones']
+        fields = ['maquina', 'fecha', 'hora_inicio', 'hora_fin', 'proposito', 'observaciones', 'operador']
         widgets = {
             'maquina':       forms.Select(attrs={'style': SELECT_STYLE}),
             'fecha':         forms.DateInput(attrs={'style': FIELD_STYLE, 'type': 'date'}),
@@ -24,16 +25,25 @@ class ReservaForm(forms.ModelForm):
             'hora_fin':      forms.TimeInput(attrs=HORA_ATTRS, format='%H:%M'),
             'proposito':     forms.Select(attrs={'style': SELECT_STYLE}),
             'observaciones': forms.Textarea(attrs={'style': TEXTAREA_STYLE, 'rows': 3}),
+            'operador':      forms.Select(attrs={'style': SELECT_STYLE, 'id': 'id_operador'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, mostrar_operador=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.mostrar_operador = mostrar_operador
         self.fields['maquina'].queryset    = Maquina.objects.filter(estado='OPERATIVA').order_by('nombre')
         self.fields['maquina'].empty_label = '— Seleccionar máquina —'
         self.fields['observaciones'].required = False
         self.fields['fecha'].widget.attrs['min'] = timezone.now().date().isoformat()
         self.fields['hora_inicio'].input_formats = ['%H:%M']
         self.fields['hora_fin'].input_formats    = ['%H:%M']
+        if mostrar_operador:
+            self.fields['operador'].queryset    = Usuario.objects.filter(
+                rol__nombre='OPERADOR', estado='ACTIVO').order_by('first_name', 'last_name')
+            self.fields['operador'].empty_label = '— Seleccionar operador —'
+            self.fields['operador'].required    = True
+        else:
+            del self.fields['operador']
 
     def clean(self):
         cleaned = super().clean()

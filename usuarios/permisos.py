@@ -23,3 +23,19 @@ def es_admin_o_tecnico(user):
         rol = _normalizar_rol(user.rol.nombre)
         return any(r in rol for r in ['administrador', 'phd', 'tecnico', 'ingeniero'])
     return False
+
+
+def es_estudiante(user):
+    if user.is_superuser:
+        return False
+    if user.rol:
+        return 'estudiante' in _normalizar_rol(user.rol.nombre)
+    return False
+
+
+def es_operador(user):
+    if user.is_superuser:
+        return False
+    if user.rol:
+        return 'operador' in _normalizar_rol(user.rol.nombre)
+    return False

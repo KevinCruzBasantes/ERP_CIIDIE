@@ -23,18 +23,16 @@
         {% if maquinas_operativas %}
         <div style="display:flex; flex-direction:column; gap:0.4rem;">
             {% for m in maquinas_operativas %}
-            <a href="{% url 'detalle_maquina' m.pk %}"
-               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
-               onmouseover="this.style.borderColor='var(--accent)'"
-               onmouseout="this.style.borderColor='var(--border)'">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border);">
                 <div>
                     <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ m.nombre }}</div>
                     <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--accent); margin-top:0.1rem;">{{ m.codigo }}</div>
                 </div>
                 <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; padding:0.2rem 0.5rem; border-radius:3px; background:rgba(34,197,94,0.15); color:var(--success);">● Operativa</span>
-            </a>
+            </div>
             {% endfor %}
         </div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.6rem;">Elige la máquina disponible al crear tu reserva.</div>
         {% else %}
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
             <span style="font-size:2rem; opacity:0.2;">⚙</span>
@@ -80,20 +78,14 @@
                 <div class="card-title">Accesos rápidos</div>
             </div>
             <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                <a href="{% url 'crear_reserva' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="color:var(--accent)">+</span> Nueva reserva
+                </a>
                 <a href="{% url 'lista_reservas' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                     <span style="color:var(--accent)">◷</span> Mis reservas
                 </a>
-                <a href="{% url 'inspeccion_diaria' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <span style="color:var(--accent)">✓</span>
-                    Inspección diaria
-                    {% if not inspeccion_hoy %}
-                    <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(245,158,11,0.15); color:var(--warning); padding:0.15rem 0.5rem; border-radius:3px;">Pendiente</span>
-                    {% else %}
-                    <span style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.6rem; background:rgba(34,197,94,0.15); color:var(--success); padding:0.15rem 0.5rem; border-radius:3px;">Realizada</span>
-                    {% endif %}
-                </a>
-                <a href="{% url 'lista_maquinas' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <span style="color:var(--accent)">⚙</span> Ver máquinas
+                <a href="{% url 'lista_ordenes' %}" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--surface2); border-radius:6px; color:var(--text); text-decoration:none; font-size:0.85rem; border:1px solid var(--border); transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="color:var(--accent)">◈</span> Mis órdenes de trabajo
                 </a>
             </div>
         </div>

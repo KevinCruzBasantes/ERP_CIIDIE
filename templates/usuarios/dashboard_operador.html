@@ -1,0 +1,133 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Inicio — ERP CIDIIE{% endblock %}
+{% block breadcrumb %}Inicio{% endblock %}
+{% block nav_inicio4 %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
+    <p>Operador — Laboratorio CIDIIE · Universidad Central del Ecuador</p>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <div class="card-title">Trabajo de hoy</div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.62rem; padding:0.2rem 0.6rem; border-radius:4px; font-weight:500; background:rgba(59,130,246,0.15); color:var(--info);">
+            {{ reservas_hoy.count }} reserva{{ reservas_hoy.count|pluralize:"s" }}
+        </span>
+    </div>
+    {% if reservas_hoy %}
+    <div style="display:flex; flex-direction:column; gap:0.4rem;">
+        {% for r in reservas_hoy %}
+        <a href="{% url 'detalle_reserva' r.pk %}"
+           style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+           onmouseover="this.style.borderColor='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)'">
+            <div>
+                <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ r.maquina.nombre }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">
+                    {{ r.hora_inicio|time:"H:i" }} – {{ r.hora_fin|time:"H:i" }} · {% if r.usuario %}{{ r.usuario.get_full_name|default:r.usuario.username }}{% else %}— usuario eliminado —{% endif %}
+                </div>
+            </div>
+            <span class="badge {% if r.estado == 'APROBADA' %}badge-success{% else %}badge-info{% endif %}">{{ r.get_estado_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+        <span style="font-size:2rem; opacity:0.2;">◷</span>
+        <div style="font-size:0.82rem;">Sin reservas asignadas para hoy.</div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="grid-2">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Próximas reservas asignadas</div>
+        </div>
+        {% if proximas_reservas %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for r in proximas_reservas %}
+            <a href="{% url 'detalle_reserva' r.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ r.maquina.nombre }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">
+                        {{ r.fecha|date:"d/m/Y" }} · {{ r.hora_inicio|time:"H:i" }} – {{ r.hora_fin|time:"H:i" }} · {% if r.usuario %}{{ r.usuario.get_full_name|default:r.usuario.username }}{% else %}— usuario eliminado —{% endif %}
+                    </div>
+                </div>
+                <span class="badge {% if r.estado == 'PENDIENTE' %}badge-warning{% elif r.estado == 'EN_USO' %}badge-info{% else %}badge-success{% endif %}">{{ r.get_estado_display }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:1.8rem; opacity:0.2;">◷</span>
+            <div style="font-size:0.82rem;">Sin reservas próximas asignadas.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Historial (completadas)</div>
+        </div>
+        {% if historial %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for r in historial %}
+            <a href="{% url 'detalle_reserva' r.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ r.maquina.nombre }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.fecha|date:"d/m/Y" }}</div>
+                </div>
+                <span class="badge badge-accent">{{ r.get_estado_display }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:1.8rem; opacity:0.2;">≡</span>
+            <div style="font-size:0.82rem;">Sin historial todavía.</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Incidencias (no completadas)</div>
+        </div>
+        {% if incidencias %}
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+            {% for r in incidencias %}
+            <a href="{% url 'detalle_reserva' r.pk %}"
+               style="display:flex; align-items:center; justify-content:space-between; padding:0.65rem; background:var(--surface2); border-radius:6px; border:1px solid var(--border); text-decoration:none; transition:border-color 0.15s;"
+               onmouseover="this.style.borderColor='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)'">
+                <div>
+                    <div style="font-size:0.82rem; color:var(--text); font-weight:500;">{{ r.maquina.nombre }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">{{ r.fecha|date:"d/m/Y" }} · {% if r.usuario %}{{ r.usuario.get_full_name|default:r.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
+                </div>
+                <span class="badge badge-danger">{{ r.get_estado_display }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; color:var(--text-muted); text-align:center; gap:0.5rem;">
+            <span style="font-size:1.8rem; opacity:0.2;">⚠</span>
+            <div style="font-size:0.82rem;">Sin incidencias registradas.</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}

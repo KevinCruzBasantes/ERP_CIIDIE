@@ -5,7 +5,8 @@ from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime, date, timedelta
-from usuarios.permisos import es_admin, es_admin_o_tecnico
+from usuarios.permisos import es_admin, es_admin_o_tecnico, es_estudiante
+from usuarios.models import Usuario
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
 from .forms import (ReservaForm, OrdenTrabajoForm, CerrarOrdenForm,
                     RegistroParadaForm, BitacoraForm)
@@ -17,6 +18,8 @@ from inventario.models import Material, ConsumoMaterial
 @login_required(login_url='login')
 def lista_reservas(request):
     reservas = Reserva.objects.select_related('usuario', 'maquina', 'autorizador').all()
+    if es_estudiante(request.user):
+        reservas = reservas.filter(usuario=request.user)
     context = {
         'reservas':           reservas,
         'total':              reservas.count(),
@@ -31,8 +34,9 @@ def lista_reservas(request):
 
 @login_required(login_url='login')
 def crear_reserva(request):
+    mostrar_operador = es_estudiante(request.user)
     if request.method == 'POST':
-        form = ReservaForm(request.POST)
+        form = ReservaForm(request.POST, mostrar_operador=mostrar_operador)
         if form.is_valid():
             reserva = form.save(commit=False)
             reserva.usuario = request.user
@@ -44,12 +48,99 @@ def crear_reserva(request):
             except ValidationError as e:
                 messages.error(request, f'No se pudo guardar la reserva: {"; ".join(e.messages)}')
     else:
-        form = ReservaForm()
+        form = ReservaForm(mostrar_operador=mostrar_operador)
     return render(request, 'reservas/form_reserva.html', {
         'form':   form,
         'titulo': 'Nueva reserva',
         'accion': 'Solicitar reserva',
     })
+
+
+@login_required(login_url='login')
+def operadores_certificados(request):
+    """JSON con los operadores activos y certificados para una máquina y,
+    si se recibe fecha/horario, además disponibles según su horario declarado
+    (un operador sin bloques de horario se asume disponible siempre)."""
+    maquina_id = request.GET.get('maquina')
+    if not maquina_id:
+        return JsonResponse({'operadores': []})
+    try:
+        operadores = list(Usuario.objects.filter(
+            rol__nombre='OPERADOR',
+            estado='ACTIVO',
+            certificaciones__maquina_id=int(maquina_id),
+            certificaciones__activo=True,
+            certificaciones__fecha_vencimiento__gte=date.today(),
+        ).distinct().order_by('first_name', 'last_name'))
+    except (ValueError, TypeError):
+        return JsonResponse({'operadores': []})
+
+    fecha_str       = request.GET.get('fecha')
+    hora_inicio_str = request.GET.get('hora_inicio')
+    hora_fin_str    = request.GET.get('hora_fin')
+    if fecha_str:
+        try:
+            dia_semana   = datetime.strptime(fecha_str, '%Y-%m-%d').date().weekday()
+            hora_ini_obj = datetime.strptime(hora_inicio_str, '%H:%M').time() if hora_inicio_str else None
+            hora_fin_obj = datetime.strptime(hora_fin_str, '%H:%M').time() if hora_fin_str else None
+            disponibles = []
+            for o in operadores:
+                bloques = o.disponibilidad.filter(activo=True)
+                if not bloques.exists():
+                    disponibles.append(o)  # sin horario declarado = siempre disponible
+                    continue
+                bloques_del_dia = bloques.filter(dia_semana=dia_semana)
+                if not bloques_del_dia.exists():
+                    continue  # no trabaja ese día de la semana
+                if hora_ini_obj and hora_fin_obj:
+                    if bloques_del_dia.filter(hora_inicio__lte=hora_ini_obj, hora_fin__gte=hora_fin_obj).exists():
+                        disponibles.append(o)
+                else:
+                    disponibles.append(o)  # aún no se eligió horario; ya sabemos que trabaja ese día
+            operadores = disponibles
+        except ValueError:
+            pass
+
+    return JsonResponse({'operadores': [
+        {'id': o.pk, 'nombre': o.get_full_name() or o.username} for o in operadores
+    ]})
+
+
+@login_required(login_url='login')
+def disponibilidad_operadores_maquina(request):
+    """JSON con el resumen semanal de disponibilidad de los operadores
+    certificados para una máquina, para que el estudiante vea de una vez
+    qué días tienen cobertura en vez de ir probando fechas al azar."""
+    maquina_id = request.GET.get('maquina')
+    if not maquina_id:
+        return JsonResponse({'siempre_disponibles': [], 'por_dia': {}})
+    try:
+        operadores = Usuario.objects.filter(
+            rol__nombre='OPERADOR',
+            estado='ACTIVO',
+            certificaciones__maquina_id=int(maquina_id),
+            certificaciones__activo=True,
+            certificaciones__fecha_vencimiento__gte=date.today(),
+        ).distinct().prefetch_related('disponibilidad')
+    except (ValueError, TypeError):
+        return JsonResponse({'siempre_disponibles': [], 'por_dia': {}})
+
+    siempre_disponibles = []
+    por_dia = {str(d): [] for d in range(7)}
+    for o in operadores:
+        nombre  = o.get_full_name() or o.username
+        bloques = [b for b in o.disponibilidad.all() if b.activo]
+        if not bloques:
+            siempre_disponibles.append(nombre)
+            continue
+        for b in bloques:
+            por_dia[str(b.dia_semana)].append({
+                'operador':    nombre,
+                'hora_inicio': b.hora_inicio.strftime('%H:%M'),
+                'hora_fin':    b.hora_fin.strftime('%H:%M'),
+            })
+
+    return JsonResponse({'siempre_disponibles': siempre_disponibles, 'por_dia': por_dia})
 
 
 @login_required(login_url='login')
@@ -91,6 +182,9 @@ def horarios_ocupados(request):
 def detalle_reserva(request, pk):
     reserva = get_object_or_404(
         Reserva.objects.select_related('usuario', 'maquina', 'autorizador'), pk=pk)
+    if es_estudiante(request.user) and reserva.usuario_id != request.user.pk:
+        messages.error(request, 'No tienes acceso a esa reserva.')
+        return redirect('lista_reservas')
     orden = getattr(reserva, 'orden_trabajo', None)
     context = {
         'reserva':            reserva,
@@ -123,8 +217,9 @@ def cambiar_estado_reserva(request, pk):
         try:
             reserva.save()
             messages.success(request, f'Reserva #{reserva.pk} actualizada a {reserva.get_estado_display()}.')
-            if nuevo_estado == 'APROBADA' and not hasattr(reserva, 'orden_trabajo'):
-                return redirect('crear_orden', reserva_pk=reserva.pk)
+            # Aprobar/rechazar es responsabilidad de quien autoriza; crear la OT y
+            # llenar la bitácora le corresponde al dueño de la reserva (botón
+            # "Crear OT" en su propio detalle), no a quien la aprobó.
         except ValidationError as e:
             messages.error(request, f'No se pudo actualizar la reserva: {"; ".join(e.messages)}')
     elif request.method == 'POST':
@@ -145,8 +240,9 @@ def editar_reserva(request, pk):
         messages.error(request, 'Solo se pueden editar reservas en estado Pendiente.')
         return redirect('detalle_reserva', pk=pk)
 
+    mostrar_operador = es_estudiante(reserva.usuario) if reserva.usuario else False
     if request.method == 'POST':
-        form = ReservaForm(request.POST, instance=reserva)
+        form = ReservaForm(request.POST, instance=reserva, mostrar_operador=mostrar_operador)
         form.fields['fecha'].widget.attrs.pop('min', None)
         if form.is_valid():
             try:
@@ -156,7 +252,7 @@ def editar_reserva(request, pk):
             except ValidationError as e:
                 messages.error(request, f'No se pudo guardar: {"; ".join(e.messages)}')
     else:
-        form = ReservaForm(instance=reserva)
+        form = ReservaForm(instance=reserva, mostrar_operador=mostrar_operador)
         form.fields['fecha'].widget.attrs.pop('min', None)
 
     return render(request, 'reservas/form_reserva.html', {
@@ -191,6 +287,8 @@ def cancelar_reserva(request, pk):
 def lista_ordenes(request):
     ordenes = OrdenTrabajo.objects.select_related(
         'reserva__usuario', 'reserva__maquina').filter(activo=True)
+    if es_estudiante(request.user):
+        ordenes = ordenes.filter(reserva__usuario=request.user)
     context = {
         'ordenes':            ordenes,
         'total':              ordenes.count(),
@@ -205,6 +303,9 @@ def lista_ordenes(request):
 @login_required(login_url='login')
 def crear_orden(request, reserva_pk):
     reserva = get_object_or_404(Reserva, pk=reserva_pk, estado='APROBADA')
+    if es_estudiante(request.user) and reserva.usuario_id != request.user.pk:
+        messages.error(request, 'No tienes acceso a esa reserva.')
+        return redirect('lista_reservas')
     if hasattr(reserva, 'orden_trabajo'):
         messages.warning(request, 'Esta reserva ya tiene una orden de trabajo.')
         return redirect('detalle_orden', pk=reserva.orden_trabajo.pk)
@@ -230,6 +331,11 @@ def crear_orden(request, reserva_pk):
         'titulo':  f'Nueva OT — {reserva.maquina.nombre}',
         'accion':  'Crear orden de trabajo',
     })
+
+
+def _es_dueno_o_staff(request, orden):
+    """Un estudiante solo puede operar sobre su propia orden de trabajo."""
+    return not (es_estudiante(request.user) and orden.reserva.usuario_id != request.user.pk)
 
 
 def _contexto_detalle_orden(request, orden, parada_form=None):
@@ -275,6 +381,9 @@ def _contexto_detalle_orden(request, orden, parada_form=None):
 @login_required(login_url='login')
 def detalle_orden(request, pk):
     orden = get_object_or_404(OrdenTrabajo, pk=pk, activo=True)
+    if not _es_dueno_o_staff(request, orden):
+        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
+        return redirect('lista_ordenes')
     return render(request, 'reservas/detalle_orden.html', _contexto_detalle_orden(request, orden))
 
 
@@ -312,6 +421,9 @@ def _advertir_sobretiempo(request, orden, tiempo_real_min):
 @login_required(login_url='login')
 def cerrar_orden(request, pk):
     orden = get_object_or_404(OrdenTrabajo, pk=pk, activo=True)
+    if not _es_dueno_o_staff(request, orden):
+        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
+        return redirect('lista_ordenes')
     if orden.estado == 'FINALIZADA':
         messages.error(request, 'Esta orden ya está finalizada.')
         return redirect('detalle_orden', pk=pk)
@@ -340,6 +452,9 @@ def cerrar_orden(request, pk):
 @login_required(login_url='login')
 def agregar_parada(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
+    if not _es_dueno_o_staff(request, orden):
+        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
+        return redirect('lista_ordenes')
     if request.method == 'POST':
         form = RegistroParadaForm(request.POST, maquina=orden.reserva.maquina, reserva=orden.reserva)
         if form.is_valid():
@@ -356,6 +471,9 @@ def agregar_parada(request, orden_pk):
 @login_required(login_url='login')
 def agregar_bitacora(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
+    if not _es_dueno_o_staff(request, orden):
+        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
+        return redirect('lista_ordenes')
     if request.method == 'POST':
         form = BitacoraForm(request.POST)
         if form.is_valid():
@@ -375,6 +493,9 @@ def agregar_bitacora(request, orden_pk):
 @login_required(login_url='login')
 def registrar_consumo(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
+    if not _es_dueno_o_staff(request, orden):
+        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
+        return redirect('lista_ordenes')
     if request.method == 'POST':
         material_id = request.POST.get('material_id')
         observacion = request.POST.get('observacion', '')

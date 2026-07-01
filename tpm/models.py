@@ -363,6 +363,7 @@ class Alerta(models.Model):
         ('INCIDENTE', 'Incidente / condición de riesgo'),
         ('PARADA_NO_PLANIFICADA', 'Parada no planificada registrada'),
         ('BITACORA_ATENCION', 'Bitácora de operario requiere atención'),
+        ('RESERVA_AFECTADA_MANTENIMIENTO', 'Reserva afectada por mantenimiento'),
     ]
 
     SEVERIDADES = [
