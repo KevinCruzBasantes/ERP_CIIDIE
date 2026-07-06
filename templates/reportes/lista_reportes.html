@@ -12,6 +12,21 @@
 
 <div class="grid-2">
 
+    <!-- RESUMEN EJECUTIVO -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Resumen ejecutivo</div>
+            <span class="badge badge-accent">Excel · 6 hojas</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Vista general del sistema: KPIs, máquinas más utilizadas, stock bajo, mantenimientos pendientes, alertas activas y certificaciones por vencer.
+        </p>
+        <form method="post" action="{% url 'reporte_resumen' %}">
+            {% csrf_token %}
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar resumen</button>
+        </form>
+    </div>
+
     <!-- INVENTARIO -->
     <div class="card">
         <div class="card-header">
@@ -24,6 +39,31 @@
         <form method="post" action="{% url 'reporte_inventario' %}">
             {% csrf_token %}
             <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar inventario</button>
+        </form>
+    </div>
+
+    <!-- CONSUMO DE MATERIALES -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Consumo de materiales</div>
+            <span class="badge badge-success">Excel</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Historial de consumos de material con cantidad, orden de trabajo asociada y quién lo registró.
+        </p>
+        <form method="post" action="{% url 'reporte_consumos' %}">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Desde</label>
+                    <input type="date" name="fecha_inicio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Hasta</label>
+                    <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar consumos</button>
         </form>
     </div>
 
@@ -52,16 +92,16 @@
         </form>
     </div>
 
-    <!-- INSPECCIONES -->
+    <!-- ÓRDENES DE MANTENIMIENTO -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Inspecciones diarias TPM</div>
+            <div class="card-title">Órdenes de mantenimiento</div>
             <span class="badge badge-success">Excel</span>
         </div>
         <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
-            Reporte de checklist de inspecciones diarias con resultados por ítem y estado final.
+            Órdenes de mantenimiento (OM) con origen, responsables, fechas, tiempos, costo y visto bueno. Filtra por fecha programada.
         </p>
-        <form method="post" action="{% url 'reporte_inspecciones' %}">
+        <form method="post" action="{% url 'reporte_ordenes' %}">
             {% csrf_token %}
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
                 <div>
@@ -73,22 +113,32 @@
                     <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
                 </div>
             </div>
-            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar inspecciones</button>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar órdenes</button>
         </form>
     </div>
 
-    <!-- OEE -->
+    <!-- BITÁCORAS -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Registros OEE</div>
-            <span class="badge badge-success">Excel</span>
+            <div class="card-title">Bitácoras</div>
+            <span class="badge badge-accent">Excel · 2 hojas</span>
         </div>
         <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
-            Exporta todos los registros OEE con disponibilidad, rendimiento, calidad y clasificación por máquina y período.
+            Bitácora de operarios (por orden de trabajo) y bitácora de mantenimiento (por máquina), con el indicador de "requiere atención".
         </p>
-        <form method="post" action="{% url 'reporte_oee' %}">
+        <form method="post" action="{% url 'reporte_bitacoras' %}">
             {% csrf_token %}
-            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar OEE</button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Desde</label>
+                    <input type="date" name="fecha_inicio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Hasta</label>
+                    <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar bitácoras</button>
         </form>
     </div>
 
@@ -142,13 +192,163 @@
         </form>
     </div>
 
+    <!-- INSPECCIONES -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Inspecciones diarias TPM</div>
+            <span class="badge badge-success">Excel</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Reporte de checklist de inspecciones diarias con resultados por ítem y estado final.
+        </p>
+        <form method="post" action="{% url 'reporte_inspecciones' %}">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Desde</label>
+                    <input type="date" name="fecha_inicio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Hasta</label>
+                    <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar inspecciones</button>
+        </form>
+    </div>
+
+    <!-- OEE -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Registros OEE</div>
+            <span class="badge badge-success">Excel</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Exporta los registros OEE con disponibilidad, rendimiento, calidad y clasificación. Filtra por año y máquina.
+        </p>
+        <form method="post" action="{% url 'reporte_oee' %}">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Año</label>
+                    <select name="anio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                        <option value="">Todos</option>
+                        {% for a in anios_oee %}
+                        <option value="{{ a }}">{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Máquina</label>
+                    <select name="maquina" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                        <option value="">Todas</option>
+                        {% for m in maquinas %}
+                        <option value="{{ m.pk }}">{{ m.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar OEE</button>
+        </form>
+    </div>
+
+    <!-- CERTIFICACIONES -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Certificaciones de usuarios</div>
+            <span class="badge badge-success">Excel</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Certificaciones por usuario y máquina con vigencia, fechas de otorgamiento/vencimiento y días para vencer.
+        </p>
+        <form method="post" action="{% url 'reporte_certificaciones' %}">
+            {% csrf_token %}
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar certificaciones</button>
+        </form>
+    </div>
+
+    <!-- INCIDENTES -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Incidentes</div>
+            <span class="badge badge-success">Excel</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Incidentes y condiciones de riesgo con tipo, severidad, acción tomada y órdenes de mantenimiento generadas.
+        </p>
+        <form method="post" action="{% url 'reporte_incidentes' %}">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Desde</label>
+                    <input type="date" name="fecha_inicio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Hasta</label>
+                    <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar incidentes</button>
+        </form>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Historial de alertas</div>
+            <span class="badge badge-success">Excel</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Todas las alertas del sistema con su ciclo de vida completo: generación, asignación, vista, resolución y tiempo de respuesta.
+        </p>
+        <form method="post" action="{% url 'reporte_alertas' %}">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Desde</label>
+                    <input type="date" name="fecha_inicio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Hasta</label>
+                    <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar alertas</button>
+        </form>
+    </div>
+
+    <!-- PIEZAS Y TRANSFERENCIAS -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Piezas y transferencias</div>
+            <span class="badge badge-accent">Excel · 3 hojas</span>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">
+            Despiece por máquina con stock de repuestos, más transferencias y reasignaciones. Las fechas filtran solo transferencias y reasignaciones.
+        </p>
+        <form method="post" action="{% url 'reporte_piezas' %}">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Desde</label>
+                    <input type="date" name="fecha_inicio" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+                <div>
+                    <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.35rem;">Hasta</label>
+                    <input type="date" name="fecha_fin" style="width:100%; padding:0.55rem 0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; outline:none;">
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:0.7rem; background:var(--accent); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;" onmouseover="this.style.background='var(--accent2)'" onmouseout="this.style.background='var(--accent)'">▤ Descargar piezas</button>
+        </form>
+    </div>
+
 </div>
 
 <!-- HISTORIAL -->
 <div class="card" style="margin-top:1.5rem;">
     <div class="card-header">
         <div class="card-title">Historial de reportes generados</div>
-        <span class="badge badge-accent">{{ reportes.count }} reporte{{ reportes.count|pluralize:"s" }}</span>
+        <span class="badge badge-accent">{{ reportes|length }} reporte{{ reportes|length|pluralize:"s" }}</span>
     </div>
     {% if reportes %}
     <div style="overflow-x:auto;">
@@ -159,6 +359,7 @@
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Tipo</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Período</th>
                     <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Generado por</th>
+                    <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Archivo</th>
                 </tr>
             </thead>
             <tbody>
@@ -171,6 +372,13 @@
                     </td>
                     <td style="padding:0.75rem; font-size:0.82rem; color:var(--text);">
                         {% if r.generado_por %}{{ r.generado_por.get_full_name|default:r.generado_por.username }}{% else %}—{% endif %}
+                    </td>
+                    <td style="padding:0.75rem;">
+                        {% if r.archivo %}
+                        <a href="{{ r.archivo.url }}" download style="display:inline-block; padding:0.35rem 0.75rem; background:var(--surface2); border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.05em; text-transform:uppercase; text-decoration:none;">⬇ Descargar</a>
+                        {% else %}
+                        <span style="color:var(--text-muted); font-size:0.75rem;">—</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -13,6 +13,13 @@ class ReporteGenerado(models.Model):
         ('TPM_PARETO', 'TPM — Análisis Pareto de paradas'),
         ('TPM_INSPECCIONES', 'TPM — Inspecciones diarias'),
         ('PIEZAS', 'Piezas y transferencias'),
+        ('ORDENES_MANTENIMIENTO', 'Órdenes de mantenimiento'),
+        ('ALERTAS', 'Historial de alertas'),
+        ('CERTIFICACIONES', 'Certificaciones de usuarios'),
+        ('INCIDENTES', 'Incidentes y condiciones de riesgo'),
+        ('BITACORAS', 'Bitácoras (operarios y mantenimiento)'),
+        ('CONSUMO_MATERIALES', 'Consumo de materiales'),
+        ('RESUMEN', 'Resumen ejecutivo'),
     ]
 
     tipo = models.CharField(max_length=30, choices=TIPOS)

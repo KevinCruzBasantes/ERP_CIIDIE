@@ -11,6 +11,9 @@ db.sqlite3
 # Respaldos de base de datos (dumpdata)
 backups/
 
+# Reportes Excel generados en runtime (re-descargables desde el historial)
+media/reportes/
+
 # Bytecode / cache de Python
 __pycache__/
 *.py[cod]
