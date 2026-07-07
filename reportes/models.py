@@ -6,20 +6,12 @@ from usuarios.models import Usuario
 class ReporteGenerado(models.Model):
 
     TIPOS = [
-        ('INVENTARIO', 'Inventario de materiales'),
-        ('MANTENIMIENTO', 'Mantenimiento'),
-        ('RESERVAS', 'Reservas y órdenes de trabajo'),
-        ('TPM_OEE', 'TPM — OEE por máquina'),
-        ('TPM_PARETO', 'TPM — Análisis Pareto de paradas'),
-        ('TPM_INSPECCIONES', 'TPM — Inspecciones diarias'),
-        ('PIEZAS', 'Piezas y transferencias'),
-        ('ORDENES_MANTENIMIENTO', 'Órdenes de mantenimiento'),
-        ('ALERTAS', 'Historial de alertas'),
-        ('CERTIFICACIONES', 'Certificaciones de usuarios'),
-        ('INCIDENTES', 'Incidentes y condiciones de riesgo'),
-        ('BITACORAS', 'Bitácoras (operarios y mantenimiento)'),
-        ('CONSUMO_MATERIALES', 'Consumo de materiales'),
         ('RESUMEN', 'Resumen ejecutivo'),
+        ('MANTENIMIENTO', 'Mantenimiento'),
+        ('PRODUCCION', 'Producción y uso'),
+        ('INVENTARIO', 'Inventario y piezas'),
+        ('SEGURIDAD', 'Seguridad y personal'),
+        ('BACKUP', 'Respaldo completo'),
     ]
 
     tipo = models.CharField(max_length=30, choices=TIPOS)

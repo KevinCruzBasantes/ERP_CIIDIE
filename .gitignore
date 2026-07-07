@@ -30,3 +30,10 @@ staticfiles/
 
 # Archivos temporales de Office
 ~$*
+
+# Bundles de transferencia al servidor (binarios pesados, no versionar)
+*.rar
+paquetes_offline/
+
+# collectstatic local
+staticfiles/
