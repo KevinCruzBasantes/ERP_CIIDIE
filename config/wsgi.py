@@ -8,6 +8,10 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 """
 
 import os
+import pymysql
+
+# Activar el parche de compatibilidad para MariaDB bajo Gunicorn
+pymysql.install_as_MySQLdb()
 
 from django.core.wsgi import get_wsgi_application
 

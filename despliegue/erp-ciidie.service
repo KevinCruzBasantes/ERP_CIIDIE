@@ -1,0 +1,25 @@
+# Servicio systemd del ERP CIIDIE (gunicorn).
+# Copiar a /etc/systemd/system/erp-ciidie.service y luego:
+#   systemctl daemon-reload && systemctl enable --now erp-ciidie
+
+[Unit]
+Description=ERP CIIDIE (gunicorn)
+After=network.target mariadb.service
+Requires=mariadb.service
+
+[Service]
+User=erp
+Group=erp
+WorkingDirectory=/opt/erp_ciidie/app
+EnvironmentFile=/etc/erp-ciidie.env
+ExecStart=/opt/erp_ciidie/venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8001 \
+    --workers 3 \
+    --timeout 120 \
+    --access-logfile /var/log/erp-ciidie/access.log \
+    --error-logfile /var/log/erp-ciidie/error.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+# Tareas programadas del ERP CIIDIE.
+# Copiar a /etc/cron.d/erp-ciidie (dueño root, permisos 644).
+
+# Alertas periódicas (mantenimientos vencidos, stock bajo, certificaciones
+# por vencer...) — el sistema las genera con este comando, no solas.
+0 6 * * * erp /bin/bash -c 'set -a; source /etc/erp-ciidie.env; /opt/erp_ciidie/venv/bin/python /opt/erp_ciidie/app/manage.py generar_alertas >> /var/log/erp-ciidie/alertas.log 2>&1'
+
+# Respaldo diario de la base a las 02:30 (conserva 30 días).
+# Requiere /root/.my.cnf con las credenciales o usuario con socket auth.
+30 2 * * * root /bin/bash -c 'mariadb-dump --single-transaction erp_ciidie | gzip > /opt/erp_ciidie/backups/erp_ciidie_$(date +\%F).sql.gz && find /opt/erp_ciidie/backups -name "*.sql.gz" -mtime +30 -delete'
