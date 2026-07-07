@@ -88,6 +88,9 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def dashboard_admin(request):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para acceder a ese panel.')
+        return redirect('dashboard_general')
     hoy = timezone.now().date()
     context = {
         'total_maquinas': Maquina.objects.count(),
@@ -134,6 +137,9 @@ def dashboard_admin(request):
 
 @login_required(login_url='login')
 def dashboard_tecnico(request):
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para acceder a ese panel.')
+        return redirect('dashboard_general')
     hoy = timezone.now().date()
 
     om_mias_en_proceso = OrdenMantenimiento.objects.filter(

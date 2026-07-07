@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime, date, timedelta
+from decimal import Decimal, InvalidOperation
 from usuarios.permisos import es_admin, es_admin_o_tecnico, es_estudiante
 from usuarios.models import Usuario
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
@@ -66,7 +67,7 @@ def operadores_certificados(request):
         return JsonResponse({'operadores': []})
     try:
         operadores = list(Usuario.objects.filter(
-            rol__nombre='OPERADOR',
+            rol__nombre__iexact='OPERADOR',
             estado='ACTIVO',
             certificaciones__maquina_id=int(maquina_id),
             certificaciones__activo=True,
@@ -116,7 +117,7 @@ def disponibilidad_operadores_maquina(request):
         return JsonResponse({'siempre_disponibles': [], 'por_dia': {}})
     try:
         operadores = Usuario.objects.filter(
-            rol__nombre='OPERADOR',
+            rol__nombre__iexact='OPERADOR',
             estado='ACTIVO',
             certificaciones__maquina_id=int(maquina_id),
             certificaciones__activo=True,
@@ -501,7 +502,12 @@ def registrar_consumo(request, orden_pk):
         observacion = request.POST.get('observacion', '')
         try:
             material = Material.objects.get(pk=material_id, activo=True)
-            cantidad = float(request.POST.get('cantidad', 0))
+            # Decimal, no float: stock_actual es DecimalField y Decimal -= float
+            # lanza TypeError (el consumo jamás se registraba).
+            try:
+                cantidad = Decimal(request.POST.get('cantidad', '') or '0')
+            except InvalidOperation:
+                raise ValueError('Cantidad inválida.')
             if cantidad <= 0:
                 raise ValueError('La cantidad debe ser mayor que 0.')
             if material.stock_actual < cantidad:

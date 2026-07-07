@@ -10,7 +10,6 @@ Signals activos:
   - Incidente: si requiere_mantenimiento=True → ALERTA CRÍTICA
   - RegistroParada (PNP): → ALERTA INFORMATIVA al ingeniero
   - BitacoraOperario: si requiere_atencion=True → ALERTA ADVERTENCIA
-  - CertificacionUsuario: al guardar, revisa si hay alertas previas que limpiar
 """
 
 from django.db.models.signals import post_save

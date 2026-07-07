@@ -39,7 +39,7 @@ class ReservaForm(forms.ModelForm):
         self.fields['hora_fin'].input_formats    = ['%H:%M']
         if mostrar_operador:
             self.fields['operador'].queryset    = Usuario.objects.filter(
-                rol__nombre='OPERADOR', estado='ACTIVO').order_by('first_name', 'last_name')
+                rol__nombre__iexact='OPERADOR', estado='ACTIVO').order_by('first_name', 'last_name')
             self.fields['operador'].empty_label = '— Seleccionar operador —'
             self.fields['operador'].required    = True
         else:

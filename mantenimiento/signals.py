@@ -33,17 +33,24 @@ def sincronizar_estado_maquina(sender, instance, **kwargs):
     """Mantiene el estado de la máquina sincronizado con sus OMs activas."""
     from maquinas.models import Maquina
     maquina = instance.maquina
-    if not maquina or maquina.estado == 'BAJA':
+    if not maquina:
+        return
+    # El estado se consulta en BD: instance.maquina puede venir cacheado en
+    # memoria con un estado viejo (p.ej. al crear y finalizar la OM con el
+    # mismo objeto) y dejaría la máquina atascada en MANTENIMIENTO.
+    estado_actual = (Maquina.objects.filter(pk=maquina.pk)
+                     .values_list('estado', flat=True).first())
+    if estado_actual is None or estado_actual == 'BAJA':
         return
 
     tiene_om_activa = sender.objects.filter(
         maquina=maquina, activo=True
     ).exclude(estado__in=['FINALIZADA', 'CANCELADA']).exists()
 
-    if tiene_om_activa and maquina.estado == 'OPERATIVA':
+    if tiene_om_activa and estado_actual == 'OPERATIVA':
         Maquina.objects.filter(pk=maquina.pk).update(estado='MANTENIMIENTO')
         _alertar_reservas_por_mantenimiento(maquina)
-    elif not tiene_om_activa and maquina.estado == 'MANTENIMIENTO':
+    elif not tiene_om_activa and estado_actual == 'MANTENIMIENTO':
         Maquina.objects.filter(pk=maquina.pk).update(estado='OPERATIVA')
         _resolver_alertas_reservas_por_mantenimiento(maquina)
 

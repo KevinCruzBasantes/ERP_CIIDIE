@@ -347,9 +347,11 @@ class TransferenciaPieza(models.Model):
         verbose_name_plural = 'Transferencias de piezas'
 
     def __str__(self):
+        # Origen/destino en NULL significa que la pieza salió de/entró a bodega
+        origen = self.maquina_origen.codigo if self.maquina_origen else 'bodega'
+        destino = self.maquina_destino.codigo if self.maquina_destino else 'bodega'
         return (
-            f"{self.pieza.nombre}: "
-            f"{self.maquina_origen.codigo} → {self.maquina_destino.codigo} "
+            f"{self.pieza.nombre}: {origen} → {destino} "
             f"({self.fecha.strftime('%d/%m/%Y')})"
         )
 
