@@ -276,7 +276,7 @@
                     <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
                       <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_posicion|default:'—' }}</td>
                       <td style="padding:0.6rem 1rem;">
-                        <a href="{% url 'detalle_pieza' pieza.pk %}" style="font-weight:500; color:var(--text); text-decoration:none;">{{ pieza.nombre }}</a>
+                        <a href="{% url 'detalle_pieza' pieza.pk %}" style="font-weight:500; color:var(--accent); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ pieza.nombre }}</a>
                         {% if pieza.nombre_original %}
                           <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
                         {% endif %}
@@ -341,7 +341,7 @@
                 <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
                   <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted);">{{ pieza.numero_posicion|default:'—' }}</td>
                   <td style="padding:0.6rem 1rem;">
-                    <a href="{% url 'detalle_pieza' pieza.pk %}" style="font-weight:500; color:var(--text); text-decoration:none;">{{ pieza.nombre }}</a>
+                    <a href="{% url 'detalle_pieza' pieza.pk %}" style="font-weight:500; color:var(--accent); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ pieza.nombre }}</a>
                     {% if pieza.nombre_original %}
                       <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.1rem;">{{ pieza.nombre_original }}</div>
                     {% endif %}
@@ -474,7 +474,7 @@
             <tr style="border-bottom:1px solid var(--border); transition:background 0.1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
               <td style="padding:0.6rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">{{ r.fecha|date:'d/m/Y H:i' }}</td>
               <td style="padding:0.6rem 1rem;">
-                <a href="{% url 'detalle_pieza' r.pieza.pk %}" style="font-weight:500; color:var(--text); text-decoration:none;">{{ r.pieza.nombre }}</a>
+                <a href="{% url 'detalle_pieza' r.pieza.pk %}" style="font-weight:500; color:var(--accent); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ r.pieza.nombre }}</a>
               </td>
               <td style="padding:0.6rem 1rem; font-size:0.78rem; color:var(--text-muted);">
                 {% if r.ensamble_anterior %}{{ r.ensamble_anterior.nombre }}{% else %}<span style="font-style:italic;">Pieza suelta</span>{% endif %}

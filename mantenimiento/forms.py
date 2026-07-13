@@ -144,9 +144,13 @@ class OrdenMantenimientoForm(forms.ModelForm):
 
     class Meta:
         model  = OrdenMantenimiento
+        # Un solo responsable por orden (decisión 2026-07-13): responsable_2/3
+        # siguen en el modelo por compatibilidad histórica/estilo DANEC, pero ya
+        # no se ofrecen en el formulario — la asignación es individual, igual que
+        # el botón "Asignarme la orden".
         fields = [
             'maquina', 'plan', 'tipo', 'prioridad', 'titulo',
-            'descripcion_tarea', 'responsable_1', 'responsable_2', 'responsable_3',
+            'descripcion_tarea', 'responsable_1',
             'fecha_programada', 'tiempo_estimado_horas',
             'repuestos_necesarios', 'afecta_seguridad', 'para_produccion',
         ]
@@ -164,8 +168,6 @@ class OrdenMantenimientoForm(forms.ModelForm):
                 'placeholder': 'Pasos a seguir, herramientas necesarias, precauciones...',
             }),
             'responsable_1':         forms.Select(attrs={'style': SELECT_STYLE}),
-            'responsable_2':         forms.Select(attrs={'style': SELECT_STYLE}),
-            'responsable_3':         forms.Select(attrs={'style': SELECT_STYLE}),
             'fecha_programada':      forms.DateInput(
                 attrs={'style': FIELD_STYLE, 'type': 'date'},
                 format='%Y-%m-%d'
@@ -187,19 +189,23 @@ class OrdenMantenimientoForm(forms.ModelForm):
         self.fields['maquina'].queryset      = Maquina.objects.all().order_by('nombre')
         self.fields['plan'].queryset         = PlanMantenimiento.objects.filter(activo=True).select_related('maquina').order_by('maquina__nombre')
         self.fields['plan'].empty_label      = '— Sin plan (correctivo) —'
-        tecnicos = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True).order_by('first_name', 'last_name')
-        self.fields['responsable_1'].queryset = tecnicos
-        self.fields['responsable_2'].queryset = tecnicos
-        self.fields['responsable_3'].queryset = tecnicos
+        # Solo jerarquía alta (admin/PhD/técnico) puede ser responsable de una OM
+        # (feedback testeo 2026-07-13) — el rol se muestra junto al nombre.
+        from usuarios.permisos import es_admin_o_tecnico as _es_staff, filtrar_usuarios_por_rol
+        candidatos = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True)
+        tecnicos = filtrar_usuarios_por_rol(candidatos, _es_staff)
+        if self.instance and self.instance.pk and self.instance.responsable_1_id:
+            # Conservar al responsable ya asignado aunque el filtro lo excluyera
+            tecnicos = (tecnicos | Usuario.objects.filter(pk=self.instance.responsable_1_id)).distinct()
+        self.fields['responsable_1'].queryset = tecnicos.order_by('first_name', 'last_name')
         self.fields['responsable_1'].empty_label = '— Seleccionar —'
-        self.fields['responsable_2'].empty_label = '— Sin responsable adicional —'
-        self.fields['responsable_3'].empty_label = '— Sin responsable adicional —'
+        self.fields['responsable_1'].label_from_instance = lambda u: (
+            f"{u.get_full_name() or u.username} — {u.rol.nombre if u.rol else 'Sin rol'}"
+        )
         # Opcionales
         self.fields['plan'].required              = False
         self.fields['descripcion_tarea'].required = False
         self.fields['responsable_1'].required     = False
-        self.fields['responsable_2'].required     = False
-        self.fields['responsable_3'].required     = False
         self.fields['tiempo_estimado_horas'].required = False
         self.fields['repuestos_necesarios'].required  = False
         self.fields['fecha_programada'].input_formats = ['%Y-%m-%d']

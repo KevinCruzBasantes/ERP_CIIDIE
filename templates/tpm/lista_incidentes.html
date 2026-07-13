@@ -67,6 +67,7 @@
               <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Reportado por</th>
               <th style="text-align:left; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Severidad</th>
               <th style="text-align:center; padding:0.6rem 0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:400;">Req. Mto.</th>
+              <th style="padding:0.6rem 0.75rem;"></th>
             </tr>
           </thead>
           <tbody>
@@ -109,6 +110,14 @@
                   {% else %}
                     <span style="color:var(--text-muted); opacity:0.4;">—</span>
                   {% endif %}
+                </td>
+                <td style="padding:0.75rem; text-align:right;">
+                  <a href="{% url 'detalle_incidente' inc.pk %}"
+                     style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; transition:border-color 0.15s;"
+                     onmouseover="this.style.borderColor='var(--accent)'"
+                     onmouseout="this.style.borderColor='var(--border)'">
+                    Ver →
+                  </a>
                 </td>
               </tr>
             {% endfor %}

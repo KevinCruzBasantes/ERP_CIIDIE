@@ -29,10 +29,13 @@ class CertificacionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         from usuarios.models import Usuario
         from maquinas.models import Maquina
-        from usuarios.permisos import es_admin, es_admin_o_tecnico
+        from usuarios.permisos import es_admin, es_admin_o_tecnico, es_estudiante, filtrar_usuarios_por_rol
         self.usuario_actual = usuario_actual
 
         candidatos = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True)
+        # Los estudiantes nunca operan la máquina por sí mismos (siempre delegan
+        # en un operador certificado), así que no se los certifica (2026-07-13).
+        candidatos = filtrar_usuarios_por_rol(candidatos, lambda u: not es_estudiante(u))
         if usuario_actual:
             candidatos = candidatos.exclude(pk=usuario_actual.pk)
             if not es_admin(usuario_actual):
@@ -46,6 +49,15 @@ class CertificacionForm(forms.ModelForm):
         # editando una certificacion que ya tenia asignada a otro tecnico).
         if self.instance.pk and self.instance.usuario_id:
             candidatos = candidatos | Usuario.objects.filter(pk=self.instance.usuario_id)
+
+        # La certificación es personal: al editar no se puede cambiar de titular
+        # (para otra persona se crea una certificación nueva). `disabled` hace que
+        # Django ignore cualquier valor POSTeado y use el de la instancia.
+        if self.instance.pk:
+            self.fields['usuario'].disabled = True
+            self.fields['usuario'].help_text = (
+                'El titular no se puede cambiar; para certificar a otra persona crea una certificación nueva.'
+            )
 
         self.fields['usuario'].queryset = candidatos.order_by('username')
         # Mostrar el rol junto al nombre para poder ubicar/filtrar por tipeo
@@ -137,12 +149,22 @@ class HallazgoForm(forms.ModelForm):
 
 class ItemChecklistForm(forms.ModelForm):
 
+    # Separador interno del value del <select> (fabricante ||| modelo)
+    SEP = '|||'
+
+    # El ámbito ya no es texto libre: se elige entre los fabricante+modelo de
+    # las máquinas registradas, porque la inspección diaria empareja los ítems
+    # por texto EXACTO contra maquina.fabricante/maquina.modelo — un typo y el
+    # ítem no aparecía nunca (feedback testeo 2026-07-13).
+    ambito = forms.ChoiceField(
+        widget=forms.Select(attrs={'style': SELECT_STYLE}),
+        label='Fabricante y modelo',
+    )
+
     class Meta:
         model  = ItemChecklistInspeccion
-        fields = ['fabricante', 'modelo_maquina', 'nombre', 'descripcion', 'es_critico', 'orden']
+        fields = ['nombre', 'descripcion', 'es_critico', 'orden']
         widgets = {
-            'fabricante':     forms.TextInput(attrs={'style': FIELD_STYLE, 'placeholder': 'Nombre del fabricante'}),
-            'modelo_maquina': forms.TextInput(attrs={'style': FIELD_STYLE, 'placeholder': 'Modelo de la máquina'}),
             'nombre':         forms.TextInput(attrs={
                 'style': FIELD_STYLE,
                 'placeholder': 'Ej: Nivel de aceite de lubricación OK',
@@ -159,11 +181,51 @@ class ItemChecklistForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        from maquinas.models import Maquina
         self.fields['descripcion'].required = False
         self.fields['orden'].required = False
 
-        # Poblar datalists con valores ya existentes, igual que CodigoParadaForm
-        fabricantes = ItemChecklistInspeccion.objects.values_list('fabricante', flat=True).distinct().order_by('fabricante')
-        modelos     = ItemChecklistInspeccion.objects.values_list('modelo_maquina', flat=True).distinct().order_by('modelo_maquina')
-        self.fabricantes_existentes = list(fabricantes)
-        self.modelos_existentes     = list(modelos)
+        pares = (
+            Maquina.objects.exclude(estado='BAJA')
+            .values_list('fabricante', 'modelo')
+            .distinct()
+            .order_by('fabricante', 'modelo')
+        )
+        choices = [
+            (f'{fab}{self.SEP}{mod}', f'{fab} — {mod}')
+            for fab, mod in pares if (fab or mod)
+        ]
+        # Al editar, conservar el ámbito actual aunque ya no exista una máquina
+        # con ese fabricante+modelo (p.ej. la máquina se dio de baja).
+        if self.instance.pk:
+            actual = f'{self.instance.fabricante}{self.SEP}{self.instance.modelo_maquina}'
+            if actual not in dict(choices):
+                choices.append((
+                    actual,
+                    f'{self.instance.fabricante} — {self.instance.modelo_maquina} (sin máquina registrada)',
+                ))
+            self.fields['ambito'].initial = actual
+        self.fields['ambito'].choices = [('', '— Seleccionar fabricante y modelo —')] + choices
+
+    def clean(self):
+        cleaned = super().clean()
+        ambito = cleaned.get('ambito')
+        if ambito:
+            fabricante, _, modelo = ambito.partition(self.SEP)
+            self.instance.fabricante = fabricante
+            self.instance.modelo_maquina = modelo
+            # Validación manual del unique_together (fabricante, modelo, nombre):
+            # como fabricante/modelo ya no son campos del form, validate_unique
+            # no los cubre y sin esto el choque llegaría como IntegrityError.
+            nombre = cleaned.get('nombre')
+            if nombre:
+                repetidos = ItemChecklistInspeccion.objects.filter(
+                    fabricante=fabricante, modelo_maquina=modelo, nombre=nombre
+                )
+                if self.instance.pk:
+                    repetidos = repetidos.exclude(pk=self.instance.pk)
+                if repetidos.exists():
+                    raise forms.ValidationError(
+                        'Ya existe un ítem con ese texto para este fabricante y modelo.'
+                    )
+        return cleaned

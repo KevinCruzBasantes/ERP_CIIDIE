@@ -183,6 +183,7 @@ def dashboard_tecnico(request):
 
 @login_required(login_url='login')
 def dashboard_operador(request):
+    from tpm.models import Incidente
     hoy = timezone.now().date()
     en_una_semana = hoy + timezone.timedelta(days=7)
     reservas = Reserva.objects.filter(operador=request.user).select_related('usuario', 'maquina')
@@ -192,7 +193,12 @@ def dashboard_operador(request):
             fecha__gt=hoy, fecha__lte=en_una_semana, estado__in=('PENDIENTE', 'APROBADA', 'EN_USO')
         ).order_by('fecha', 'hora_inicio'),
         'historial':         reservas.filter(estado='COMPLETADA').order_by('-fecha')[:10],
-        'incidencias':       reservas.filter(estado='CANCELADA').order_by('-fecha')[:10],
+        # "canceladas" antes se llamaba "incidencias" en el template y confundía:
+        # eran reservas CANCELADAS, no incidentes TPM (feedback 2026-07-13).
+        'canceladas':        reservas.filter(estado='CANCELADA').order_by('-fecha')[:10],
+        'mis_incidentes':    Incidente.objects.filter(
+            reportado_por=request.user, activo=True
+        ).select_related('maquina').order_by('-fecha_ocurrencia')[:10],
     }
     return render(request, 'usuarios/dashboard_operador.html', context)
 

@@ -139,4 +139,32 @@
       </div>
     {% endif %}
   </div>
+
+  {% if es_admin_o_tecnico and inactivos %}
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="card-header">
+        <div class="card-title">Materiales desactivados</div>
+        <span class="badge badge-danger">{{ inactivos|length }}</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.83rem;">
+          <tbody>
+            {% for mat in inactivos %}
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:0.75rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--text-muted);">{{ mat.codigo }}</td>
+                <td style="padding:0.75rem; color:var(--text);">{{ mat.nombre }}</td>
+                <td style="padding:0.75rem; text-align:right; white-space:nowrap;">
+                  <a href="{% url 'detalle_material' mat.pk %}" style="font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); text-decoration:none; padding:0.3rem 0.7rem; border:1px solid var(--border); border-radius:4px; margin-right:0.5rem;">Ver →</a>
+                  <form method="post" action="{% url 'reactivar_material' mat.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="padding:0.3rem 0.7rem; background:transparent; color:var(--success); border:1px solid var(--success); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; cursor:pointer;">Reactivar</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}

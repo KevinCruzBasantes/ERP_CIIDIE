@@ -19,6 +19,7 @@ def lista_materiales(request):
         'mantenimiento':      materiales.filter(tipo='MANTENIMIENTO').count(),
         'produccion':         materiales.filter(tipo='PRODUCCION').count(),
         'ambos':              materiales.filter(tipo='AMBOS').count(),
+        'inactivos':          Material.objects.filter(activo=False),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
     }
     return render(request, 'inventario/lista_materiales.html', context)
@@ -127,3 +128,18 @@ def eliminar_material(request, pk):
         messages.success(request, f'Material "{material.nombre}" desactivado.')
         return redirect('lista_materiales')
     return render(request, 'inventario/confirmar_eliminar_material.html', {'material': material})
+
+
+@login_required(login_url='login')
+def reactivar_material(request, pk):
+    """Contraparte del soft-delete: vuelve a activar un material desactivado
+    (feedback testeo 2026-07-13 — no existía forma de reactivarlos)."""
+    if not es_admin_o_tecnico(request.user):
+        messages.error(request, 'No tienes permisos para reactivar materiales.')
+        return redirect('lista_materiales')
+    material = get_object_or_404(Material, pk=pk, activo=False)
+    if request.method == 'POST':
+        material.activo = True
+        material.save(update_fields=['activo'])
+        messages.success(request, f'Material "{material.nombre}" reactivado.')
+    return redirect('detalle_material', pk=pk)

@@ -139,8 +139,29 @@ def eliminar_hallazgo(request, pk):
     hallazgo   = get_object_or_404(HallazgoInspeccion, pk=pk)
     inspeccion_pk = hallazgo.inspeccion.pk
     if request.method == 'POST':
+        # La OM generada automáticamente por este hallazgo no debe quedar
+        # huérfana (feedback testeo 2026-07-13): si aún no se empezó a
+        # ejecutar, se desactiva junto con el hallazgo. Si ya está EN_PROCESO
+        # o FINALIZADA se conserva como historial de trabajo real.
+        from mantenimiento.models import OrdenMantenimiento
+        oms_pendientes = OrdenMantenimiento.objects.filter(
+            hallazgo=hallazgo, origen='HALLAZGO', activo=True, estado='PROGRAMADA'
+        )
+        canceladas = 0
+        for om in oms_pendientes:
+            om.activo = False
+            om.save(update_fields=['activo'])  # save() (no .update) para que el signal re-sincronice el estado de la máquina
+            canceladas += 1
+
         hallazgo.delete()
-        messages.success(request, 'Hallazgo eliminado correctamente.')
+        if canceladas:
+            messages.success(
+                request,
+                f'Hallazgo eliminado. Se dio de baja también {canceladas} orden(es) '
+                'de mantenimiento generada(s) automáticamente que aún no se ejecutaban.'
+            )
+        else:
+            messages.success(request, 'Hallazgo eliminado correctamente.')
     return redirect('detalle_inspeccion', pk=inspeccion_pk)
 
 

@@ -31,8 +31,24 @@
         {% else %}
           <span class="badge badge-success">● Stock OK</span>
         {% endif %}
+        {% if not material.activo %}
+          <span class="badge badge-danger">Inactivo</span>
+        {% endif %}
       </div>
     </div>
+    {% if es_admin_o_tecnico %}
+      <div style="display:flex; gap:0.6rem;">
+        <a href="{% url 'editar_material' material.pk %}" style="padding:0.5rem 1rem; background:transparent; color:var(--text); border:1px solid var(--border); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none;">Editar</a>
+        {% if material.activo %}
+          <a href="{% url 'eliminar_material' material.pk %}" style="padding:0.5rem 1rem; background:transparent; color:var(--danger); border:1px solid var(--danger); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-decoration:none;">Desactivar</a>
+        {% else %}
+          <form method="post" action="{% url 'reactivar_material' material.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" style="padding:0.5rem 1rem; background:var(--success); color:#0f1117; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; font-weight:500; cursor:pointer;">Reactivar</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
   </div>
 
   <div class="grid-2">

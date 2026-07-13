@@ -29,40 +29,15 @@
             <div class="card-title">Ámbito del ítem</div>
             <span style="font-size:0.7rem; color:var(--text-muted); font-family:'IBM Plex Mono',monospace;">Aplica a todas las máquinas de este fabricante + modelo</span>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Fabricante <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.fabricante }}
-                {% if form.fabricante.errors %}
-                <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.fabricante.errors.0 }}</div>
-                {% endif %}
-                {% if form.fabricantes_existentes %}
-                <datalist id="dl-fabricantes">
-                    {% for f in form.fabricantes_existentes %}<option value="{{ f }}">{% endfor %}
-                </datalist>
-                <script>document.querySelector('[name=fabricante]').setAttribute('list','dl-fabricantes');</script>
-                {% endif %}
-            </div>
-
-            <div>
-                <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Modelo de máquina <span style="color:var(--danger);">*</span>
-                </label>
-                {{ form.modelo_maquina }}
-                {% if form.modelo_maquina.errors %}
-                <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.modelo_maquina.errors.0 }}</div>
-                {% endif %}
-                {% if form.modelos_existentes %}
-                <datalist id="dl-modelos">
-                    {% for m in form.modelos_existentes %}<option value="{{ m }}">{% endfor %}
-                </datalist>
-                <script>document.querySelector('[name=modelo_maquina]').setAttribute('list','dl-modelos');</script>
-                {% endif %}
-            </div>
-
+        <div>
+            <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
+                Fabricante — Modelo <span style="color:var(--danger);">*</span>
+            </label>
+            {{ form.ambito }}
+            {% if form.ambito.errors %}
+            <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.ambito.errors.0 }}</div>
+            {% endif %}
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.3rem;">Se listan los fabricantes y modelos de las máquinas ya registradas — así el ítem aparece automáticamente en la inspección diaria de esas máquinas.</div>
         </div>
     </div>
 

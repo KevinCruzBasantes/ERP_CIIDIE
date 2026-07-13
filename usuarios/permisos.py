@@ -39,3 +39,12 @@ def es_operador(user):
     if user.rol:
         return 'operador' in _normalizar_rol(user.rol.nombre)
     return False
+
+
+def filtrar_usuarios_por_rol(queryset, criterio):
+    """Filtra un queryset de Usuario con uno de los helpers de rol de este módulo
+    (es_admin, es_admin_o_tecnico, ...). La comparación de roles es por substring
+    sin tildes y no se puede expresar en SQL, así que se evalúa en Python —
+    aceptable porque la tabla de usuarios es pequeña."""
+    ids = [u.pk for u in queryset if criterio(u)]
+    return queryset.filter(pk__in=ids)

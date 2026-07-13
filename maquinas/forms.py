@@ -1,6 +1,7 @@
 from django import forms
 from .models import Maquina, Pieza, TransferenciaPieza, CodigoParada
 from usuarios.models import Usuario
+from usuarios.permisos import es_admin_o_tecnico, filtrar_usuarios_por_rol
 
 INPUT = 'width:100%; padding:0.65rem 0.9rem; background:#1e2333; border:1px solid #2a2f42; border-radius:6px; color:#d4d8e8; font-size:0.88rem; outline:none;'
 SELECT = INPUT + ' cursor:pointer;'
@@ -51,7 +52,15 @@ class MaquinaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['responsable'].queryset = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True)
+        # Solo roles de jerarquía alta (admin/PhD/técnico) pueden ser responsables
+        # de una máquina — no estudiantes ni operadores (feedback testeo 2026-07-13).
+        candidatos = Usuario.objects.filter(estado='ACTIVO').exclude(is_superuser=True)
+        responsables = filtrar_usuarios_por_rol(candidatos, es_admin_o_tecnico)
+        # Si la máquina ya tiene un responsable que quedó fuera del filtro,
+        # mantenerlo en las opciones para no perderlo silenciosamente al editar.
+        if self.instance and self.instance.pk and self.instance.responsable_id:
+            responsables = (responsables | Usuario.objects.filter(pk=self.instance.responsable_id)).distinct()
+        self.fields['responsable'].queryset = responsables.order_by('first_name', 'last_name')
         self.fields['responsable'].empty_label = '— Sin responsable asignado —'
         for field in self.fields.values():
             field.required = False

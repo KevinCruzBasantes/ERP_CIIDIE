@@ -31,6 +31,7 @@
                     Usuario <span style="color:var(--danger);">*</span>
                 </label>
                 {{ form.usuario }}
+                {% if form.usuario.help_text %}<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">{{ form.usuario.help_text }}</div>{% endif %}
                 {% if form.usuario.errors %}<div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.usuario.errors.0 }}</div>{% endif %}
             </div>
 
