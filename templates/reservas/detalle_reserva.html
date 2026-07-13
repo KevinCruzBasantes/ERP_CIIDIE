@@ -56,14 +56,14 @@
         </form>
         {% endif %}
 
-        {% if es_propia and reserva.estado == 'APROBADA' and not orden %}
+        {% if puede_gestionar_orden and reserva.estado == 'APROBADA' and not orden %}
         <a href="{% url 'crear_orden' reserva.pk %}"
            style="padding:0.4rem 1rem; background:rgba(232,160,32,0.15); color:var(--accent); border:1px solid rgba(232,160,32,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none; font-weight:500;">
             ◈ Crear OT
         </a>
         {% endif %}
 
-        {% if es_propia and orden %}
+        {% if puede_gestionar_orden and orden %}
         <a href="{% url 'detalle_orden' orden.pk %}"
            style="padding:0.4rem 1rem; background:rgba(59,130,246,0.1); color:var(--info); border:1px solid rgba(59,130,246,0.25); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-decoration:none;">
             ◈ OT-{{ orden.pk|stringformat:"04d" }}
@@ -145,7 +145,7 @@
         {% endif %}
     </div>
 
-    {% if es_propia %}
+    {% if puede_gestionar_orden %}
     <div class="card">
         <div class="card-header">
             <div class="card-title">Orden de trabajo</div>

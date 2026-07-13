@@ -1,0 +1,198 @@
+### 0.1 Autenticación y acceso
+AUTH-01 | Landing con selector de perfil | http://10.3.21.120:8085/ Landing de inicio correcto muestra los 4 perfiles
+AUTH-02 | Registro de estudiante | `/registro/` http://10.3.21.120:8085/registro/ Se muestra corectamente el template al ingresar a la url al realizar el registro y pulsar el boton lleva al estudiante a http://10.3.21.120:8085/dashboard/ correctamete y muesta la notificacion de cuenta creada, bienvenido
+AUTH-03 | Login | `/ingresar/` | http://10.3.21.120:8085/ingresar/?rol=operador http://10.3.21.120:8085/ingresar/?rol=estudiante http://10.3.21.120:8085/ingresar/?rol=tecnico http://10.3.21.120:8085/ingresar/?rol=admin en el landing al pulsar el boton ingresar me lleva a cada url segun su rol
+AUTH-04 | Logout | `/logout/` | en todos los roles al hacer click en cerrar sesion los lleva a http://10.3.21.120:8085/ingresar/
+AUTH-05 | Redirección al dashboard según rol |  en cada rol al ingresar sus datos corectos en el login me lleva a http://10.3.21.120:8085/dashboard/admin/, http://10.3.21.120:8085/dashboard/tecnico/, http://10.3.21.120:8085/dashboard/operador/,http://10.3.21.120:8085/dashboard/
+AUTH-06 | Cierre de sesión por inactividad | Para operador, adminitrador, tecnico y estudiante la sesion se cerro y me regreso al endpoint /ingresar/ y se muestra el mensaje tu sesion se cerro por inactividad
+
+### 0.2 Dashboards
+DASH-01 | Dashboard Administrador | `/dashboard/admin/` Muestra Maquinas con su contador, Alertas Activas con su contador, ordenes mantenimiento con su contador reservas pendientes con su contador; Paneles alertas activas, ordenes mantenimiento, reservas pendientes, maquinas en mantenimiento, materiales con stock bajo, con respecto a la informacion de cada panel todos los paneles muestran la informacion correspondiente y al hacer click en la informacion de cada panel lleva al usuario justo a ese elemento exacto, en el momento de realizar estas pruebas el panel de alertas activas estaba vacio; muestra el sidebar alineado a la izquierda con los botones inicio, maquinas, reservas, ordenes de trabajo, inspeccion diaria, inventario, ordenes, planes tpm, historial, tpm y oee, alertas, reportes, usuarios, panel admin y cerrar session; muestra el texto del nombre del administradot y su rol;
+DASH-02 | Dashboard Técnico | `/dashboard/tecnico/` | Muestra mensaje de bienvenido, nombre del tecnico; mensaje de subtitulo Tecnico - fecha; paneles mis oms en ejecucion, mis oms asignadas, oms disponibles, alertas activas esos paneles de conteo; paneles de acceso rapido a oms disponible para tomar funciona muestra la orden con le boton tomar para asignar al tecnico, mis oms programadas muestra la orden a la que se le asigno al tecnico listo para ir a la orden, alertas activas para este momento no se tenia ninguna alerta no se si refleja alguna alerta, ispeccion diaria tpm panerl con contadores realizadas hoy y maquinas pendientes notificacion de todas las maquinas inspeccionadas hoy botones ir a inspeccion diaria y ver historialde inspecciones funcionando nota para la inspeccion diaria cuando se registra una maquina no se lanza la inspeccion diaria como activa? y para todos los paneles de acceso rapido el boton de ver todas y en algunos casos gestionar funcionan y lleva a su respectivo modulo
+DASH-03 | Dashboard Operador | `/dashboard/operador/` | Muestra mensaje de bienvenido, nombre del operador; subtitulo con el rol operador- y mensaje; paneles de acceso rapido trabajo de hoy muestra la reserva asignada con el estado aprovada, proximas reservas asignadas muestra la proxima orden con el estado aprovado, historial de completadas muestra la orden con el estado completada, incidencias no muestra nada por ahora en la logica debo saber como esta funcinando pendiente a revisar el codigo; barra lateral muestra el nombre del operador y rol, botones de inicio, reservs, orden de trabajo, mi horario y cerrar sesion
+DASH-04 | Dashboard General (estudiante) | `/dashboard/` | Muestra mensaje de bienvenido, nombre del estudiante; subtitulo con rol y mensaje; paneles de acceso rapido maquinas disponibles lista la maquinas con el estado operativa, mis reservas recientes mmuestra una lista de las reserva y sus tags, accesos rapidos muestra tres botones nueva reserva, mis reservas y mis ordenes de trabajo; barra lateral nombre del estudiante y rol, botones de inicio, reservas, ordenes de trabajo y cerrar sesion
+
+### 0.3 Usuarios (administración)
+USR-01 | Listar usuarios | `/usuarios/` | En la barra lateral en la seccion de administración al hacer click en usuarios me lleva a http://10.3.21.120:8085/usuarios en el template se muestra titulo usuarios subtitulo gestion de cuentas y roles del sistema; paneles de contadores total usuarios, activos, inactivos, y suspendidos; panel listado de usuarios con si fuera una tabla con usuario, nombre, cedula, rol, email, y estado, cada fila es un usuario con sus datos y existe el boton ver funciona ; boton nuevo usuario funciona 
+USR-02 | Crear usuario | `/usuarios/crear/` | Boton nuevo usuario funciona y me lleva a http://10.3.21.120:8085/usuarios/crear/` panel de datos de acceso contiene campo usuario nombre de usuario, contraseña, confirmar contraseña, slider de estado; panel datos personales campos de nombres, cedula, email, apellidos, telefono y rol slider de roles; al llenar todo el formato de crear usuario aparece la notificacion de usuario "" creado correctamete y me redirije a usuarios/<pk>/ 
+USR-03 | Ver detalle de usuario | `/usuarios/<pk>/` | Muestra el panel de datos personales y el panel de estado de la cuenta con los datos estado actual con su tag y ultimo acceso con la fecha; boton de suspender y boton de activar/desactivar; boton de editar que me lleva a /usuarios/<pk>/editar/ , boton eliminar /usuarios/<pk>/eliminar/ 
+USR-04 | Editar usuario | `/usuarios/<pk>/editar/` | Mestra el mensaje editar-nombre y apellido; panel de datos de acceso con usuario y estado con un slider con opciones de seleccion; panel de datos personales con campos: nombres, apellidos, cedula, telefono, email, rol con slider de seleccion; botones de cancelar y guardar cambios funcinan los dos botones
+USR-05 | Cambiar estado (activar/inactivar/suspender) | `/usuarios/<pk>/estado/` | Funciona en el template se refleja el cambio al actualizar el tag de Estado Actual al pulsar cualquier boton suspender desactivar activar/desactivar
+USR-06 | Eliminar usuario | `/usuarios/<pk>/eliminar/` | Boton eliminar me lleva a al endpoint, en ese template se ve el titulo eliminar usuarioa y el panel de confirmar eliminacion permanente en donde se ven los campos usuaio, nombre, cedula, rol, demas se ve un mensaje de advertencia, tambien se ven dos botones cancelar y eliminar permanentemente, el boton de eliminar funciona y en la lista de usuarios ya no aparece
+
+### 0.4 Horario del operador
+| HOR-01 | Ver / registrar mi disponibilidad | `/mi-horario/` | Al hacer click en la barra lateral y pulsar en el boton mi-horario me lleva al endpoint /mi-horario/ en donde se ve el titulo Mi horario y un subtitlo con un mensaje; panel de agregar bloque de disponibilidad dia slider de seleccion con los 7 dias de la semana, hora de inicio campo de texto que pide hora y minutos, hora fin campo de texto que pide hora y minutos y el boton agregar; panel de mis bloques actuales muestra el dia y hora-minutos y un boton quitar
+| HOR-02 | Eliminar una franja de disponibilidad | `/mi-horario/<pk>/eliminar/` | Boton quitar al pulsarlo el navegador crea un cuadro de dialogo para aceptar o no quitar el horario y si acepto aparece la notificacion horario eliminado 
+
+### 0.5 Máquinas
+| MAQ-01 | Listar máquinas | `/maquinas/` | Al ir al endpoint me muestra el template con el titulo Maquinas y un subtitlo, estan los botones de transferencias, codigos de paradas, nueva maquina, paneles de contadores total registradas, operativas, en mantenimiento, dadas de baja todos estos paneles funciona y reflejan los datos de la base; panel listado de maquinas es una tabla con los campos: codigo, maquina, fabricante / modelo, ubicacion, estado, responsable, cada fila tiene el boton ver
+| MAQ-02 | Crear máquina | `/maquinas/crear/` | Le di clicl al boton nueva maquina y me lleva a /maquinas/crear/ en donde aparece el titulo Nueva maquina; panel identificacion con los campos nombre, codigo interno. n de serie, codigo de barra uce, fabricante, modelo, año fabricacion, fecha adquisiscion, ubicacion, estado, responsable y descripcion; panel ficha tecnica campos: voltaje, frecuencia, presion neumatica min, presion neumatica max, capacidad refrigerante, rpm huesillo max, control cnc, peso, largo, ancho y alto; panel archivos boton de seleccionar archivos desde el dispositivo para la imagen  y boton para seleccionar archivos para el manual; boton de cancelar y crear los dos funcionan, Revisar el codigo para el campo responsable el slider lista a todos los usuarios solo debe listar a los usuarios mas altos en la jerarquia
+| MAQ-03 | Detalle de máquina | `/maquinas/<pk>/` | Boton ver me lleva a  /maquinas/<pk> en donde aparece un titulo maquina prueba con su tag y aparce el fabricante / modelo, aparece la imagen, botones de editar y dar de baja; panels de identificacion y ficha tecnica como en MAQ-02 pero ahora solo de lectura con sus datos ; panel ficha y ensambles botones nuevo ensamble y nueva pieza, en este panel se listan los ensambles con un slider de lista aparecen las piezas  con los atributos pos, pieza, n parte, especificacion, cantidad, stock, acciones , tanto el ensambre y las piezas tienen botones de eitar , transferir y eliminar, en el caso de una pieza suelta se crea el ensambre de nomnre sin ensamblea asignado y se muestra la pieza como lo destrico en ensamble; panel de historial de transferencias muestra una tabla con fecha, dir, pieza, contraparte, motivo, y realizado por; panel de reasignacion de ensamble es cuando una pieza suelta o en otro ensamble se le reasigna a otro ensamble aqui se lista una tabla con campos: fecha, pieza, ensamble anterior, ensamble actual y realizado por 
+| MAQ-04 | Editar máquina | `/maquinas/<pk>/editar/` | A/T | ⬜ | | boton de editar Titulo Editar-Nombre de la maquina permite editar los campos de los paneles identificacion y ficha tecnica; permite editar el panel archivos limpiando la imagen y manual actual por otro, problema al querer selecionar otro archivo y marcar la el check de limpiar y darle al boton de guardar cambios me arroja el error 413 request entity too large nginx 1.22.1
+| MAQ-05 | Eliminar máquina | `/maquinas/<pk>/eliminar/` | Boton dar de baja me lleva al endpoint /maquinas/<pk>/eliminar/ titulo desactivar maquina; panel confirmar desactivacion campos: maquina, codigo, estado actual, nuevo estado con la informacion dada de baja, mensaje de softdelete
+| MAQ-06 | Cambiar estado (→ FUERA_SERVICIO dispara OM) | `/maquinas/<pk>/estado/` | Ese endpont ya no esta contemplado para este sistema,nota: revisar el codigo
+
+### 0.6 Piezas y despiece
+| PZA-01 | Crear ensamble (nivel 1) | `/maquinas/<maquina_pk>/ensambles/crear/` | Funciona el endpoint ligado a nuevo ensamble me lleva a el template aparece un tiutlo y un subtitlo, aparece el panel identificacion con los campos: nombre, nombre original, nombre en ingles, y descripcion; botones cancelar y crear ensamble al hacer click inserta el ensamble
+| PZA-02 | Crear pieza (nivel 2) | `/maquinas/<maquina_pk>/piezas/crear/` | Funciona el endpoint ligado al boton nueva pieza despliega el template con titulo y subtitlo, el panel ensamble en donde se puede selecionar un ensamble ya creado o por defecto se crea un ensable de nombre pieza suelta; panel de identificacion con campos: nombre, nombre original, nombre en ingles, n de parte/ referencia, n posicion en el manual, especificacion tecnica; panel inventario de repuestos con campos: cantidad en maquina, stock repuestos, stock minimo alerta. Nota verificar el codigo el campo cantidad en maquina hace un conteo todal de la maquina o se refiere al numero de esa pieza en el ensamble y verificar si el stock de repuestos  cuando se llega al minimo de una pieza lanza una alerta; panel descripcion y ubicacion campos: descripcion, ubicacion fisica en la maquina, imagen de ubicacion seleciona un archivo de imagen de endonde se encuentra en la maquina , y foto de pieza es la imagen propia de la pieza; botones de cancelar y registrar el boton de registrar funcina e inserta la pieza en la base 
+| PZA-03 | Detalle de pieza | `/maquinas/piezas/<pk>/` | el endpoint 10.3.21.120:8085/maquinas/piezas/2 funciona ingrese al template pero no se si existe un boton no se revisar el codigo
+| PZA-04 | Editar pieza | `/maquinas/piezas/<pk>/editar/` | Existe el boton editar y me lleva al template en donde esta un titulo eidtar pieza-"nombre pieza"; panel ensamble que es un slider para seleccionar el ensamble; panel identificacion con los campos ya mensionados; panel de inventario con los campos ya mensionados igual el panel de descripcion y ubicacion con los campos ya mensionados; botones de cancelar y guardar cambios los dos ya funcinando, el error 413 deberia ser por la capacidad de subir archivos al servidor nginx
+| PZA-05 | Eliminar pieza | `/maquinas/piezas/<pk>/eliminar/` | Funciona 
+| PZA-06 | Reasignar pieza | `/maquinas/piezas/<pk>/reasignar/` | funciona
+| PZA-07 | Transferir pieza entre máquinas | `/maquinas/piezas/<pieza_pk>/transferir/` | funciona
+| PZA-08 | Listar transferencias | `/maquinas/transferencias/` | la transferencia, los filtros y el historial funcionan
+
+### 0.7 Códigos de parada (catálogo por fabricante+modelo)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| CP-01 | Listar códigos de parada | `/maquinas/codigos-parada/` | Funciona sin errores
+| CP-02 | Crear código de parada | `/maquinas/codigos-parada/crear/` | Funciona 
+| CP-03 | Detalle código de parada | `/maquinas/codigos-parada/<pk>/` | Funcina con el boton ver que se encuantra en la tabla del panel catalogo del temple http://10.3.21.120:8085/maquinas/codigos-parada/
+| CP-04 | Editar código de parada | `/maquinas/codigos-parada/<pk>/editar/` Funciona para editar tengo que pulsar el boton ver de la tabla del panel catalogo y poder tener acceso al boton editar todo funcian aparece la notificacion al guardar el cambio
+| CP-05 | Eliminar código de parada | `/maquinas/codigos-parada/<pk>/eliminar/` | Funciona para editar tengo que pulsar el boton ver de la tabla del panel catalogo y poder tener acceso al boton eliminar funciona al eleminar al pulsar el boton eliminacion permanente
+
+### 0.8 Reservas
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| RES-01 | Listar reservas (filtradas por rol) | `/reservas/` | Funcina lista las reservas segun el rol y tiene el boton de nueva reserva
+| RES-02 | Crear reserva (operador opcional/obligatorio, certificación, disponibilidad) | `/reservas/crear/` | Funciona al pulsar el boton nueva reserva me lleva al template para llenar el formulario y solicitar la reserva, condicion al selecionar la maquina el usuario se debe fijar en los horarios de trabajo del operador y ver si hay un operador certificado para esa maquina 
+| RES-03 | Detalle de reserva | `/reservas/<pk>/` | funciona  en http://10.3.21.120:8085/reservas/ en listado de reserva existe el boton ver que al pulsarlo me lleva a http://10.3.21.120:8085/reservas/4/ en donde puedo ver los datos de la reserva y la orden de trabajo segun el caso 
+| RES-04 | Editar reserva | `/reservas/<pk>/editar/` | funciona  en http://10.3.21.120:8085/reservas/ en listado de reserva existe el boton ver que al pulsarlo me lleva a http://10.3.21.120:8085/reservas/6/ esto solo funciona cuando la reserva esta en estado pendiente la edicion la puede hacer el creador o tambien una persona mas alta en la jerarquia
+| RES-05 | Cambiar estado (aprobar → EN_USO → COMPLETADA) | `/reservas/<pk>/estado/` | Funciona cambia estado solo el administrador o miembro de la jerarquia este autorizado para cambiar el estado de una reserva solicitada
+| RES-06 | Cancelar reserva | `/reservas/<pk>/cancelar/` | funciona el solicitande de la reserva la puede cancelar pulsando el boton cancelar lo que dispara el template con un panel de confirmar cancelacion y para pulsar un boton
+| RES-07 | Consultar horarios ocupados (AJAX) | `/reservas/horarios-ocupados/` | Todos | funciona cuando una persona esta en el formulario de creacion de la reserva y elige un dia aparece el AJAX listando en que horarios estan programadas algunas reservas para ese dia
+| RES-08 | Listar operadores certificados (AJAX) | `/reservas/operadores-certificados/` | funciona al seleccionar la maquina se despliega la disponibilidad de los operadores certificados para la maquina selecionada
+| RES-09 | Disponibilidad de operadores por máquina (AJAX) | `/reservas/disponibilidad-operadores/` | Funcina cuando existe un operador certificado para una maquina esta vigente y el usuario elige una maquina el operador certificado se lista el nombre y horario de trabajo del operador
+
+### 0.9 Órdenes de trabajo (OT)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| OT-01 | Listar OT (filtradas por rol) | `/reservas/ordenes/` | funciona todos los perfiles pueden ver entrando a http://10.3.21.120:8085/reservas/ordenes/ de su respectivo dashboard pero solo los perfilos con jerarquia mas alta pueden ver todas las ordenes los perfiles mas bajos solo ve
+| OT-02 | Crear OT desde una reserva | `/reservas/ordenes/crear/<reserva_pk>/` | solicitante/operador/staff | ⬜ | | funciona todos los perfiles pueden seleccionar una reserva y crear una orden de trabajo 
+| OT-03 | Detalle de OT (estudiante solo lectura) | `/reservas/ordenes/<pk>/` | participantes + staff | ⬜ | | funciona el estudiante esta habilitado solo para lectura 
+| OT-04 | Agregar bitácora de operario | `/reservas/ordenes/<orden_pk>/bitacora/` | operador/solicitante(no est.)/staff | ⬜ | | funciona, solo el perfil de estudiante no tiene habiliado el boton de agregar y no puede llenar el formulario lo cual es correcto, los perfiles de mas jerarquia pueden ingresar a las ordenes y seleccionarlas y agregar un campo a la bitacora
+| OT-05 | Agregar parada (dispara alerta / OM técnica) | `/reservas/ordenes/<orden_pk>/parada/` | operador/solicitante(no est.)/staff | ⬜ | |
+| OT-06 | Registrar consumo de material (descuenta stock) | `/reservas/ordenes/<orden_pk>/consumo/` | operador/solicitante(no est.)/staff | ⬜ | | Funciona el perfil estudiante no puede consumir material pero los demas si pueden consumir un marerial en la ot para la reserva
+| OT-07 | Cerrar OT (tiempos, unidades → OEE) | `/reservas/ordenes/<pk>/cerrar/` | operador/solicitante(no est.)/staff | ⬜ | | Funciona el perfil de estudiante no puede cerrar la orden de trabajo debe ser cerrada por un perfil mas alto a estudiante el la jerarquia 
+
+### 0.10 TPM — Inspección diaria y hallazgos
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| INS-01 | Inspección diaria (checklist antes de usar) | `/inspeccion/` | Todos | ⬜ | |
+| INS-02 | Listar inspecciones | `/tpm/inspecciones/` | A/T | ⬜ | | Funciona el endpoint me lleva a su template y me muestra una lista de maquinarias que falta por inspeccionar y que ya fueron inspeccionadas esto en el panel de inspeccionadas hoy; panel de nueva inspeccion con un slider de opcciones con cada maquina un checklist universal. una seccion de anomalias detectadas y una entrada de observaciones y boton de registrar inspeccion que esta funcionando
+| INS-03 | Detalle de inspección | `/tpm/inspecciones/<pk>/` | A/T | ⬜ | | Funciona el endpoint esta dentro del template del endpont anterior esta dentro del panel inspeccionadas hoy al darle click sobre la maquina inspeccionada me lleva al dashborar de la maquina que se inspecciono ahi me muesta el tag de inspeccion fallida o el otro de ser el caso, la fecha de inspeccion; un panel de checklist de inspeccion; panel de datos generales; panel de hallazgos con un slider de prioridad y campo de descripcion con panel de agregar, al ingresar un hallazgo aparecen sus etiquetas de priotidad y el tag de fallido o el otro tambien aparecen botones de editar, marcar como resuelto y eliminar
+| INS-04 | Agregar hallazgo (dispara OM si ALTA/CRÍTICA) | `/tpm/inspecciones/<pk>/hallazgos/crear/` | A/T | ⬜ | |
+| INS-05 | Editar hallazgo | `/tpm/hallazgos/<pk>/editar/` | A/T | ⬜ | | Funciona el endpoint al hacer click en el boton de editar te lleva al template editar hallazgo aparce el panel de datos del hallazgo con los campos prioridad y descripcion y un check de marcar como resuelto si es marcado como resuleto el hallazgo el boton de marcar como resulto cambia a pendiente para volver a activar ese hallazgo no se si esa es la logica correcta tenia pensado talvez que al marcar el boton que sea marcar como resuelto se implemente otro template explicacndo como se resolvio pendiente para el futuro
+| INS-06 | Resolver hallazgo | `/tpm/hallazgos/<pk>/resolver/` | A/T | ⬜ | | La funcion hasta el momento solo cambia el tag de pendiente a resuelto y dispara su notificacion en el template de inspecciones/<pk>
+| INS-07 | Eliminar hallazgo | `/tpm/hallazgos/<pk>/eliminar/` | A/T | ⬜ | | Funciona al pulsar el boton de eliminacion el navegador lanza un cuadro de dialogo para confirmar la eliminacion
+
+### 0.11 TPM — Ítems de checklist (catálogo por fabricante+modelo)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| CHK-01 | Listar ítems de checklist | `/tpm/checklist-items/` | A/T | ⬜ | | Items de checklist se encuentra en /tpm/checklist-items/ se accede al darle click en TPM/OEE  en ese template existe un boton de items de ckecklist esto lleva al endpoint y a su respectivo temple existe un contador de total items, criticos y modelos cubiertos; panel de fabricante y modelo para filtrar con su bitin de filtro y limpiar; panel de catalogo
+| CHK-02 | Crear ítem de checklist | `/tpm/checklist-items/crear/` | A/T | ⬜ | | Funciona el endpoint al darle al boton nuevo item o al hacer  click en el mensaje crear el primer item en le panel de catalogo paneles que aparecen: Ambito de item aparcen campos para llenar de nombre del fabricante y modelo de maquina; panel datos del item campos del panel texto del item, decripcion adicional odeden de aparicion, un check de si es critico mejora para el futuro al momento de registrar el item no se si es necesario que en el panel ambito de item no sea un campo para escribir si no sea un slider de lista para saber que fabricante y modelo tiene ese item y se vincule de ese modo y cuando se realice la inspeccion al seleccionar la maquina ese nuevo item del checklist aparezca
+| CHK-03 | Editar ítem de checklist | `/tpm/checklist-items/<pk>/editar/` | A/T | ⬜ | | Funcina correctamente
+| CHK-04 | Eliminar ítem de checklist | `/tpm/checklist-items/<pk>/eliminar/` | A/T | ⬜ | | Funciona el endpoint al pulsar el boton eliminar me lleva al template de eliminar item de checklist 
+
+### 0.12 TPM — Certificaciones
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| CERT-01 | Listar certificaciones | `/tpm/certificaciones/` | A/T | ⬜ | | El endpoint y template funciona muesta los contadores de total activas, vigentes, por vencer y vencidas, ademas tiene el panel de listado de certificaciones con su tabla la informacion de la tabla esta bien las columnas en general y los registros tienen su respectivo boton de editar y revocar; ademas existe el boton de nueva certificacaion
+| CERT-02 | Crear certificación | `/tpm/certificaciones/crear/` | A/T | ⬜ | | funciona el endpoint y template al pulsar el boton de nueva certificacaion del template anterior te lleva al template de crear nueva certificacion que tiene el panel de datos de la certificacion el slider de usuarios lista a todos los del sistema deberia estar restringido solo para operadores los de jerarquia mayor a operador no lo necesitarian, el listado de maquinas es correcto recupera las del sistema segun si estan operativas, sus botones funcionan 
+| CERT-03 | Editar certificación | `/tpm/certificaciones/<pk>/editar/` | A/T | ⬜ | | al seleccionar editar para el correspondiente usuario y editar puedo cambiar de usuario esto seria incorrecto ya que se supone que estoy editando la de ese usuario no lo deberia poder cambiar cambiar para que maquina eso si es correcto poder cambiar las fechas si podria cambiar 
+| CERT-04 | Revocar certificación | `/tpm/certificaciones/<pk>/revocar/` | A/T | ⬜ | | Funciona el endpoint y me lleva al template de revocar certificacion 
+Nota para los hallazgos si el hallazgo se elimina la orden de mantenimiento tambien deberia ser eliminada ya que elimine un hallazgo y sigue la orden solo la orden deberia aparecer si el hallazgo esta con el estado de pendiente 
+### 0.13 TPM — Incidentes
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| INC-01 | Listar incidentes | `/tpm/incidentes/` | Todos | ⬜ | | Funcina el endpoint y el template muestra el boton de registrar incidente, muestra los contadores total incidentes, criticos y requiere mantenimiento, panel de historial de incidentes 
+| INC-02 | Reportar incidente (dispara alerta si requiere mant.) | `/tpm/incidentes/crear/` | Todos | ⬜ | | Funciona al pulsar el boton de registrar nuevo incidente panel del incidente con maquina con slider de seleccion de maquina, tipo de incidente con una lista de incidentes, severidad lista de severidad, registro de fecha y hora; panel de descripcion y acciones contiene descripcion del incidente y la accion que se tomo y check de requiere mantenimiento en el template cada incidente que se lista no tiene el boton de detalles que deberia llevar a tpm/incidentes/<pk>/ no existe como acceder
+| INC-03 | Detalle de incidente (botón "Generar OM" manual) | `/tpm/incidentes/<pk>/` | A/T | ⬜ | | en tpm/incidentes/<pk>/ existe el template de incidente endonde estan los tags el boton de editar y el boton de generar orden de mantenimiento; se tiene panel de descripcion del incidente; panel de datos del registro ; panel de accion tomada; al pulsar el boton de generar orden de mantenimiento me lleva al endpoint mantenimiento/ordenes/crear/?incidente=2
+| INC-04 | Editar incidente | `/tpm/incidentes/<pk>/editar/` | A/T | ⬜ | | Funciona
+
+### 0.14 TPM — OEE
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| OEE-01 | Listar registros OEE | `/tpm/oee/` | A/T | ⬜ | | Funciona el endpoint y template tiene el boton de calcular OEE; panel de historial OEE por maquina y periodo
+| OEE-02 | Calcular OEE del período | `/tpm/oee/calcular/` | A/T | ⬜ | | Funciona el endpoint y el template tiene el panel parametros de calculo campo de maquina con slider, mes con slider, año campo manual , explicaicon de como funciona y boton de calculo OEE
+Nota para OEE debo probar denesito ingresar varios datos para poder saber que si esta funcionando el OEE
+### 0.15 TPM — Alertas
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| ALE-01 | Listar alertas | `/tpm/alertas/` | A/T | ⬜ | | funciona el endpoint y el template tiene los contadores total activas, criticas y advertencias ; panel de alertas pendientes una alerta tiene sus tags de critica segun corresponda, que ocasiono la alerta por ejemplo inspeccion diaria fallina, codigo de la maquina y descripcion de la alerta; botones de asignar responsable, resolver eta alerta y boton de crear orden mantenimiento
+| ALE-02 | Resolver alerta | `/tpm/alertas/<pk>/resolver/` | A/T | ⬜ |  Al pulsar el boton de resolver esta alerta se despliega un campo de texto para escribir la accion tomada
+| ALE-03 | Asignar alerta | `/tpm/alertas/<pk>/asignar/` | A/T | ⬜ | |  Todavia no probada
+| ALE-04 | Crear OM desde alerta | `/tpm/alertas/<pk>/crear-om/` | A/T | ⬜ | | Todavia no probada
+
+### 0.16 Mantenimiento — Registro rápido (modelo legado)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| MNT-01 | Listar mantenimientos | `/mantenimiento/` | A/T | ⬜ | | Se accede al pulsar Historial en la seccion de mantenimiento del slider lateral, Si funciona el endpoint y template muestra los contadores de total registros, programados, en proceso y vencidos; panel historial de mantenimientos y boton de nuevo mantenimiento
+| MNT-02 | Crear mantenimiento | `/mantenimiento/crear/` | A/T | ⬜ | | Funciona endpoint y template en el template existen panels; panel datos principales; panel fechas para este panel necesito una aclaracion proxima fecha sera cuando este mantenimiento vuelva a saltar?; panel de ejecucion y costos; boton de cancelar y registrar todo esto funciona
+| MNT-03 | Detalle de mantenimiento | `/mantenimiento/<pk>/` | A/T | ⬜ | | Funciona endpoint y template en historial en la tabla la fila tiene el boton ver que me lleva a los detalles en el existen los botones de cambiar estado los cuales son iniciar y cancelar, tags de preventivo y programado, boton de editar y eliminar; panel de datos generales; panel de plan asociado especificar que es el plan asociado; panel de ejecucion  
+| MNT-04 | Editar mantenimiento | `/mantenimiento/<pk>/editar/` | A/T | ⬜ | | Funciona
+| MNT-05 | Eliminar mantenimiento | `/mantenimiento/<pk>/eliminar/` | A/T | ⬜ | | Funciona
+| MNT-06 | Cambiar estado de mantenimiento | `/mantenimiento/<pk>/estado/` | A/T | ⬜ | | Todavi no probado
+Nota deberia revisar el mantenimiento de como esta funcionando en el sistema estos serviran como recordatorios para las maquinas para que tenga su mantenimiento?
+### 0.17 Mantenimiento — Planes
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| PLN-01 | Listar planes | `/mantenimiento/planes/` | A/T | ⬜ | | funciona
+| PLN-02 | Crear plan | `/mantenimiento/planes/crear/` | A/T | ⬜ | | pilar tpm debo especificar en la documentacion que son y para que sirven; panel de disparadores de mantenimiento 
+| PLN-03 | Detalle de plan (botón "Generar OM") | `/mantenimiento/planes/<pk>/` | A/T | ⬜ | |  funciona
+| PLN-04 | Editar plan | `/mantenimiento/planes/<pk>/editar/` | A/T | ⬜ | | funciona 
+| PLN-05 | Eliminar plan (soft delete) | `/mantenimiento/planes/<pk>/eliminar/` | A/T | ⬜ | | funciona
+| PLN-06 | Restaurar plan | `/mantenimiento/planes/<pk>/restaurar/` | A/T | ⬜ | | funcian 
+| PLN-07 | Eliminar plan definitivo | `/mantenimiento/planes/<pk>/eliminar-definitivo/` | A | ⬜ | | funciona
+Nota para planestpm: necesito aclar como funciona planes tpm para la guia y documentacion del proyecto
+### 0.18 Mantenimiento — Órdenes de mantenimiento (OM)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| OM-01 | Listar OM | `/mantenimiento/ordenes/` | A/T | ⬜ | | Funciona 
+| OM-02 | Crear OM (manual / desde incidente / desde plan) | `/mantenimiento/ordenes/crear/` | A/T | ⬜ | | funciona especificar en la documentacion y manual de usuario los disparadores y las creaciones manuales de las ordenes 
+| OM-03 | Detalle de OM (enlaza al origen) | `/mantenimiento/ordenes/<pk>/` | A/T | ⬜ | |  Funciona no existe boton de ver pero funciona al darle click a la orden que se lista en mantenimiento/ordenes/ sirve
+| OM-04 | Editar OM | `/mantenimiento/ordenes/<pk>/editar/` | A/T | ⬜ | | Funciona
+| OM-05 | Asignarme la OM | `/mantenimiento/ordenes/<pk>/asignarme/` | T | ⬜ | | funciona 
+| OM-06 | Ejecutar OM | `/mantenimiento/ordenes/<pk>/ejecutar/` | T | ⬜ | | funciona 
+| OM-07 | Cambiar estado de OM | `/mantenimiento/ordenes/<pk>/estado/` | A/T | ⬜ | | No se si se refiere a finalizar orden, de ser el caso si funciona
+| OM-08 | Eliminar OM | `/mantenimiento/ordenes/<pk>/eliminar/` | A/T | ⬜ | | funciona
+| OM-09 | Agregar entrada a bitácora de OM | `/mantenimiento/ordenes/<om_pk>/bitacora/` | T | ⬜ | | funciona
+| OM-10 | Bitácora completa por máquina | `/mantenimiento/bitacora/<maquina_pk>/` | A/T | ⬜ | | funciona
+Nota: para las ordenes las personas seleccionables para responsables en la ordenes de mantenimiento no deberia listar a todos los usuarios deberia seguir la jerarquia para limitar dejando fuera a usuarios y deberia aparecer el rol para mayor informacion y no se si al crear la bitacora solo debo dejar un responsable ya que con la otra funcion de asignacion solo se asigna una persona si se crea manual pide 3 quiero dejar solo un responsable
+### 0.19 Inventario
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| INV-01 | Listar materiales | `/inventario/` | A/T | ⬜ | | funciona
+| INV-02 | Crear material | `/inventario/crear/` | A/T | ⬜ |  funciona
+| INV-03 | Detalle de material | `/inventario/<pk>/` | A/T | ⬜ | | funciona
+| INV-04 | Editar material | `/inventario/<pk>/editar/` | A/T | ⬜ | |
+| INV-05 | Ajustar stock manualmente | `/inventario/<pk>/stock/` | A/T | ⬜ |  funciona
+| INV-06 | Eliminar material | `/inventario/<pk>/eliminar/` | A/T | ⬜ | | funciona entrando al endpoint directo no se si hay un boton de eliminar ligado a el de ser el caso falta implementarlo y solo creao que desactiva el material deberia existir una forma de volver a reactivarlo
+
+### 0.20 Reportes
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| REP-01 | Listar / historial de reportes | `/reportes/` | A/T | ⬜ | |  funciona
+| REP-02 | Generar reporte Resumen | `/reportes/generar/resumen/` | A/T | ⬜ | | funciona
+| REP-03 | Generar reporte Mantenimiento | `/reportes/generar/mantenimiento/` | A/T | ⬜ | | funciona
+| REP-04 | Generar reporte Producción | `/reportes/generar/produccion/` | A/T | ⬜ | | funciona
+| REP-05 | Generar reporte Inventario | `/reportes/generar/inventario/` | A/T | ⬜ | | funciona
+| REP-06 | Generar reporte Seguridad | `/reportes/generar/seguridad/` | A/T | ⬜ | | funciona
+| REP-07 | Generar respaldo completo de la BD (backup) | `/reportes/generar/backup/` | A | ⬜ | | funciona
+
+### 0.21 Automatizaciones (en segundo plano — se verifican indirectamente)
+| Código | Flujo | Disparador | Efecto | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| AUTO-01 | Inspección reprobada | `InspeccionDiaria.aprobada=False` | Alerta crítica + OM automática | ⬜ | | funciona
+| AUTO-02 | Hallazgo crítico/alto | `HallazgoInspeccion` creado ALTA/CRÍTICA | OM automática | ⬜ | | funciona
+| AUTO-03 | Parada técnica no planificada | `RegistroParada` NP + categoría técnica | Alerta + OM automática | ⬜ | | Aun no probada
+| AUTO-04 | Máquina fuera de servicio | `Maquina.estado → FUERA_SERVICIO` | OM automática | ⬜ | | Aun no probada
+| AUTO-05 | Incidente que requiere mant. | `Incidente.requiere_mantenimiento=True` | Alerta crítica | ⬜ | | funciona
+| AUTO-06 | Cron diario de alertas | `manage.py generar_alertas` (7am) | Alertas de mant. vencido / stock bajo / certificaciones | ⬜ | | Aun no probada
+Nota para todo lo no probado no se intento por falta de datos en la base
+
+
+
+
+
+ 

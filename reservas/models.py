@@ -111,14 +111,17 @@ class Reserva(models.Model):
         # no al estudiante. Admin/técnico siguen siendo sus propios operadores.
         if self.usuario_id and self.maquina_id:
             from tpm.models import CertificacionUsuario
-            if es_estudiante(self.usuario):
-                if not self.operador_id:
-                    raise ValidationError(
-                        "Como estudiante debes elegir un operador certificado para esta máquina."
-                    )
-                sujeto_certificacion = self.operador
-            else:
-                sujeto_certificacion = self.usuario
+            # El estudiante nunca opera la máquina por sí mismo: debe delegar en
+            # un operador certificado. Los roles superiores (admin/técnico/PhD)
+            # operan ellos mismos, pero pueden asignar opcionalmente un operador
+            # para delegar el trabajo.
+            if es_estudiante(self.usuario) and not self.operador_id:
+                raise ValidationError(
+                    "Como estudiante debes elegir un operador certificado para esta máquina."
+                )
+            # La certificación se exige a quien realmente opera la máquina:
+            # el operador asignado si lo hay, o el solicitante en caso contrario.
+            sujeto_certificacion = self.operador if self.operador_id else self.usuario
             tiene_certificacion = CertificacionUsuario.objects.filter(
                 usuario_id=sujeto_certificacion.pk,
                 maquina_id=self.maquina_id,
@@ -130,10 +133,10 @@ class Reserva(models.Model):
                     f"{sujeto_certificacion} no tiene una certificación vigente para operar "
                     f"'{self.maquina.nombre}'. Solicita la certificación antes de reservar esta máquina."
                 )
-            # Disponibilidad horaria del operador — solo se exige si el operador
-            # declaró al menos un bloque de horario; si no declaró ninguno se
-            # asume disponible en cualquier día/hora (comportamiento por defecto).
-            if es_estudiante(self.usuario) and self.operador_id:
+            # Disponibilidad horaria del operador — solo se exige si hay un
+            # operador asignado y declaró al menos un bloque de horario; si no
+            # declaró ninguno se asume disponible en cualquier día/hora.
+            if self.operador_id:
                 from usuarios.models import DisponibilidadOperador
                 bloques = self.operador.disponibilidad.filter(activo=True)
                 if bloques.exists() and not bloques.filter(

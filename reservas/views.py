@@ -4,9 +4,10 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
+from django.db.models import Q
 from datetime import datetime, date, timedelta
 from decimal import Decimal, InvalidOperation
-from usuarios.permisos import es_admin, es_admin_o_tecnico, es_estudiante
+from usuarios.permisos import es_admin, es_admin_o_tecnico, es_estudiante, es_operador
 from usuarios.models import Usuario
 from .models import Reserva, OrdenTrabajo, RegistroParada, BitacoraOperario
 from .forms import (ReservaForm, OrdenTrabajoForm, CerrarOrdenForm,
@@ -21,6 +22,9 @@ def lista_reservas(request):
     reservas = Reserva.objects.select_related('usuario', 'maquina', 'autorizador').all()
     if es_estudiante(request.user):
         reservas = reservas.filter(usuario=request.user)
+    elif es_operador(request.user):
+        # El operador ve las reservas que solicitó y las que le fueron asignadas.
+        reservas = reservas.filter(Q(usuario=request.user) | Q(operador=request.user))
     context = {
         'reservas':           reservas,
         'total':              reservas.count(),
@@ -35,9 +39,9 @@ def lista_reservas(request):
 
 @login_required(login_url='login')
 def crear_reserva(request):
-    mostrar_operador = es_estudiante(request.user)
+    solicitante_es_estudiante = es_estudiante(request.user)
     if request.method == 'POST':
-        form = ReservaForm(request.POST, mostrar_operador=mostrar_operador)
+        form = ReservaForm(request.POST, solicitante_es_estudiante=solicitante_es_estudiante)
         if form.is_valid():
             reserva = form.save(commit=False)
             reserva.usuario = request.user
@@ -49,7 +53,7 @@ def crear_reserva(request):
             except ValidationError as e:
                 messages.error(request, f'No se pudo guardar la reserva: {"; ".join(e.messages)}')
     else:
-        form = ReservaForm(mostrar_operador=mostrar_operador)
+        form = ReservaForm(solicitante_es_estudiante=solicitante_es_estudiante)
     return render(request, 'reservas/form_reserva.html', {
         'form':   form,
         'titulo': 'Nueva reserva',
@@ -187,12 +191,17 @@ def detalle_reserva(request, pk):
         messages.error(request, 'No tienes acceso a esa reserva.')
         return redirect('lista_reservas')
     orden = getattr(reserva, 'orden_trabajo', None)
+    es_propia          = reserva.usuario == request.user
+    es_operador_asignado = reserva.operador_id == request.user.pk
     context = {
         'reserva':            reserva,
         'orden':              orden,
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
         'es_admin':           es_admin(request.user),
-        'es_propia':          reserva.usuario == request.user,
+        'es_propia':          es_propia,
+        # Quién puede crear/ver la OT desde el detalle de la reserva:
+        # el solicitante, el operador asignado o el staff.
+        'puede_gestionar_orden': es_propia or es_operador_asignado or es_admin_o_tecnico(request.user),
     }
     return render(request, 'reservas/detalle_reserva.html', context)
 
@@ -241,9 +250,9 @@ def editar_reserva(request, pk):
         messages.error(request, 'Solo se pueden editar reservas en estado Pendiente.')
         return redirect('detalle_reserva', pk=pk)
 
-    mostrar_operador = es_estudiante(reserva.usuario) if reserva.usuario else False
+    solicitante_es_estudiante = es_estudiante(reserva.usuario) if reserva.usuario else False
     if request.method == 'POST':
-        form = ReservaForm(request.POST, instance=reserva, mostrar_operador=mostrar_operador)
+        form = ReservaForm(request.POST, instance=reserva, solicitante_es_estudiante=solicitante_es_estudiante)
         form.fields['fecha'].widget.attrs.pop('min', None)
         if form.is_valid():
             try:
@@ -253,7 +262,7 @@ def editar_reserva(request, pk):
             except ValidationError as e:
                 messages.error(request, f'No se pudo guardar: {"; ".join(e.messages)}')
     else:
-        form = ReservaForm(instance=reserva, mostrar_operador=mostrar_operador)
+        form = ReservaForm(instance=reserva, solicitante_es_estudiante=solicitante_es_estudiante)
         form.fields['fecha'].widget.attrs.pop('min', None)
 
     return render(request, 'reservas/form_reserva.html', {
@@ -290,6 +299,10 @@ def lista_ordenes(request):
         'reserva__usuario', 'reserva__maquina').filter(activo=True)
     if es_estudiante(request.user):
         ordenes = ordenes.filter(reserva__usuario=request.user)
+    elif es_operador(request.user):
+        # El operador ve las órdenes de las reservas que solicitó o le asignaron.
+        ordenes = ordenes.filter(
+            Q(reserva__usuario=request.user) | Q(reserva__operador=request.user))
     context = {
         'ordenes':            ordenes,
         'total':              ordenes.count(),
@@ -304,7 +317,12 @@ def lista_ordenes(request):
 @login_required(login_url='login')
 def crear_orden(request, reserva_pk):
     reserva = get_object_or_404(Reserva, pk=reserva_pk, estado='APROBADA')
-    if es_estudiante(request.user) and reserva.usuario_id != request.user.pk:
+    puede = (
+        es_admin_o_tecnico(request.user)
+        or reserva.usuario_id == request.user.pk       # solicitante
+        or reserva.operador_id == request.user.pk       # operador asignado
+    )
+    if not puede:
         messages.error(request, 'No tienes acceso a esa reserva.')
         return redirect('lista_reservas')
     if hasattr(reserva, 'orden_trabajo'):
@@ -334,9 +352,20 @@ def crear_orden(request, reserva_pk):
     })
 
 
-def _es_dueno_o_staff(request, orden):
-    """Un estudiante solo puede operar sobre su propia orden de trabajo."""
-    return not (es_estudiante(request.user) and orden.reserva.usuario_id != request.user.pk)
+def _es_participante_orden(user, orden):
+    """Quién puede VER una OT: el staff (admin/técnico), el solicitante dueño
+    de la reserva, o el operador asignado a ella."""
+    if es_admin_o_tecnico(user):
+        return True
+    reserva = orden.reserva
+    return reserva.usuario_id == user.pk or reserva.operador_id == user.pk
+
+
+def _puede_registrar_en_orden(user, orden):
+    """Quién puede ESCRIBIR en una OT (bitácora/paradas/consumos/cierre): igual
+    que participante pero excluyendo al estudiante, que siempre delega en un
+    operador y es de solo lectura sobre la OT."""
+    return _es_participante_orden(user, orden) and not es_estudiante(user)
 
 
 def _contexto_detalle_orden(request, orden, parada_form=None):
@@ -374,6 +403,15 @@ def _contexto_detalle_orden(request, orden, parada_form=None):
         'materiales':         Material.objects.filter(activo=True).order_by('nombre'),
         'cerrar_form':        CerrarOrdenForm(instance=orden),
         'es_admin_o_tecnico': es_admin_o_tecnico(request.user),
+        # Puede registrar trabajo (bitácora/paradas/consumos) y cerrar la OT:
+        # el operador asignado, el staff, o un solicitante de rol superior que
+        # opere su propia reserva. El estudiante queda excluido: siempre delega
+        # en un operador y es de solo lectura sobre la OT (no escribe en la
+        # bitácora del operario ni registra nada).
+        'puede_editar_orden': (
+            orden.estado != 'FINALIZADA'
+            and _puede_registrar_en_orden(request.user, orden)
+        ),
         'proxima_reserva':    proxima_reserva,
         'minutos_restantes':  minutos_restantes,
     }
@@ -382,7 +420,7 @@ def _contexto_detalle_orden(request, orden, parada_form=None):
 @login_required(login_url='login')
 def detalle_orden(request, pk):
     orden = get_object_or_404(OrdenTrabajo, pk=pk, activo=True)
-    if not _es_dueno_o_staff(request, orden):
+    if not _es_participante_orden(request.user, orden):
         messages.error(request, 'No tienes acceso a esa orden de trabajo.')
         return redirect('lista_ordenes')
     return render(request, 'reservas/detalle_orden.html', _contexto_detalle_orden(request, orden))
@@ -422,9 +460,9 @@ def _advertir_sobretiempo(request, orden, tiempo_real_min):
 @login_required(login_url='login')
 def cerrar_orden(request, pk):
     orden = get_object_or_404(OrdenTrabajo, pk=pk, activo=True)
-    if not _es_dueno_o_staff(request, orden):
-        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
-        return redirect('lista_ordenes')
+    if not _puede_registrar_en_orden(request.user, orden):
+        messages.error(request, 'No tienes permiso para modificar esta orden de trabajo.')
+        return redirect('detalle_orden', pk=pk)
     if orden.estado == 'FINALIZADA':
         messages.error(request, 'Esta orden ya está finalizada.')
         return redirect('detalle_orden', pk=pk)
@@ -453,9 +491,9 @@ def cerrar_orden(request, pk):
 @login_required(login_url='login')
 def agregar_parada(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
-    if not _es_dueno_o_staff(request, orden):
-        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
-        return redirect('lista_ordenes')
+    if not _puede_registrar_en_orden(request.user, orden):
+        messages.error(request, 'No tienes permiso para modificar esta orden de trabajo.')
+        return redirect('detalle_orden', pk=orden_pk)
     if request.method == 'POST':
         form = RegistroParadaForm(request.POST, maquina=orden.reserva.maquina, reserva=orden.reserva)
         if form.is_valid():
@@ -472,9 +510,9 @@ def agregar_parada(request, orden_pk):
 @login_required(login_url='login')
 def agregar_bitacora(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
-    if not _es_dueno_o_staff(request, orden):
-        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
-        return redirect('lista_ordenes')
+    if not _puede_registrar_en_orden(request.user, orden):
+        messages.error(request, 'No tienes permiso para modificar esta orden de trabajo.')
+        return redirect('detalle_orden', pk=orden_pk)
     if request.method == 'POST':
         form = BitacoraForm(request.POST)
         if form.is_valid():
@@ -494,9 +532,9 @@ def agregar_bitacora(request, orden_pk):
 @login_required(login_url='login')
 def registrar_consumo(request, orden_pk):
     orden = get_object_or_404(OrdenTrabajo, pk=orden_pk, activo=True)
-    if not _es_dueno_o_staff(request, orden):
-        messages.error(request, 'No tienes acceso a esa orden de trabajo.')
-        return redirect('lista_ordenes')
+    if not _puede_registrar_en_orden(request.user, orden):
+        messages.error(request, 'No tienes permiso para modificar esta orden de trabajo.')
+        return redirect('detalle_orden', pk=orden_pk)
     if request.method == 'POST':
         material_id = request.POST.get('material_id')
         observacion = request.POST.get('observacion', '')

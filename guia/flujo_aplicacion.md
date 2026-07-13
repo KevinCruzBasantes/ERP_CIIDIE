@@ -2,6 +2,229 @@
 
 > Documento de referencia técnica. Generado a partir del código fuente real (modelos, vistas, urls, signals) al 2026-06-16.
 > Objetivo: tener en un solo lugar el mapa completo del sistema para planificar cambios futuros sin tener que releer todo el código.
+>
+> **Nota (2026-07-09):** el cuerpo del documento (secciones 1–14) refleja el estado de junio y tiene detalles ya desactualizados (dice Django 6.0.5 pero producción corre **Django 5.2 LTS**; faltan flujos nuevos: landing con selector de perfil, registro de estudiante, dashboard operador, mi-horario, ítems de checklist, ejecutar/asignarme OM, asignar alerta, crear OM desde alerta, reasignar pieza, respaldo/backup). El **Apartado 0** de abajo es el índice actualizado y es el que usamos para el testeo en tiempo real: a medida que pruebes cada flujo, me cuentas qué pasa y voy corrigiendo tanto el estado como el cuerpo del documento.
+
+---
+
+## 0. Índice de flujos para testeo (2026-07-09)
+
+Lista completa de flujos del sistema, agrupados por módulo. Cada flujo tiene un **código** para que puedas referirte a él al reportar (ej. *"RES-02 no me deja elegir operador"*). Reconstruido desde los `urls.py` reales en producción.
+
+**Cómo lo usamos:** pruebas un flujo → me dices en texto qué pasó (qué esperabas, qué ocurrió, con qué rol) → actualizo la columna **Estado** y, si hace falta, corrijo el documento/código.
+
+**Leyenda de estado:**
+- ⬜ Pendiente de probar
+- ✅ Probado — funciona como se espera
+- ⚠️ Probado — funciona con observaciones (mejorable pero no bloquea)
+- ❌ Con error / bloqueado
+- ➖ No aplica / no se prueba todavía
+
+Roles: **A**=Administrador/PhD · **T**=Técnico/Ingeniero · **O**=Operador · **E**=Estudiante · **Todos**=cualquier autenticado
+
+### 0.1 Autenticación y acceso
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| AUTH-01 | Landing con selector de perfil | `/` | Público | ✅ | Muestra los 4 perfiles |
+| AUTH-02 | Registro de estudiante | `/registro/` | Público | ✅ | Crea cuenta, redirige a `/dashboard/` con notificación de bienvenida |
+| AUTH-03 | Login | `/ingresar/` | Público | ✅ | El landing pasa `?rol=` por perfil |
+| AUTH-04 | Logout | `/logout/` | Todos | ✅ | Redirige a `/ingresar/` en todos los roles |
+| AUTH-05 | Redirección al dashboard según rol | tras login | Todos | ✅ | Cada rol cae en su dashboard correcto |
+| AUTH-06 | Cierre de sesión por inactividad | automático | Todos | ✅ | Redirige a `/ingresar/` con mensaje de sesión cerrada |
+
+### 0.2 Dashboards
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| DASH-01 | Dashboard Administrador | `/dashboard/admin/` | A | ✅ | Contadores + paneles clicables OK (panel de alertas vacío al momento de la prueba) |
+| DASH-02 | Dashboard Técnico | `/dashboard/tecnico/` | T | ⚠️ | Funciona. **Duda:** al registrar una máquina, ¿no debería quedar su inspección diaria como pendiente/activa? (revisar) |
+| DASH-03 | Dashboard Operador | `/dashboard/operador/` | O | ⚠️ | Funciona. Panel "Incidencias" no muestra nada — **revisar lógica** |
+| DASH-04 | Dashboard General (estudiante) | `/dashboard/` | E | ✅ | Máquinas disponibles, reservas recientes, accesos rápidos OK |
+
+### 0.3 Usuarios (administración)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| USR-01 | Listar usuarios | `/usuarios/` | A | ✅ | Contadores + tabla + botón ver/nuevo |
+| USR-02 | Crear usuario | `/usuarios/crear/` | A | ✅ | Notifica y redirige a detalle |
+| USR-03 | Ver detalle de usuario | `/usuarios/<pk>/` | A | ✅ | |
+| USR-04 | Editar usuario | `/usuarios/<pk>/editar/` | A | ✅ | |
+| USR-05 | Cambiar estado (activar/inactivar/suspender) | `/usuarios/<pk>/estado/` | A | ✅ | Refleja el cambio en el tag de estado |
+| USR-06 | Eliminar usuario | `/usuarios/<pk>/eliminar/` | A | ✅ | Confirmación + desaparece del listado |
+
+### 0.4 Horario del operador
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| HOR-01 | Ver / registrar mi disponibilidad | `/mi-horario/` | O | ✅ | Día + hora inicio/fin + bloques actuales |
+| HOR-02 | Eliminar una franja de disponibilidad | `/mi-horario/<pk>/eliminar/` | O | ✅ | Confirma y notifica |
+
+### 0.5 Máquinas
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| MAQ-01 | Listar máquinas | `/maquinas/` | Todos | ✅ | Contadores + tabla |
+| MAQ-02 | Crear máquina | `/maquinas/crear/` | A/T | ⚠️ | Funciona. **Bug:** el campo "responsable" lista TODOS los usuarios; debe listar solo jerarquía alta |
+| MAQ-03 | Detalle de máquina | `/maquinas/<pk>/` | Todos | ✅ | Identificación, ficha técnica, ensambles/piezas, historiales |
+| MAQ-04 | Editar máquina | `/maquinas/<pk>/editar/` | A/T | ❌ | Al subir imagen/manual → **HTTP 413 Request Entity Too Large (nginx)**. Falta subir `client_max_body_size` |
+| MAQ-05 | Eliminar máquina | `/maquinas/<pk>/eliminar/` | A/T | ✅ | "Dar de baja" = soft delete |
+| MAQ-06 | Cambiar estado | `/maquinas/<pk>/estado/` | A/T | ❌ | **Endpoint ya no contemplado en el sistema — revisar código** (¿de dónde sale AUTO-04?) |
+
+### 0.6 Piezas y despiece
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| PZA-01 | Crear ensamble (nivel 1) | `/maquinas/<maquina_pk>/ensambles/crear/` | A/T | ✅ | |
+| PZA-02 | Crear pieza (nivel 2) | `/maquinas/<maquina_pk>/piezas/crear/` | A/T | ⚠️ | Funciona. **Dudas:** ¿"cantidad en máquina" es total de la máquina o nº en el ensamble? ¿el stock mínimo de repuestos lanza alerta? |
+| PZA-03 | Detalle de pieza | `/maquinas/piezas/<pk>/` | Todos | ⚠️ | El endpoint carga; **revisar si hay botón de acceso** desde el detalle de máquina |
+| PZA-04 | Editar pieza | `/maquinas/piezas/<pk>/editar/` | A/T | ⚠️ | Funciona; mismo **HTTP 413** al subir imágenes |
+| PZA-05 | Eliminar pieza | `/maquinas/piezas/<pk>/eliminar/` | A/T | ✅ | |
+| PZA-06 | Reasignar pieza | `/maquinas/piezas/<pk>/reasignar/` | A/T | ✅ | |
+| PZA-07 | Transferir pieza entre máquinas | `/maquinas/piezas/<pieza_pk>/transferir/` | A/T | ✅ | |
+| PZA-08 | Listar transferencias | `/maquinas/transferencias/` | A/T | ✅ | Transferencia, filtros e historial OK |
+
+### 0.7 Códigos de parada (catálogo por fabricante+modelo)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| CP-01 | Listar códigos de parada | `/maquinas/codigos-parada/` | A/T | ✅ | |
+| CP-02 | Crear código de parada | `/maquinas/codigos-parada/crear/` | A/T | ✅ | |
+| CP-03 | Detalle código de parada | `/maquinas/codigos-parada/<pk>/` | A/T | ✅ | Se accede con "ver" desde la tabla |
+| CP-04 | Editar código de parada | `/maquinas/codigos-parada/<pk>/editar/` | A/T | ✅ | Vía botón editar dentro del detalle |
+| CP-05 | Eliminar código de parada | `/maquinas/codigos-parada/<pk>/eliminar/` | A/T | ✅ | Eliminación permanente |
+
+### 0.8 Reservas
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| RES-01 | Listar reservas (filtradas por rol) | `/reservas/` | Todos | ✅ | Lista según rol + botón nueva reserva |
+| RES-02 | Crear reserva (operador opcional/obligatorio, certificación, disponibilidad) | `/reservas/crear/` | Todos | ✅ | Al elegir máquina se ven horarios de operador y operadores certificados |
+| RES-03 | Detalle de reserva | `/reservas/<pk>/` | Todos | ✅ | Muestra reserva y su OT según el caso |
+| RES-04 | Editar reserva | `/reservas/<pk>/editar/` | Todos | ✅ | Solo en estado PENDIENTE; edita el creador o alguien de mayor jerarquía |
+| RES-05 | Cambiar estado (aprobar → EN_USO → COMPLETADA) | `/reservas/<pk>/estado/` | A/T | ✅ | Solo admin/jerarquía autorizada |
+| RES-06 | Cancelar reserva | `/reservas/<pk>/cancelar/` | Todos | ✅ | El solicitante puede cancelar con confirmación |
+| RES-07 | Consultar horarios ocupados (AJAX) | `/reservas/horarios-ocupados/` | Todos | ✅ | Lista horarios ya reservados del día elegido |
+| RES-08 | Listar operadores certificados (AJAX) | `/reservas/operadores-certificados/` | Todos | ✅ | Muestra operadores certificados de la máquina |
+| RES-09 | Disponibilidad de operadores por máquina (AJAX) | `/reservas/disponibilidad-operadores/` | Todos | ✅ | Nombre + horario del operador certificado vigente |
+
+### 0.9 Órdenes de trabajo (OT)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| OT-01 | Listar OT (filtradas por rol) | `/reservas/ordenes/` | Todos | ✅ | Jerarquía alta ve todas; perfiles bajos ven solo las suyas |
+| OT-02 | Crear OT desde una reserva | `/reservas/ordenes/crear/<reserva_pk>/` | solicitante/operador/staff | ✅ | Todos los perfiles pueden crear su OT |
+| OT-03 | Detalle de OT (estudiante solo lectura) | `/reservas/ordenes/<pk>/` | participantes + staff | ✅ | Estudiante en solo lectura, correcto |
+| OT-04 | Agregar bitácora de operario | `/reservas/ordenes/<orden_pk>/bitacora/` | operador/solicitante(no est.)/staff | ✅ | Estudiante sin botón "agregar", correcto |
+| OT-05 | Agregar parada (dispara alerta / OM técnica) | `/reservas/ordenes/<orden_pk>/parada/` | operador/solicitante(no est.)/staff | ⬜ | No probado (falta de datos) |
+| OT-06 | Registrar consumo de material (descuenta stock) | `/reservas/ordenes/<orden_pk>/consumo/` | operador/solicitante(no est.)/staff | ✅ | Estudiante no puede consumir; los demás sí |
+| OT-07 | Cerrar OT (tiempos, unidades → OEE) | `/reservas/ordenes/<pk>/cerrar/` | operador/solicitante(no est.)/staff | ✅ | Estudiante no puede cerrar, correcto |
+
+### 0.10 TPM — Inspección diaria y hallazgos
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| INS-01 | Inspección diaria (checklist antes de usar) | `/inspeccion/` | Todos | ⬜ | No probado en aislado (ver INS-02) |
+| INS-02 | Listar inspecciones | `/tpm/inspecciones/` | A/T | ✅ | Panel inspeccionadas hoy + nueva inspección con checklist universal |
+| INS-03 | Detalle de inspección | `/tpm/inspecciones/<pk>/` | A/T | ✅ | Se abre desde la máquina inspeccionada; checklist + hallazgos |
+| INS-04 | Agregar hallazgo (dispara OM si ALTA/CRÍTICA) | `/tpm/inspecciones/<pk>/hallazgos/crear/` | A/T | ✅ | Al agregar hallazgo aparecen tags de prioridad y estado |
+| INS-05 | Editar hallazgo | `/tpm/hallazgos/<pk>/editar/` | A/T | ⚠️ | Funciona. **Duda de lógica:** resolver es un toggle pendiente↔resuelto; a futuro se quiere un template que explique cómo se resolvió |
+| INS-06 | Resolver hallazgo | `/tpm/hallazgos/<pk>/resolver/` | A/T | ⚠️ | Solo cambia el tag pendiente→resuelto y notifica |
+| INS-07 | Eliminar hallazgo | `/tpm/hallazgos/<pk>/eliminar/` | A/T | ⚠️ | Funciona. **Bug:** si se elimina el hallazgo, la OM asociada debería eliminarse también (o existir solo mientras el hallazgo esté pendiente) |
+
+### 0.11 TPM — Ítems de checklist (catálogo por fabricante+modelo)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| CHK-01 | Listar ítems de checklist | `/tpm/checklist-items/` | A/T | ✅ | Contadores + filtro fabricante/modelo + catálogo |
+| CHK-02 | Crear ítem de checklist | `/tpm/checklist-items/crear/` | A/T | ⚠️ | Funciona. **Mejora:** el "ámbito" (fabricante/modelo) hoy es texto libre; debería ser lista desplegable para que el ítem se vincule y aparezca en la inspección al elegir esa máquina |
+| CHK-03 | Editar ítem de checklist | `/tpm/checklist-items/<pk>/editar/` | A/T | ✅ | |
+| CHK-04 | Eliminar ítem de checklist | `/tpm/checklist-items/<pk>/eliminar/` | A/T | ✅ | |
+
+### 0.12 TPM — Certificaciones
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| CERT-01 | Listar certificaciones | `/tpm/certificaciones/` | A/T | ✅ | Contadores + tabla con editar/revocar + nueva |
+| CERT-02 | Crear certificación | `/tpm/certificaciones/crear/` | A/T | ⚠️ | Funciona. **Bug:** el slider de usuarios lista a todos; debería restringirse solo a operadores. Máquinas OK (solo operativas) |
+| CERT-03 | Editar certificación | `/tpm/certificaciones/<pk>/editar/` | A/T | ⚠️ | **Bug:** permite cambiar el usuario; debería estar bloqueado (solo cambiar máquina/fechas) |
+| CERT-04 | Revocar certificación | `/tpm/certificaciones/<pk>/revocar/` | A/T | ✅ | |
+
+### 0.13 TPM — Incidentes
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| INC-01 | Listar incidentes | `/tpm/incidentes/` | Todos | ✅ | Contadores + historial |
+| INC-02 | Reportar incidente (dispara alerta si requiere mant.) | `/tpm/incidentes/crear/` | Todos | ⚠️ | Funciona. **Bug:** en el listado falta el botón "ver/detalles" para llegar a `/tpm/incidentes/<pk>/` |
+| INC-03 | Detalle de incidente (botón "Generar OM" manual) | `/tpm/incidentes/<pk>/` | A/T | ✅ | Botón lleva a `mantenimiento/ordenes/crear/?incidente=<pk>` |
+| INC-04 | Editar incidente | `/tpm/incidentes/<pk>/editar/` | A/T | ✅ | |
+
+### 0.14 TPM — OEE
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| OEE-01 | Listar registros OEE | `/tpm/oee/` | A/T | ✅ | Historial por máquina y período |
+| OEE-02 | Calcular OEE del período | `/tpm/oee/calcular/` | A/T | ⚠️ | UI OK; **falta validar el cálculo con datos reales** de OT cerradas |
+
+### 0.15 TPM — Alertas
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| ALE-01 | Listar alertas | `/tpm/alertas/` | A/T | ✅ | Contadores + panel de pendientes con acciones |
+| ALE-02 | Resolver alerta | `/tpm/alertas/<pk>/resolver/` | A/T | ✅ | Despliega campo "acción tomada" |
+| ALE-03 | Asignar alerta | `/tpm/alertas/<pk>/asignar/` | A/T | ⬜ | No probada |
+| ALE-04 | Crear OM desde alerta | `/tpm/alertas/<pk>/crear-om/` | A/T | ⬜ | No probada |
+
+### 0.16 Mantenimiento — Registro rápido (modelo legado)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| MNT-01 | Listar mantenimientos | `/mantenimiento/` | A/T | ✅ | Se accede por "Historial"; contadores + tabla |
+| MNT-02 | Crear mantenimiento | `/mantenimiento/crear/` | A/T | ⚠️ | Funciona. **Duda:** ¿"próxima fecha" es cuándo vuelve a saltar el mantenimiento? |
+| MNT-03 | Detalle de mantenimiento | `/mantenimiento/<pk>/` | A/T | ⚠️ | Funciona. **Aclarar** qué es "plan asociado" |
+| MNT-04 | Editar mantenimiento | `/mantenimiento/<pk>/editar/` | A/T | ✅ | |
+| MNT-05 | Eliminar mantenimiento | `/mantenimiento/<pk>/eliminar/` | A/T | ✅ | |
+| MNT-06 | Cambiar estado de mantenimiento | `/mantenimiento/<pk>/estado/` | A/T | ⬜ | No probado (iniciar/cancelar desde el detalle) |
+
+### 0.17 Mantenimiento — Planes
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| PLN-01 | Listar planes | `/mantenimiento/planes/` | A/T | ✅ | |
+| PLN-02 | Crear plan | `/mantenimiento/planes/crear/` | A/T | ⚠️ | Funciona. **Aclarar en docs:** qué es "pilar TPM" y "disparadores de mantenimiento" |
+| PLN-03 | Detalle de plan (botón "Generar OM") | `/mantenimiento/planes/<pk>/` | A/T | ✅ | |
+| PLN-04 | Editar plan | `/mantenimiento/planes/<pk>/editar/` | A/T | ✅ | |
+| PLN-05 | Eliminar plan (soft delete) | `/mantenimiento/planes/<pk>/eliminar/` | A/T | ✅ | |
+| PLN-06 | Restaurar plan | `/mantenimiento/planes/<pk>/restaurar/` | A/T | ✅ | |
+| PLN-07 | Eliminar plan definitivo | `/mantenimiento/planes/<pk>/eliminar-definitivo/` | A | ✅ | |
+
+### 0.18 Mantenimiento — Órdenes de mantenimiento (OM)
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| OM-01 | Listar OM | `/mantenimiento/ordenes/` | A/T | ✅ | |
+| OM-02 | Crear OM (manual / desde incidente / desde plan) | `/mantenimiento/ordenes/crear/` | A/T | ⚠️ | Funciona. **Bug:** responsables listan a todos; deben seguir jerarquía (excluir estudiantes) y mostrar el rol. Ver decisión de 1 vs 3 responsables |
+| OM-03 | Detalle de OM (enlaza al origen) | `/mantenimiento/ordenes/<pk>/` | A/T | ✅ | Sin botón "ver", se abre con click en la fila |
+| OM-04 | Editar OM | `/mantenimiento/ordenes/<pk>/editar/` | A/T | ✅ | |
+| OM-05 | Asignarme la OM | `/mantenimiento/ordenes/<pk>/asignarme/` | T | ✅ | |
+| OM-06 | Ejecutar OM | `/mantenimiento/ordenes/<pk>/ejecutar/` | T | ✅ | |
+| OM-07 | Cambiar estado de OM | `/mantenimiento/ordenes/<pk>/estado/` | A/T | ✅ | Confirmado como "finalizar orden" |
+| OM-08 | Eliminar OM | `/mantenimiento/ordenes/<pk>/eliminar/` | A/T | ✅ | |
+| OM-09 | Agregar entrada a bitácora de OM | `/mantenimiento/ordenes/<om_pk>/bitacora/` | T | ✅ | |
+| OM-10 | Bitácora completa por máquina | `/mantenimiento/bitacora/<maquina_pk>/` | A/T | ✅ | |
+
+### 0.19 Inventario
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| INV-01 | Listar materiales | `/inventario/` | A/T | ✅ | |
+| INV-02 | Crear material | `/inventario/crear/` | A/T | ✅ | |
+| INV-03 | Detalle de material | `/inventario/<pk>/` | A/T | ✅ | |
+| INV-04 | Editar material | `/inventario/<pk>/editar/` | A/T | ✅ | |
+| INV-05 | Ajustar stock manualmente | `/inventario/<pk>/stock/` | A/T | ✅ | |
+| INV-06 | Eliminar material | `/inventario/<pk>/eliminar/` | A/T | ⚠️ | Funciona por URL directa. **Falta:** botón en el detalle; es soft delete → falta forma de reactivar |
+
+### 0.20 Reportes
+| Código | Flujo | Entrada | Roles | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| REP-01 | Listar / historial de reportes | `/reportes/` | A/T | ✅ | |
+| REP-02 | Generar reporte Resumen | `/reportes/generar/resumen/` | A/T | ✅ | |
+| REP-03 | Generar reporte Mantenimiento | `/reportes/generar/mantenimiento/` | A/T | ✅ | |
+| REP-04 | Generar reporte Producción | `/reportes/generar/produccion/` | A/T | ✅ | |
+| REP-05 | Generar reporte Inventario | `/reportes/generar/inventario/` | A/T | ✅ | |
+| REP-06 | Generar reporte Seguridad | `/reportes/generar/seguridad/` | A/T | ✅ | |
+| REP-07 | Generar respaldo completo de la BD (backup) | `/reportes/generar/backup/` | A | ✅ | |
+
+### 0.21 Automatizaciones (en segundo plano — se verifican indirectamente)
+| Código | Flujo | Disparador | Efecto | Estado | Notas / hallazgos |
+|---|---|---|---|---|---|
+| AUTO-01 | Inspección reprobada | `InspeccionDiaria.aprobada=False` | Alerta crítica + OM automática | ✅ | Verificado |
+| AUTO-02 | Hallazgo crítico/alto | `HallazgoInspeccion` creado ALTA/CRÍTICA | OM automática | ✅ | Verificado (ver bug de INS-07 sobre eliminar) |
+| AUTO-03 | Parada técnica no planificada | `RegistroParada` NP + categoría técnica | Alerta + OM automática | ⬜ | No probada (falta de datos) |
+| AUTO-04 | Máquina fuera de servicio | `Maquina.estado → FUERA_SERVICIO` | OM automática | ⬜ | No probada; **depende de MAQ-06 que parece removido — revisar** |
+| AUTO-05 | Incidente que requiere mant. | `Incidente.requiere_mantenimiento=True` | Alerta crítica | ✅ | Verificado |
+| AUTO-06 | Cron diario de alertas | `manage.py generar_alertas` (7am) | Alertas de mant. vencido / stock bajo / certificaciones | ⬜ | No probada (falta de datos) |
 
 ---
 

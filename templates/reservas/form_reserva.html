@@ -75,15 +75,21 @@
             {% if form.operador %}
             <div style="grid-column:span 2;">
                 <label style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                    Operador <span style="color:var(--danger);">*</span>
+                    Operador {% if form.operador.field.required %}<span style="color:var(--danger);">*</span>{% else %}<span style="color:var(--text-muted); text-transform:none; letter-spacing:normal;">(opcional)</span>{% endif %}
                 </label>
                 {{ form.operador }}
                 <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.3rem;">
+                    {% if form.operador.field.required %}
                     Elige primero la máquina: solo aparecen los operadores certificados, activos y disponibles ese día/horario.
+                    {% else %}
+                    Déjalo vacío si operarás tú mismo, o asigna un operador certificado para delegar el trabajo. Elige primero la máquina para ver los disponibles.
+                    {% endif %}
                 </div>
+                {% if form.operador.field.required %}
                 <div id="aviso-sin-operadores" style="display:none; margin-top:0.5rem; padding:0.6rem 0.9rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:6px; font-size:0.78rem; color:var(--danger);">
                     ⚠ No hay ningún operador certificado y disponible para esta máquina en ese día. Prueba otra fecha u horario, o contacta a un técnico/administrador.
                 </div>
+                {% endif %}
                 {% if form.operador.errors %}
                     <div style="font-size:0.72rem; color:var(--danger); margin-top:0.3rem;">{{ form.operador.errors.0 }}</div>
                 {% endif %}

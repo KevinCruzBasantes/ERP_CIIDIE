@@ -28,22 +28,30 @@ class ReservaForm(forms.ModelForm):
             'operador':      forms.Select(attrs={'style': SELECT_STYLE, 'id': 'id_operador'}),
         }
 
-    def __init__(self, *args, mostrar_operador=False, **kwargs):
+    def __init__(self, *args, solicitante_es_estudiante=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mostrar_operador = mostrar_operador
+        self.solicitante_es_estudiante = solicitante_es_estudiante
         self.fields['maquina'].queryset    = Maquina.objects.filter(estado='OPERATIVA').order_by('nombre')
         self.fields['maquina'].empty_label = '— Seleccionar máquina —'
         self.fields['observaciones'].required = False
         self.fields['fecha'].widget.attrs['min'] = timezone.now().date().isoformat()
         self.fields['hora_inicio'].input_formats = ['%H:%M']
         self.fields['hora_fin'].input_formats    = ['%H:%M']
-        if mostrar_operador:
-            self.fields['operador'].queryset    = Usuario.objects.filter(
-                rol__nombre__iexact='OPERADOR', estado='ACTIVO').order_by('first_name', 'last_name')
-            self.fields['operador'].empty_label = '— Seleccionar operador —'
-            self.fields['operador'].required    = True
-        else:
-            del self.fields['operador']
+        # El operador siempre es seleccionable. Es obligatorio solo cuando el
+        # solicitante es estudiante (no puede operar la máquina por sí mismo);
+        # para los roles superiores es opcional: operan ellos o delegan.
+        operadores = Usuario.objects.filter(
+            rol__nombre__iexact='OPERADOR', estado='ACTIVO').order_by('first_name', 'last_name')
+        # Al editar, conservar el operador ya asignado aunque no cumpla el filtro
+        # (p. ej. si quedó inactivo después de asignarlo).
+        if self.instance and self.instance.pk and self.instance.operador_id:
+            operadores = (operadores | Usuario.objects.filter(pk=self.instance.operador_id)).distinct()
+        self.fields['operador'].queryset = operadores
+        self.fields['operador'].required = solicitante_es_estudiante
+        self.fields['operador'].empty_label = (
+            '— Seleccionar operador —' if solicitante_es_estudiante
+            else '— Sin operador (opero yo) —'
+        )
 
     def clean(self):
         cleaned = super().clean()

@@ -27,7 +27,7 @@
            onmouseover="this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text)'">
             ◷ Ver reserva
         </a>
-        {% if orden.estado != 'FINALIZADA' and es_admin_o_tecnico %}
+        {% if puede_editar_orden %}
         <button onclick="document.getElementById('modal-cerrar').style.display='flex'"
                 style="padding:0.4rem 0.9rem; background:rgba(34,197,94,0.15); color:var(--success); border:1px solid rgba(34,197,94,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; cursor:pointer; font-weight:500;">
             ✓ Cerrar OT
@@ -59,8 +59,12 @@
         <div class="card-header"><div class="card-title">Información general</div></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; font-size:0.82rem;">
             <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Operario</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Solicitante</div>
                 <div style="color:var(--text);">{% if orden.reserva.usuario %}{{ orden.reserva.usuario.get_full_name|default:orden.reserva.usuario.username }}{% else %}— usuario eliminado —{% endif %}</div>
+            </div>
+            <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Operario</div>
+                <div style="color:var(--text);">{% if orden.reserva.operador %}{{ orden.reserva.operador.get_full_name|default:orden.reserva.operador.username }}{% else %}{% if orden.reserva.usuario %}{{ orden.reserva.usuario.get_full_name|default:orden.reserva.usuario.username }}{% else %}—{% endif %} <span style="color:var(--text-muted); font-size:0.72rem;">(solicitante)</span>{% endif %}</div>
             </div>
             <div>
                 <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem;">Horario</div>
@@ -100,7 +104,7 @@
         <div class="card-header">
             <div class="card-title">Materiales consumidos</div>
         </div>
-        {% if es_admin_o_tecnico and orden.estado != 'FINALIZADA' %}
+        {% if puede_editar_orden %}
         <form method="post" action="{% url 'registrar_consumo' orden.pk %}" style="margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--border);">
             {% csrf_token %}
             <div style="display:grid; gap:0.6rem;">
@@ -154,7 +158,7 @@
             <div class="card-title">Paradas</div>
             <span class="badge badge-danger">{{ paradas|length }}</span>
         </div>
-        {% if es_admin_o_tecnico and orden.estado != 'FINALIZADA' %}
+        {% if puede_editar_orden %}
         <form method="post" action="{% url 'agregar_parada' orden.pk %}" style="margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--border);">
             {% csrf_token %}
             <div style="display:grid; gap:0.6rem;">
@@ -215,7 +219,7 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">Bitácora del operario</div>
-            {% if es_admin_o_tecnico and orden.estado != 'FINALIZADA' %}
+            {% if puede_editar_orden %}
             <button onclick="document.getElementById('form-bitacora').style.display = document.getElementById('form-bitacora').style.display === 'none' ? 'block' : 'none'"
                     style="padding:0.3rem 0.75rem; background:transparent; color:var(--accent); border:1px solid rgba(232,160,32,0.3); border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:0.65rem; cursor:pointer;">
                 + Agregar
@@ -223,7 +227,7 @@
             {% endif %}
         </div>
 
-        {% if es_admin_o_tecnico and orden.estado != 'FINALIZADA' %}
+        {% if puede_editar_orden %}
         <div id="form-bitacora" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--border);">
             <form method="post" action="{% url 'agregar_bitacora' orden.pk %}">
                 {% csrf_token %}
